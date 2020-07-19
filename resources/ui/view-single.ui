@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.22.2 -->
+<interface>
+  <requires lib="gtk+" version="3.20"/>
+  <template class="ViewSingle" parent="GtkScrolledWindow">
+    <property name="visible">True</property>
+    <property name="can_focus">True</property>
+    <property name="has_focus">True</property>
+    <property name="events">GDK_STRUCTURE_MASK | GDK_TOUCH_MASK | GDK_TOUCHPAD_GESTURE_MASK | GDK_TABLET_PAD_MASK</property>
+    <property name="shadow_type">in</property>
+    <property name="min_content_width">300</property>
+    <property name="min_content_height">200</property>
+    <child>
+      <object class="GtkViewport" id="image_viewport">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="events">GDK_STRUCTURE_MASK | GDK_TOUCH_MASK | GDK_TOUCHPAD_GESTURE_MASK</property>
+        <property name="hscroll_policy">natural</property>
+        <property name="vscroll_policy">natural</property>
+        <signal name="size-allocate" handler="on_image_size" swapped="no"/>
+        <child>
+          <object class="GtkImage" id="image">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="stock">gtk-missing-image</property>
+            <property name="icon_size">6</property>
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

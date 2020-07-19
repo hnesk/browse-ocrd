@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.22.2 -->
+<interface>
+  <requires lib="gtk+" version="3.10"/>
+  <template class="AboutDialog" parent="GtkAboutDialog">
+    <property name="can_focus">False</property>
+    <property name="type">popup</property>
+    <property name="title" translatable="yes">About OCRD Browser</property>
+    <property name="resizable">False</property>
+    <property name="modal">True</property>
+    <property name="window_position">center-on-parent</property>
+    <property name="destroy_with_parent">True</property>
+    <property name="type_hint">dialog</property>
+    <property name="program_name">OCRD Browser</property>
+    <property name="version">0.1</property>
+    <property name="copyright" translatable="yes">2020 Johannes Künsebeck</property>
+    <property name="website">http://quantikative.org</property>
+    <property name="authors">Johannes Künsebeck</property>
+    <property name="logo">../../resources/icons/logo.png</property>
+    <property name="license_type">mit-x11</property>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
+    <child internal-child="vbox">
+      <object class="GtkBox">
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox">
+            <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

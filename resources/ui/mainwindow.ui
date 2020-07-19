@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.22.2 
+
+The MIT License (MIT)
+
+Copyright (c) 
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+-->
+<interface>
+  <requires lib="gtk+" version="3.20"/>
+  <!-- interface-license-type mit -->
+  <!-- interface-name OCRDBrowser -->
+  <!-- interface-description A Viewer for OCRD mets files -->
+  <template class="MainWindow" parent="GtkApplicationWindow">
+    <property name="can_focus">False</property>
+    <property name="default_width">1000</property>
+    <property name="default_height">800</property>
+    <property name="icon_name">camera-photo</property>
+    <property name="has_resize_grip">True</property>
+    <child type="titlebar">
+      <object class="GtkHeaderBar" id="headerbar">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="title">OCRD Browser</property>
+        <property name="subtitle" translatable="yes">~~~</property>
+        <property name="show_close_button">True</property>
+        <property name="decoration_layout">:menu,minimize,maximize,close</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkPaned" id="panes">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="position">300</property>
+        <property name="position_set">True</property>
+        <child>
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkScrolledWindow" id="page_list_scroller">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="hscrollbar_policy">never</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkActionBar">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkButton">
+                    <property name="height_request">36</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Erste Seite</property>
+                    <property name="hexpand">True</property>
+                    <property name="action_name">win.goto_first</property>
+                    <property name="always_show_image">True</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="stock">gtk-goto-first</property>
+                        <property name="icon_size">2</property>
+                      </object>
+                    </child>
+                    <accelerator key="Home" signal="clicked"/>
+                  </object>
+                  <packing>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Vorherige Seite</property>
+                    <property name="hexpand">True</property>
+                    <property name="action_name">win.go_back</property>
+                    <property name="always_show_image">True</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="stock">gtk-go-back</property>
+                        <property name="icon_size">2</property>
+                      </object>
+                    </child>
+                    <accelerator key="Left" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child type="center">
+                  <object class="GtkLabel" id="current_page_label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label">1/100</property>
+                  </object>
+                  <packing>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Letzte Seite</property>
+                    <property name="hexpand">True</property>
+                    <property name="action_name">win.go_forward</property>
+                    <property name="always_show_image">True</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="stock">gtk-go-forward</property>
+                        <property name="icon_size">2</property>
+                      </object>
+                    </child>
+                    <accelerator key="Right" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                  </object>
+                  <packing>
+                    <property name="pack_type">end</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Nächste Seite</property>
+                    <property name="hexpand">True</property>
+                    <property name="action_name">win.goto_last</property>
+                    <property name="always_show_image">True</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="stock">gtk-goto-last</property>
+                        <property name="icon_size">2</property>
+                      </object>
+                    </child>
+                    <accelerator key="End" signal="clicked"/>
+                  </object>
+                  <packing>
+                    <property name="pack_type">end</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="resize">True</property>
+            <property name="shrink">True</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

@@ -28,11 +28,11 @@ lxml==4.5.1
 MarkupSafe==1.1.1
 msgpack==0.6.2
 numpy==1.18.5
-ocrd==2.10.2
-ocrd-modelfactory==2.10.2
-ocrd-models==2.10.2
-ocrd-utils==2.10.2
-ocrd-validators==2.10.2
+ocrd==2.10.5
+ocrd-modelfactory==2.10.5
+ocrd-models==2.10.5
+ocrd-utils==2.10.5
+ocrd-validators==2.10.5
 opencv-python==4.2.0.34
 opencv-python-headless==4.2.0.34
 packaging==20.3
@@ -43,9 +43,9 @@ pure-python-adb==0.2.5.dev0
 pycairo==1.19.1
 pycparser==2.20
 PyGObject==3.36.1
-PyGObject-stubs==0.0.2
 pyparsing==2.4.6
 pyrsistent==0.16.0
+python-magic==0.4.18
 pytoml==0.1.21
 pyvoussoir==0.2.0.2
 PyYAML==5.3.1
