@@ -117,6 +117,10 @@ class MainWindow(Gtk.ApplicationWindow, ActionRegistry):
 class AboutDialog(Gtk.AboutDialog):
     __gtype_name__ = "AboutDialog"
 
+    def __init__(self, **kwargs):
+        Gtk.AboutDialog.__init__(self, **kwargs)
+        self.set_logo(GdkPixbuf.Pixbuf.new_from_resource('/org/readmachine/ocrdbrowser/icons/logo.png'))
+
 
 @Gtk.Template(resource_path="/org/readmachine/ocrdbrowser/ui/open-dialog.ui")
 class OpenDialog(Gtk.FileChooserDialog):

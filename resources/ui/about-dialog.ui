@@ -16,7 +16,7 @@
     <property name="copyright" translatable="yes">2020 Johannes Künsebeck</property>
     <property name="website">http://quantikative.org</property>
     <property name="authors">Johannes Künsebeck</property>
-    <property name="logo">../../resources/icons/logo.png</property>
+    <property name="logo_icon_name">image-missing</property>
     <property name="license_type">mit-x11</property>
     <child type="titlebar">
       <placeholder/>

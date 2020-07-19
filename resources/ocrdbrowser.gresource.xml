@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/org/readmachine/ocrdbrowser">
-    <file>icons/logo.png</file>
+    <file preprocess="to-pixdata">icons/logo.png</file>
     <file preprocess="xml-stripblanks">gtk/menus.ui</file>
     <file preprocess="xml-stripblanks">ui/about-dialog.ui</file>
     <file preprocess="xml-stripblanks">ui/mainwindow.ui</file>
