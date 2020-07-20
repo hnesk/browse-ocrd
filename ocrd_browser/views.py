@@ -27,7 +27,7 @@ class View:
         pass
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrdbrowser/ui/view-single.ui")
+@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/view-single.ui")
 class ViewSingle(Gtk.ScrolledWindow,View):
     __gtype_name__ = "ViewSingle"
 
@@ -51,7 +51,7 @@ class ViewSingle(Gtk.ScrolledWindow,View):
 
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrdbrowser/ui/view-multi.ui")
+@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/view-multi.ui")
 class ViewMulti(Gtk.ScrolledWindow,View):
     __gtype_name__ = "ViewMulti"
 
@@ -115,7 +115,7 @@ class ViewMulti(Gtk.ScrolledWindow,View):
 
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrdbrowser/ui/view-xml.ui")
+@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/view-xml.ui")
 class ViewXml(Gtk.ScrolledWindow,View):
     __gtype_name__ = "ViewXml"
 

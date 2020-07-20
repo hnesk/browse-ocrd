@@ -7,7 +7,7 @@ from window import MainWindow, AboutDialog, OpenDialog, ActionRegistry
 
 class OcrdBrowserApplication(Gtk.Application, ActionRegistry):
     def __init__(self):
-        Gtk.Application.__init__(self, application_id='org.readmachine.ocrdbrowser', flags=Gio.ApplicationFlags.HANDLES_OPEN)
+        Gtk.Application.__init__(self, application_id='org.readmachine.ocrd-browser', flags=Gio.ApplicationFlags.HANDLES_OPEN)
         ActionRegistry.__init__(self)
 
     def do_startup(self):

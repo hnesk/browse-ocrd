@@ -2,9 +2,9 @@ import gi
 from ocrd_utils import pushd_popd
 
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GdkPixbuf, Gio, GObject, Gdk, GLib
+from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
 
-from image_util import pil_to_pixbuf, pil_scale
+from image_util import pil_to_pixbuf
 from model import Document
 from views import ViewSingle, ViewXml, ViewMulti
 
@@ -24,7 +24,7 @@ class ActionRegistry:
         self.actions[name] = action
         return action
 
-@Gtk.Template(resource_path="/org/readmachine/ocrdbrowser/ui/mainwindow.ui")
+@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/mainwindow.ui")
 class MainWindow(Gtk.ApplicationWindow, ActionRegistry):
     __gtype_name__ = "MainWindow"
 
@@ -90,12 +90,11 @@ class MainWindow(Gtk.ApplicationWindow, ActionRegistry):
     def update_ui(self):
         if self.current_page_id and len(self.document.page_ids)>0:
             index = self.document.page_ids.index(self.current_page_id)
-            qty_pages = len(self.document.page_ids)
-            print(index , qty_pages)
+            last_page = len(self.document.page_ids) - 1
             self.actions['goto_first'].set_enabled(index > 0)
             self.actions['go_back'].set_enabled(index > 0)
-            self.actions['go_forward'].set_enabled(index +1 < qty_pages)
-            self.actions['goto_last'].set_enabled(index +1 < qty_pages)
+            self.actions['go_forward'].set_enabled(index < last_page)
+            self.actions['goto_last'].set_enabled(index < last_page)
 
     def on_close(self, action: Gio.SimpleAction, _):
         self.destroy()
@@ -113,16 +112,16 @@ class MainWindow(Gtk.ApplicationWindow, ActionRegistry):
         self.page_list.goto_index(-1)
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrdbrowser/ui/about-dialog.ui")
+@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/about-dialog.ui")
 class AboutDialog(Gtk.AboutDialog):
     __gtype_name__ = "AboutDialog"
 
     def __init__(self, **kwargs):
         Gtk.AboutDialog.__init__(self, **kwargs)
-        self.set_logo(GdkPixbuf.Pixbuf.new_from_resource('/org/readmachine/ocrdbrowser/icons/logo.png'))
+        self.set_logo(GdkPixbuf.Pixbuf.new_from_resource('/org/readmachine/ocrd-browser/icons/logo.png'))
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrdbrowser/ui/open-dialog.ui")
+@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/open-dialog.ui")
 class OpenDialog(Gtk.FileChooserDialog):
     __gtype_name__ = "OpenDialog"
 
@@ -190,7 +189,7 @@ class LazyLoadingPixbufListStore(Gtk.ListStore):
         self.loading = False
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrdbrowser/ui/page-list.ui")
+@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/page-list.ui")
 class PagePreviewList(Gtk.IconView):
     __gtype_name__ = "PagePreviewList"
 
