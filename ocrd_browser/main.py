@@ -10,13 +10,8 @@ from pathlib import Path
 BASE_PATH = Path(__file__).absolute().parent.parent
 RESOURCE_FILE_NAME = "resources/ocrd-browser.gresource"
 
-
-def main(arguments):
-    from application import OcrdBrowserApplication
-    app = OcrdBrowserApplication()
-    app.run(arguments)
-
-
+resources = Gio.resource_load(str(BASE_PATH / RESOURCE_FILE_NAME))
+Gio.resources_register(resources)
 
 def install_excepthook():
     """ Make sure we exit when an unhandled exception occurs. """
@@ -31,8 +26,14 @@ def install_excepthook():
 
 
 
-if __name__ == "__main__":
-    resources = Gio.resource_load(str(BASE_PATH / RESOURCE_FILE_NAME))
-    Gio.resources_register(resources)
+def main():
+    from ocrd_browser.application import OcrdBrowserApplication
     install_excepthook()
-    sys.exit(main(sys.argv))
+    app = OcrdBrowserApplication()
+    app.run(sys.argv)
+
+
+
+
+if __name__ == "__main__":
+    sys.exit(main())

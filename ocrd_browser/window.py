@@ -4,9 +4,9 @@ from ocrd_utils import pushd_popd
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
 
-from image_util import pil_to_pixbuf
-from model import Document
-from views import ViewSingle, ViewXml, ViewMulti
+from ocrd_browser.image_util import pil_to_pixbuf
+from ocrd_browser.model import Document
+from ocrd_browser.views import ViewSingle, ViewXml, ViewMulti
 
 import threading
 
@@ -63,7 +63,7 @@ class MainWindow(Gtk.ApplicationWindow, ActionRegistry):
         self.add_view(ViewSingle(file_group='OCR-D-IMG'))
         #self.add_view(ViewSingle(file_group='OCR-D-IMG-BIN'))
         #self.add_view(ViewMulti(file_group='OCR-D-IMG', image_count=2))
-        self.add_view(ViewXml(file_group='OCR-D-OCR-TESS-frk'))
+        #self.add_view(ViewXml(file_group='OCR-D-OCR-TESS-frk'))
 
 
         if len(self.document.page_ids):

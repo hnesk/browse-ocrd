@@ -2,7 +2,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gio,  Gtk
 from typing import List
-from window import MainWindow, AboutDialog, OpenDialog, ActionRegistry
+from ocrd_browser.window import MainWindow, AboutDialog, OpenDialog, ActionRegistry
 
 
 class OcrdBrowserApplication(Gtk.Application, ActionRegistry):

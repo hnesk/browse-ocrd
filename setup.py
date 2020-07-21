@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import codecs
 import subprocess
+
+import setuptools
 from setuptools import setup
 
 install_requires = open('requirements.txt').read().split('\n')
@@ -25,7 +27,7 @@ setup(
     long_description=codecs.open('README.md', encoding='utf-8').read(),
     long_description_content_type='text/markdown',
     url="https://github.com/hnesk/ocrd-browser",
-    packages=['voussoir'],
+    packages=setuptools.find_packages(),
     install_requires=install_requires,
     classifiers=[
         'Programming Language :: Python :: 3',

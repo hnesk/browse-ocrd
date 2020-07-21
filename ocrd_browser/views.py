@@ -4,8 +4,8 @@ gi.require_version('GtkSource', '4')
 
 from gi.repository import Gtk, Gdk, GObject, GtkSource
 from ocrd_models.ocrd_page import to_xml
-from image_util import pil_to_pixbuf, pil_scale
-from model import Document, Page
+from ocrd_browser.image_util import pil_to_pixbuf, pil_scale
+from ocrd_browser.model import Document, Page
 
 GObject.type_register(GtkSource.View)
 
