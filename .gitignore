@@ -128,3 +128,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 /resources/ocrd-browser.gresource
+/ocrd_browser/ui.gresource

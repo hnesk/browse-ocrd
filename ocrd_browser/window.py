@@ -1,9 +1,8 @@
 import gi
-from ocrd_utils import pushd_popd
-
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
-
+from ocrd_utils import pushd_popd
+from ocrd_browser import __version__
 from ocrd_browser.image_util import pil_to_pixbuf
 from ocrd_browser.model import Document
 from ocrd_browser.views import ViewSingle, ViewXml, ViewMulti
@@ -119,6 +118,7 @@ class AboutDialog(Gtk.AboutDialog):
     def __init__(self, **kwargs):
         Gtk.AboutDialog.__init__(self, **kwargs)
         self.set_logo(GdkPixbuf.Pixbuf.new_from_resource('/org/readmachine/ocrd-browser/icons/logo.png'))
+        self.set_version(__version__)
 
 
 @Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/open-dialog.ui")
@@ -211,7 +211,7 @@ class PagePreviewList(Gtk.IconView):
 
     def goto_index(self, index):
         index = index if index >= 0 else len(self.model) + index
-        if index >= 0 and index < len(self.model):
+        if 0 <= index < len(self.model):
             self.goto_path(Gtk.TreePath(index))
 
     def skip(self, pos):

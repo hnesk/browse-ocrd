@@ -7,10 +7,8 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gio
 from pathlib import Path
 
-BASE_PATH = Path(__file__).absolute().parent.parent
-RESOURCE_FILE_NAME = "resources/ocrd-browser.gresource"
-
-resources = Gio.resource_load(str(BASE_PATH / RESOURCE_FILE_NAME))
+BASE_PATH = Path(__file__).absolute().parent
+resources = Gio.resource_load(str(BASE_PATH / "ui.gresource"))
 Gio.resources_register(resources)
 
 def install_excepthook():
