@@ -5,7 +5,7 @@ from ocrd_utils import pushd_popd
 from ocrd_browser import __version__
 from ocrd_browser.image_util import pil_to_pixbuf
 from ocrd_browser.model import Document
-from ocrd_browser.views import ViewSingle, ViewXml, ViewMulti
+from ocrd_browser.views import ViewSingle, ViewMulti
 
 import threading
 

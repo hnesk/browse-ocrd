@@ -46,7 +46,10 @@ setup(
     entry_points={
         'console_scripts': [
             'browse-ocrd = ocrd_browser.main:main',
-        ]
+        ],
+        'ocrd_browser_ext': [
+            'xml = ocrd_browser.extensions.xmlview:register',
+        ],
     },
     package_data={'ocrd_browser': ['*.gresource']},
 )
