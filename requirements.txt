@@ -6,3 +6,4 @@ PyGObject
 python-magic
 vext
 vext.gi
+wheel
