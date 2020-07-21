@@ -12,9 +12,8 @@
     <property name="destroy_with_parent">True</property>
     <property name="type_hint">dialog</property>
     <property name="program_name">OCRD Browser</property>
-    <property name="version">0.1</property>
     <property name="copyright" translatable="yes">2020 Johannes Künsebeck</property>
-    <property name="website">http://quantikative.org</property>
+    <property name="website">https://github.com/hnesk/browse-ocrd</property>
     <property name="authors">Johannes Künsebeck</property>
     <property name="logo_icon_name">image-missing</property>
     <property name="license_type">mit-x11</property>
