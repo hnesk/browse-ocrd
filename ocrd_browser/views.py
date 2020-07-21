@@ -1,16 +1,9 @@
 import gi
 gi.require_version('Gtk', '3.0')
-try:
-    gi.require_version('GtkSource', '4')
-except ValueError:
-    gi.require_version('GtkSource', '3.0')
-
-from gi.repository import Gtk, Gdk, GObject, GtkSource
-from ocrd_models.ocrd_page import to_xml
+from gi.repository import Gtk, Gdk
 from ocrd_browser.image_util import pil_to_pixbuf, pil_scale
 from ocrd_browser.model import Document, Page
 
-GObject.type_register(GtkSource.View)
 
 class View:
     def __init__(self, file_group = None, document = None):
@@ -117,24 +110,4 @@ class ViewMulti(Gtk.ScrolledWindow,View):
                 image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
 
 
-
-@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/view-xml.ui")
-class ViewXml(Gtk.ScrolledWindow,View):
-    __gtype_name__ = "ViewXml"
-
-    text_view: GtkSource.View = Gtk.Template.Child()
-
-    def __init__(self, **kwargs):
-        Gtk.ScrolledWindow.__init__(self)
-        View.__init__(self, **kwargs)
-        lang_manager = GtkSource.LanguageManager()
-        style_manager = GtkSource.StyleSchemeManager()
-        self.buffer: GtkSource.Buffer = self.text_view.get_buffer()
-        self.buffer.set_language(lang_manager.get_language('xml'))
-        self.buffer.set_style_scheme(style_manager.get_scheme('tango'))
-
-
-    def redraw(self):
-        if self.current:
-            self.buffer.set_text(to_xml(self.current.pcGts))
 

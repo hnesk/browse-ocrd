@@ -1,4 +1,6 @@
 import gi
+import pkg_resources
+
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gio,  Gtk
 from typing import List
@@ -16,6 +18,12 @@ class OcrdBrowserApplication(Gtk.Application, ActionRegistry):
         self.create_simple_action('open')
         self.create_simple_action('about')
         self.create_simple_action('quit')
+        extensions = {}
+        entry_point: pkg_resources.EntryPoint
+        for entry_point in pkg_resources.iter_entry_points('ocrd_browser_ext'):
+            register_function = entry_point.load()
+            register_function(self)
+
 
     def do_activate(self):
         win = self.get_active_window()
