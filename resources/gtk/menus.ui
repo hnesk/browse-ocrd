@@ -29,6 +29,7 @@
             </item>
         </section>
     </menu>
+    <!--
     <menu id="menubar">
         <submenu>
             <attribute name="label" translatable="yes">_File</attribute>
@@ -60,4 +61,5 @@
             </section>
         </submenu>
     </menu>
+    -->
 </interface>
