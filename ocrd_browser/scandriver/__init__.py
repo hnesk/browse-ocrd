@@ -13,7 +13,8 @@ class AbstractScanDriver:
     def scan(self, timeout=1):
         raise NotImplementedError('Please override scan() in your driver')
 
-    def verify_image_file(self, image_file):
+    @staticmethod
+    def verify_image_file(image_file):
         try:
             if os.path.getsize(image_file) < 10000:
                 raise RuntimeError('Too small, thumbnail? ({0}B)'.format(os.path.getsize(image_file)))
@@ -37,6 +38,9 @@ class AndroidADBDriver(AbstractScanDriver):
         self.port = port
         self.client = None
         self.device = None
+
+        self.camera_path = None
+        self.newest_photo = None
 
     def setup(self):
         self.client = self._connect()

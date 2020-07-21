@@ -14,6 +14,7 @@ from ocrd_utils import pushd_popd
 
 class Document:
     def __init__(self, workspace: Workspace, resolver: Resolver = None, file_group = 'OCR-D-IMG'):
+        self.current_file:OcrdFile = None
         self.workspace: Workspace = workspace
         self.resolver: Resolver = resolver if resolver else Resolver()
         self.file_group: str = file_group
@@ -79,12 +80,11 @@ class Document:
         mimetype = 'image/png'
         local_filename = Path(file_group, '%s%s' % (file_id, extension))
         url = Path(self.workspace.directory) / local_filename
-        print(url)
         self.current_file = self.workspace.add_file(file_group, ID=file_id, mimetype=mimetype, force=True, content=imagebytes, url=str(url), local_filename=str(local_filename), pageId=page_id)
-        self.position += 1
         return self.current_file
 
-    def _add_dpi_to_png_buffer(self, imagebytes, dpi = 300):
+    @staticmethod
+    def _add_dpi_to_png_buffer(imagebytes, dpi = 300):
         """
         adds dpi information to a png image
 
@@ -115,8 +115,6 @@ class Document:
         #print(local_filename)
         self.workspace.add_file(self.file_group, ID=file_id, mimetype=mimetype, force=True, url=local_filename,
                                 local_filename=local_filename, pageId=page_id)
-        self.workspace.save_image_file()
-        self.count += 1
 
 
 
