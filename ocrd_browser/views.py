@@ -1,6 +1,9 @@
 import gi
 gi.require_version('Gtk', '3.0')
-gi.require_version('GtkSource', '4')
+try:
+    gi.require_version('GtkSource', '4')
+except ValueError:
+    gi.require_version('GtkSource', '3.0')
 
 from gi.repository import Gtk, Gdk, GObject, GtkSource
 from ocrd_models.ocrd_page import to_xml
