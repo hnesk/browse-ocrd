@@ -48,6 +48,11 @@ class MainWindow(Gtk.ApplicationWindow, ActionRegistry):
         self.create_simple_action('goto_last')
         self.create_simple_action('create_view')
 
+        close_view_action = Gio.SimpleAction.new("close_view", GLib.Variant("s","").get_type())
+        close_view_action.connect("activate", self.on_close_view)
+        self.add_action(close_view_action)
+
+
         self.document = Document.load(file)
 
         title = self.document.workspace.mets.unique_identifier if self.document.workspace.mets.unique_identifier else '<unnamed>'
@@ -73,6 +78,8 @@ class MainWindow(Gtk.ApplicationWindow, ActionRegistry):
 
     def add_view(self, view: 'View'):
         view.set_document(self.document)
+        view.set_name('view_{}'.format(len(self.views)))
+        view.setup()
         self.views.append(view)
         self.connect('page_activated', view.page_activated)
         self.view_container.pack_start(view, True, True, 3)
@@ -119,6 +126,10 @@ class MainWindow(Gtk.ApplicationWindow, ActionRegistry):
         if view:
             self.add_view(view(document=self.document))
 
+    def on_close_view(self, _action:Gio.SimpleAction, view_name:GLib.Variant):
+        for view in self.views:
+            if view.get_name() == view_name.get_string():
+                view.destroy()
 
 @Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/about-dialog.ui")
 class AboutDialog(Gtk.AboutDialog):

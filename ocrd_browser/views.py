@@ -15,6 +15,9 @@ class View:
         self.file_group = file_group
         self.page_id = None
 
+    def setup(self):
+        pass
+
     def set_document(self, document: Document):
         self.document: Document = document
         self.current = None
@@ -26,6 +29,16 @@ class View:
     def reload(self):
         self.current = self.document.page_for_id(self.page_id, self.file_group)
         self.redraw()
+
+    def setup_close_button(self, view_action_box: Gtk.Box):
+        close_button: Gtk.Button = Gtk.Button.new_from_icon_name('window-close',Gtk.IconSize.SMALL_TOOLBAR)
+        close_button.set_name('close_button')
+        close_button.set_visible(True)
+        close_button.set_relief(Gtk.ReliefStyle.NONE)
+        close_button.set_always_show_image(True)
+        close_button.set_detailed_action_name('win.close_view("{}")'.format(self.get_name()))
+        view_action_box.pack_end(close_button, False, False, 6)
+
 
     def setup_file_group_selector(self, file_group_selector):
         for group in self.document.file_groups:
@@ -46,6 +59,7 @@ class ViewImages(Gtk.Box, View):
     image_box: Gtk.Box = Gtk.Template.Child()
     file_group_selector: Gtk.ComboBoxText = Gtk.Template.Child()
     page_qty_selector: Gtk.SpinButton = Gtk.Template.Child()
+    view_action_box: Gtk.Box = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         Gtk.Box.__init__(self)
@@ -59,7 +73,11 @@ class ViewImages(Gtk.Box, View):
         self.connect('notify::page-qty', lambda *args: self.rebuild_images())
         self.bind_property('file_group', self.file_group_selector, 'active_id', GObject.BindingFlags.BIDIRECTIONAL)
         self.connect('notify::file-group', lambda *args: self.reload())
+
+    def setup(self):
         self.setup_file_group_selector(self.file_group_selector)
+        self.setup_close_button(self.view_action_box)
+
 
     def rebuild_images(self):
         existing_images = {child.get_name(): child for child in self.image_box.get_children()}

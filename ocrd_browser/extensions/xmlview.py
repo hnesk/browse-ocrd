@@ -35,6 +35,7 @@ class ViewXml(Gtk.Box, View):
 
     file_group: str = GObject.Property(type=str, default='OCR-D-IMG')
 
+    view_action_box: Gtk.Box = Gtk.Template.Child()
     text_view: GtkSource.View = Gtk.Template.Child()
     file_group_selector: Gtk.ComboBoxText = Gtk.Template.Child()
 
@@ -45,7 +46,11 @@ class ViewXml(Gtk.Box, View):
 
         self.bind_property('file_group', self.file_group_selector, 'active_id', GObject.BindingFlags.BIDIRECTIONAL)
         self.connect('notify::file-group', lambda *args: self.reload())
+
+    def setup(self):
         self.setup_file_group_selector(self.file_group_selector)
+        self.setup_close_button(self.view_action_box)
+
 
     def setup_buffer(self) -> GtkSource.Buffer:
         lang_manager = GtkSource.LanguageManager()
