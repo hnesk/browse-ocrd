@@ -93,7 +93,6 @@ class ViewImages(Gtk.Box, View):
 
     @Gtk.Template.Callback()
     def on_viewport_size_allocate(self, _sender: Gtk.Widget, rect: Gdk.Rectangle):
-        print(self.preview_height, rect.height)
         if abs(self.preview_height - rect.height) > 4:
             self.preview_height = rect.height
             self.redraw()
