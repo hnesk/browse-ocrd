@@ -41,7 +41,7 @@ class ViewXml(Gtk.Box, View):
     def __init__(self, **kwargs):
         Gtk.Box.__init__(self)
         View.__init__(self, **kwargs)
-        self.buffer = self.setup_source_view()
+        self.buffer = self.setup_buffer()
 
         self.bind_property('file_group', self.file_group_selector, 'active_id', GObject.BindingFlags.BIDIRECTIONAL)
         self.connect('notify::file-group', lambda *args: self.reload())
