@@ -47,9 +47,11 @@ setup(
         'console_scripts': [
             'browse-ocrd = ocrd_browser.main:main',
         ],
-        'ocrd_browser_ext': [
-            'xml = ocrd_browser.extensions.xmlview:register',
+        'ocrd_browser_view': [
+            'xml = ocrd_browser.extensions.xmlview:ViewXml',
+            'images = ocrd_browser.views:ViewImages',
         ],
+
     },
     package_data={'ocrd_browser': ['*.gresource']},
 )

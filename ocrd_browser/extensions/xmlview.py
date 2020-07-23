@@ -1,44 +1,61 @@
 import gi
-from gi.overrides import Gio
-
-from ocrd_browser.application import OcrdBrowserApplication
 
 try:
     gi.require_version('GtkSource', '4')
 except ValueError:
     gi.require_version('GtkSource', '3.0')
 
-from gi.repository import Gtk, GObject, GtkSource, Gio
+from gi.repository import Gtk, GObject, GtkSource
 from ocrd_models.ocrd_page import to_xml
 from ocrd_browser.views import View
 
 GObject.type_register(GtkSource.View)
 
-def on_xml(action, param):
-    print(action)
 
-def register(application: OcrdBrowserApplication):
-    application.get_app_menu().append('XML','app.xml')
-    application.create_simple_action('xml',on_xml)
-
+# Example for extension point 'ocrd_browser_ext'
+#
+# 'ocrd_browser_ext': [
+#    'xml = ocrd_browser.extensions.xmlview:register',
+# ],
+#
+# def on_xml(action, param):
+#     print(action)
+#
+# def register(application: OcrdBrowserApplication):
+#     application.get_app_menu().append('XML','app.xml')
+#     application.create_simple_action('xml',on_xml)
 
 
 @Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/view-xml.ui")
-class ViewXml(Gtk.ScrolledWindow,View):
+class ViewXml(Gtk.Box, View):
+    """
+    A view of the current Page-Xml with syntax highlighting via GtkSourceView
+    """
     __gtype_name__ = "ViewXml"
 
+    file_group: str = GObject.Property(type=str, default='OCR-D-IMG')
+
     text_view: GtkSource.View = Gtk.Template.Child()
+    file_group_selector: Gtk.ComboBoxText = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
-        Gtk.ScrolledWindow.__init__(self)
+        Gtk.Box.__init__(self)
         View.__init__(self, **kwargs)
+        self.buffer = self.setup_source_view()
+
+        self.bind_property('file_group', self.file_group_selector, 'active_id', GObject.BindingFlags.BIDIRECTIONAL)
+        self.connect('notify::file-group', lambda *args: self.reload())
+        self.setup_file_group_selector(self.file_group_selector)
+
+    def setup_buffer(self) -> GtkSource.Buffer:
         lang_manager = GtkSource.LanguageManager()
         style_manager = GtkSource.StyleSchemeManager()
-        self.buffer: GtkSource.Buffer = self.text_view.get_buffer()
-        self.buffer.set_language(lang_manager.get_language('xml'))
-        self.buffer.set_style_scheme(style_manager.get_scheme('tango'))
+        buffer: GtkSource.Buffer = self.text_view.get_buffer()
+        buffer.set_language(lang_manager.get_language('xml'))
+        buffer.set_style_scheme(style_manager.get_scheme('tango'))
+        return buffer
 
     def redraw(self):
         if self.current:
-            self.buffer.set_text(to_xml(self.current.pcGts))
-
+            self.buffer.set_text(to_xml(self.current.pc_gts))
+            print(self.document.path(self.current.file))

@@ -1,113 +1,125 @@
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GObject
+
+import pkg_resources
+from typing import Dict, Optional
 from ocrd_browser.image_util import pil_to_pixbuf, pil_scale
 from ocrd_browser.model import Document, Page
 
 
 class View:
-    def __init__(self, file_group = None, document = None):
+    def __init__(self, file_group=None, document=None):
         self.document: Document = document
-        self.current: Page = None
+        self.current: Optional[Page] = None
         self.file_group = file_group
+        self.page_id = None
 
     def set_document(self, document: Document):
         self.document: Document = document
         self.current = None
 
     def page_activated(self, sender, page_id):
-        self.current = self.document.page_for_id(page_id, self.file_group)
+        self.page_id = page_id
+        self.reload()
+
+    def reload(self):
+        self.current = self.document.page_for_id(self.page_id, self.file_group)
         self.redraw()
+
+    def setup_file_group_selector(self, file_group_selector):
+        for group in self.document.file_groups:
+            file_group_selector.append(group, group)
+        file_group_selector.set_active(0)
 
     def redraw(self):
         pass
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/view-single.ui")
-class ViewSingle(Gtk.ScrolledWindow,View):
-    __gtype_name__ = "ViewSingle"
+@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/view-images.ui")
+class ViewImages(Gtk.Box, View):
+    __gtype_name__ = "ViewImages"
 
-    image: Gtk.Image = Gtk.Template.Child()
+    file_group: str = GObject.Property(type=str, default='OCR-D-IMG')
+    page_qty: int = GObject.Property(type=int, default=1)
+
+    image_box: Gtk.Box = Gtk.Template.Child()
+    file_group_selector: Gtk.ComboBoxText = Gtk.Template.Child()
+    page_qty_selector: Gtk.SpinButton = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
-        Gtk.ScrolledWindow.__init__(self)
+        Gtk.Box.__init__(self)
         View.__init__(self, **kwargs)
-        self.preview_height = 0
-
-    @Gtk.Template.Callback()
-    def on_image_size(self, sender:Gtk.Widget, rect: Gdk.Rectangle):
-        if abs(self.preview_height - rect.height) > 4:
-            self.preview_height = rect.height
-            self.redraw()
-
-    def redraw(self):
-        if self.current:
-            thumbnail = pil_scale(self.current.image, None, self.preview_height)
-            self.image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
-
-
-
-@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/view-multi.ui")
-class ViewMulti(Gtk.ScrolledWindow,View):
-    __gtype_name__ = "ViewMulti"
-
-    image_template: Gtk.Image = Gtk.Template.Child()
-    box: Gtk.Box = Gtk.Template.Child()
-
-
-    def __init__(self, image_count=2, **kwargs):
-        Gtk.ScrolledWindow.__init__(self)
-        View.__init__(self, **kwargs)
-        self.image_count = image_count
-        self.preview_height = 300
-        self.images = []
+        self.preview_height = 10
         self.pages = []
+        self.page_id = None
+        self.rebuild_images()
 
-        box_properties = {}
-        for key in self.box.list_child_properties():
-            box_properties[key.name] = self.box.child_get_property(self.image_template, key.name)
+        self.bind_property('page_qty', self.page_qty_selector, 'value', GObject.BindingFlags.BIDIRECTIONAL)
+        self.connect('notify::page-qty', lambda *args: self.rebuild_images())
+        self.bind_property('file_group', self.file_group_selector, 'active_id', GObject.BindingFlags.BIDIRECTIONAL)
+        self.connect('notify::file-group', lambda *args: self.reload())
+        self.setup_file_group_selector(self.file_group_selector)
 
-        image_properties = {}
-        for key in self.image_template.list_properties():
-            image_properties[key.name] = self.image_template.get_property(key.name)
-        image_properties.pop('parent', None)
+    def rebuild_images(self):
+        existing_images = {child.get_name(): child for child in self.image_box.get_children()}
 
-        self.box.remove(self.image_template)
+        for i in range(0, self.page_qty):
+            name = 'image_{}'.format(i)
+            if not existing_images.pop(name, None):
+                image = Gtk.Image(name=name, visible=True, icon_name='gtk-missing-image', icon_size=Gtk.IconSize.DIALOG)
+                self.image_box.add(image)
 
-        for i in range(0,self.image_count):
-            image = Gtk.Image()
-            image.set_properties(image_properties)
-            image.set_visible(True)
-            for name, value in box_properties.items():
-                self.box.child_set_property(image, name, value)
-            self.images.append(image)
-            self.box.add(image)
+        for child in existing_images.values():
+            child.destroy()
 
+        self.reload()
 
-    @Gtk.Template.Callback()
-    def on_image_size(self, sender:Gtk.Widget, rect: Gdk.Rectangle):
-        if self.preview_height > 30 and abs(self.preview_height - rect.height) > 4:
-            self.preview_height = rect.height
-            self.redraw()
+    def page_activated(self, _sender, page_id):
+        self.page_id = page_id
+        self.reload()
 
-    def page_activated(self, sender, page_id):
+    def reload(self):
         try:
-            index = self.document.page_ids.index(page_id)
+            index = self.document.page_ids.index(self.page_id)
         except ValueError:
             return
-        index = index - index % self.image_count
-        display_ids = self.document.page_ids[index:index+self.image_count]
+        index = index - index % self.page_qty
+        display_ids = self.document.page_ids[index:index + self.page_qty]
         self.pages = []
         for display_id in display_ids:
             self.pages.append(self.document.page_for_id(display_id, self.file_group))
         self.redraw()
 
+    @Gtk.Template.Callback()
+    def on_viewport_size_allocate(self, _sender: Gtk.Widget, rect: Gdk.Rectangle):
+        print(self.preview_height, rect.height)
+        if abs(self.preview_height - rect.height) > 4:
+            self.preview_height = rect.height
+            self.redraw()
 
     def redraw(self):
         if self.pages:
-            for image, page in zip(self.images, self.pages):
+            for image, page in zip(self.image_box.get_children(), self.pages):
                 thumbnail = pil_scale(page.image, None, self.preview_height - 10)
                 image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
 
 
+class ViewManager:
+    def __init__(self, views: Dict):
+        self.views = views
 
+    @classmethod
+    def create_from_entry_points(cls) -> 'ViewManager':
+        views = {}
+        entry_point: pkg_resources.EntryPoint
+        for entry_point in pkg_resources.iter_entry_points('ocrd_browser_view'):
+            view_class = entry_point.load()
+            views[entry_point.name] = view_class
+        return cls(views)
+
+    def get_view_options(self) -> Dict:
+        return {id_: view_class.__name__ for id_, view_class in self.views.items()}
+
+    def get_view(self, id_):
+        return self.views[id_] if id_ in self.views else None
