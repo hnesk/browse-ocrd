@@ -11,17 +11,18 @@ BASE_PATH = Path(__file__).absolute().parent
 resources = Gio.resource_load(str(BASE_PATH / "ui.gresource"))
 Gio.resources_register(resources)
 
+
 def install_excepthook():
     """ Make sure we exit when an unhandled exception occurs. """
     old_hook = sys.excepthook
+
     def new_hook(etype, evalue, etb):
         old_hook(etype, evalue, etb)
         while Gtk.main_level():
             Gtk.main_quit()
         sys.exit()
+
     sys.excepthook = new_hook
-
-
 
 
 def main():
@@ -31,7 +32,7 @@ def main():
     app.run(sys.argv)
 
 
-
-
 if __name__ == "__main__":
+    # WHY OH WHY
+    sys.path.append(str(BASE_PATH.parent))
     sys.exit(main())
