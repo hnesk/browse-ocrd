@@ -124,7 +124,6 @@ class Document:
         basename = file_id + '.png'
         local_filename = self.resolver.download_to_directory(self.workspace.directory, str(page_image), basename,
                                                              subdir=self.file_group, if_exists='overwrite')
-        # print(local_filename)
         self.workspace.add_file(self.file_group, ID=file_id, mimetype=mime_type, force=True, url=local_filename,
                                 local_filename=local_filename, pageId=page_id)
 
