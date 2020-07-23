@@ -8,7 +8,7 @@ from ocrd_browser import __version__
 
 install_requires = open('requirements.txt').read().split('\n')
 
-print("Generating gresources bundle")
+print("Generating gresource bundle")
 subprocess.call(
     [
         "glib-compile-resources",
