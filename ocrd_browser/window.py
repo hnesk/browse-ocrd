@@ -159,9 +159,9 @@ class LazyLoadingPixbufListStore(Gtk.ListStore):
         if loading_image_pixbuf:
             self.loading_image_pixbuf = loading_image_pixbuf
         else:
-            self.loading_image_pixbuf = Gtk.IconTheme.get_default().load_icon_for_scale('image-loading',
-                                                                                        Gtk.IconSize.LARGE_TOOLBAR, 40,
-                                                                                        0)
+            icon_theme = Gtk.IconTheme.get_default()
+            self.loading_image_pixbuf = icon_theme.load_icon_for_scale('image-loading', Gtk.IconSize.LARGE_TOOLBAR, 40,
+                                                                       0)
 
         self.connect('row-inserted', self.on_row_inserted)
         self.connect('row-changed', self.on_row_changed)
@@ -212,7 +212,8 @@ class PagePreviewList(Gtk.IconView):
         self.set_tooltip_column(1)
         self.set_pixbuf_column(2)
         self.set_item_width(50)
-        text_renderer: Gtk.CellRendererText = [cell for cell in self.get_cells() if isinstance(cell, Gtk.CellRendererText)][0]
+        text_renderer: Gtk.CellRendererText = \
+        [cell for cell in self.get_cells() if isinstance(cell, Gtk.CellRendererText)][0]
         text_renderer.ellipsize = 'middle'
         self.model = self._setup_model()
         self.set_model(self.model)
