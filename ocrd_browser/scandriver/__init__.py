@@ -5,6 +5,7 @@ from PIL import Image
 from retrying import retry
 from pathlib import Path
 
+
 class AbstractScanDriver:
 
     def setup(self):
@@ -66,7 +67,7 @@ class AndroidADBDriver(AbstractScanDriver):
         start = clock()
         newest_photo = previous_photo
         while previous_photo == self._get_newest_photo():
-            if (clock() - start > timeout):
+            if clock() - start > timeout:
                 raise TimeoutError('Waited {0} seconds, still no image', str(timeout))
             sleep(0.1)
             newest_photo = self._get_newest_photo()
@@ -83,14 +84,14 @@ class AndroidADBDriver(AbstractScanDriver):
 
         remote_size = int(self._stat(remote_file))
         local_size = int(os.path.getsize(local_file))
-        if (remote_size != local_size):
+        if remote_size != local_size:
             # display('{0} - {1}'.format(remote_size, local_size))
             raise IOError('Image not there yet')
 
         if not self.verify_image_file(local_file):
             raise IOError('Image is broken')
 
-        return (local_file, remote_file)
+        return local_file, remote_file
 
     def _get_newest_photo(self):
         return self.device.shell("ls -t1b {0} | head -n1".format(self.camera_path)).strip()
@@ -130,5 +131,3 @@ class DummyDriver(AbstractScanDriver):
 
     def scan(self, timeout=1):
         return next(self.files)
-
-
