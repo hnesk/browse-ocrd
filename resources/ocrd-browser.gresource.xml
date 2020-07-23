@@ -4,11 +4,10 @@
     <file compressed="true" preprocess="to-pixdata">icons/logo.png</file>
     <file preprocess="xml-stripblanks">gtk/menus.ui</file>
     <file preprocess="xml-stripblanks">ui/about-dialog.ui</file>
-    <file preprocess="xml-stripblanks">ui/mainwindow.ui</file>
+    <file preprocess="xml-stripblanks">ui/main-window.ui</file>
     <file preprocess="xml-stripblanks">ui/open-dialog.ui</file>
     <file preprocess="xml-stripblanks">ui/page-list.ui</file>
-    <file preprocess="xml-stripblanks">ui/view-multi.ui</file>
-    <file preprocess="xml-stripblanks">ui/view-single.ui</file>
+    <file preprocess="xml-stripblanks">ui/view-images.ui</file>
     <file preprocess="xml-stripblanks">ui/view-xml.ui</file>
   </gresource>
 </gresources>
