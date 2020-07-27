@@ -1,5 +1,7 @@
 import gi
 
+gi.require_version('Gtk', '3.0')
+
 try:
     gi.require_version('GtkSource', '4')
 except ValueError:
