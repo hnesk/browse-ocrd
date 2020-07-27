@@ -49,7 +49,7 @@ THE SOFTWARE.
       <object class="GtkPaned" id="panes">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
-        <property name="position">250</property>
+        <property name="position">335</property>
         <child>
           <object class="GtkBox">
             <property name="visible">True</property>

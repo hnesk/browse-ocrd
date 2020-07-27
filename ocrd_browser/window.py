@@ -180,7 +180,6 @@ class PagePreviewList(Gtk.IconView):
         self.set_text_column(0)
         self.set_tooltip_column(1)
         self.set_pixbuf_column(3)
-        self.set_item_width(50)
         text_renderer: Gtk.CellRendererText = \
             [cell for cell in self.get_cells() if isinstance(cell, Gtk.CellRendererText)][0]
         text_renderer.ellipsize = 'middle'
