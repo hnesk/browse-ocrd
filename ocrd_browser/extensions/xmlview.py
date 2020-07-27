@@ -8,6 +8,7 @@ except ValueError:
 from gi.repository import Gtk, GObject, GtkSource
 from ocrd_models.ocrd_page import to_xml
 from ocrd_browser.views import View
+from pkg_resources import resource_filename
 
 GObject.type_register(GtkSource.View)
 
@@ -26,7 +27,7 @@ GObject.type_register(GtkSource.View)
 #     application.create_simple_action('xml',on_xml)
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/view-xml.ui")
+@Gtk.Template(filename=resource_filename(__name__, 'resources/view-xml.ui'))
 class ViewXml(Gtk.Box, View):
     """
     A view of the current Page-Xml with syntax highlighting via GtkSourceView
