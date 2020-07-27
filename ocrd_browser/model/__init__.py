@@ -14,10 +14,11 @@ from ocrd_utils import pushd_popd
 
 DEFAULT_FILE_GROUP = 'OCR-D-IMG'
 
-
 class Document:
 
-    def __init__(self, workspace: Workspace, resolver: Resolver = None):
+    def __init__(self, workspace: Workspace, mets_url = None, resolver: Resolver = None):
+        self.empty = True
+        self.mets_url = mets_url
         self.current_file: OcrdFile = None
         self.workspace: Workspace = workspace
         self.resolver: Resolver = resolver if resolver else Resolver()
@@ -34,7 +35,7 @@ class Document:
     def create(cls, directory=None, resolver: Resolver = None) -> 'Document':
         resolver = resolver if resolver else Resolver()
         workspace = resolver.workspace_from_nothing(directory=directory, mets_basename='mets.xml')
-        return cls(workspace, resolver)
+        return cls(workspace, None, resolver)
 
     @classmethod
     def load(cls, mets_url=None, resolver: Resolver = None) -> 'Document':
@@ -42,7 +43,8 @@ class Document:
             return cls.create(None, resolver)
         resolver = resolver if resolver else Resolver()
         workspace = resolver.workspace_from_url(mets_url, download=True)
-        doc = cls(workspace, resolver)
+        doc = cls(workspace, mets_url, resolver)
+        doc.empty = False
         return doc
 
     def page_for_id(self, page_id: str, file_group: str = None) -> Optional['Page']:
@@ -94,6 +96,7 @@ class Document:
         self.current_file = self.workspace.add_file(file_group, ID=file_id, mimetype=mime_type, force=True,
                                                     content=image_bytes, url=str(url),
                                                     local_filename=str(local_filename), pageId=page_id)
+        self.empty = False
         return self.current_file
 
     @staticmethod
@@ -127,7 +130,7 @@ class Document:
                                                              subdir=file_group, if_exists='overwrite')
         self.workspace.add_file(file_group, ID=file_id, mimetype=mime_type, force=True, url=local_filename,
                                 local_filename=local_filename, pageId=page_id)
-
+        self.empty = False
 
 class Page:
     def __init__(self, id_: str, file: OcrdFile, pc_gts: PcGtsType, image: Image, exif: OcrdExif):
