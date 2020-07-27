@@ -51,7 +51,6 @@ class ViewXml(Gtk.Box, View):
         self.setup_file_group_selector(self.file_group_selector)
         self.setup_close_button(self.view_action_box)
 
-
     def setup_buffer(self) -> GtkSource.Buffer:
         lang_manager = GtkSource.LanguageManager()
         style_manager = GtkSource.StyleSchemeManager()

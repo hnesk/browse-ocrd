@@ -1,6 +1,6 @@
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gio, Gtk
+from gi.repository import Gio, Gtk, GLib
 
 import pkg_resources
 from typing import List
@@ -43,8 +43,7 @@ class OcrdBrowserApplication(Gtk.Application):
 
         response = open_dialog.run()
         if response == Gtk.ResponseType.OK:
-            win = MainWindow(application=self, file=open_dialog.get_filename())
-            win.present()
+            self.load_in_window(open_dialog.get_filename())
 
         open_dialog.destroy()
 
@@ -54,7 +53,10 @@ class OcrdBrowserApplication(Gtk.Application):
 
     def do_open(self, files: List[Gio.File], file_count: int, hint: str):
         for file in files:
-            win = MainWindow(application=self, file=file.get_path())
-            win.present()
-
+            self.load_in_window(file.get_path())
         return 0
+
+    def load_in_window(self, file):
+        win = MainWindow(application=self)
+        win.present()
+        GLib.timeout_add(10, win.load, file)
