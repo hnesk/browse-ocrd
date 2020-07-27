@@ -53,5 +53,7 @@ setup(
         ],
 
     },
-    package_data={'ocrd_browser': ['*.gresource']},
+    package_data={
+        '' : ['*.gresource','*.ui', '*.xml']
+    },
 )

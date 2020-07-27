@@ -3,7 +3,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GObject
 
-import pkg_resources
+from pkg_resources import EntryPoint, iter_entry_points, resource_filename
 from typing import Dict, Optional
 from ocrd_browser.image_util import pil_to_pixbuf, pil_scale
 from ocrd_browser.model import Document, Page
@@ -51,7 +51,7 @@ class View:
         pass
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/view-images.ui")
+@Gtk.Template(filename=resource_filename(__name__, 'resources/view-images.ui'))
 class ViewImages(Gtk.Box, View):
     __gtype_name__ = "ViewImages"
 
@@ -130,8 +130,8 @@ class ViewManager:
     @classmethod
     def create_from_entry_points(cls) -> 'ViewManager':
         views = {}
-        entry_point: pkg_resources.EntryPoint
-        for entry_point in pkg_resources.iter_entry_points('ocrd_browser_view'):
+        entry_point: EntryPoint
+        for entry_point in iter_entry_points('ocrd_browser_view'):
             view_class = entry_point.load()
             views[entry_point.name] = view_class
         return cls(views)
