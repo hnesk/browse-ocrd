@@ -9,12 +9,13 @@ from ocrd_browser.views import ViewManager, ViewImages, View
 from ocrd_browser.icon_store import LazyLoadingListStore
 from ocrd_browser.image_util import cv_scale, cv_to_pixbuf
 from ocrd_browser.gtk_util import ActionRegistry
+from pkg_resources import resource_filename
 
 import cv2
 import os
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/main-window.ui")
+@Gtk.Template(filename=resource_filename(__name__, 'resources/main-window.ui'))
 class MainWindow(Gtk.ApplicationWindow):
     __gtype_name__ = "MainWindow"
 
@@ -140,7 +141,7 @@ class MainWindow(Gtk.ApplicationWindow):
                 view.destroy()
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/about-dialog.ui")
+@Gtk.Template(filename=resource_filename(__name__, 'resources/about-dialog.ui'))
 class AboutDialog(Gtk.AboutDialog):
     __gtype_name__ = "AboutDialog"
 
@@ -150,7 +151,7 @@ class AboutDialog(Gtk.AboutDialog):
         self.set_version(__version__)
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/open-dialog.ui")
+@Gtk.Template(filename=resource_filename(__name__, 'resources/open-dialog.ui'))
 class OpenDialog(Gtk.FileChooserDialog):
     __gtype_name__ = "OpenDialog"
 
@@ -168,7 +169,7 @@ class OpenDialog(Gtk.FileChooserDialog):
         self.add_filter(filter_any)
 
 
-@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/page-list.ui")
+@Gtk.Template(filename=resource_filename(__name__, 'resources/page-list.ui'))
 class PagePreviewList(Gtk.IconView):
     __gtype_name__ = "PagePreviewList"
 
