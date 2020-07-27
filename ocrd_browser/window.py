@@ -1,13 +1,16 @@
 import gi
 
-from ocrd_browser.icon_store import PagePreviewList
-
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
 
 from ocrd_browser import __version__
 from ocrd_browser.model import Document
 from ocrd_browser.views import ViewManager, ViewImages, View
+from ocrd_browser.icon_store import LazyLoadingListStore
+from ocrd_browser.image_util import cv_scale, cv_to_pixbuf
+
+import cv2
+import os
 
 
 class ActionRegistry:
@@ -155,3 +158,88 @@ class OpenDialog(Gtk.FileChooserDialog):
         filter_any.set_name("Any files")
         filter_any.add_pattern("*")
         self.add_filter(filter_any)
+
+
+@Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/page-list.ui")
+class PagePreviewList(Gtk.IconView):
+    __gtype_name__ = "PagePreviewList"
+
+    def __init__(self, document: Document, **kwargs):
+        super().__init__(**kwargs)
+        self.document = document
+        self.current: Gtk.TreeIter = None
+        self.model: LazyLoadingListStore = None
+        self.loading_image_pixbuf: GdkPixbuf.Pixbuf = None
+        self.file_lookup: dict = None
+        self.setup_ui()
+        self.setup_model()
+
+    def setup_ui(self):
+        theme = Gtk.IconTheme.get_default()
+        self.loading_image_pixbuf = theme.load_icon_for_scale('image-loading', Gtk.IconSize.LARGE_TOOLBAR, 48, 0)
+        self.set_text_column(0)
+        self.set_tooltip_column(1)
+        self.set_pixbuf_column(3)
+        self.set_item_width(50)
+        text_renderer: Gtk.CellRendererText = \
+            [cell for cell in self.get_cells() if isinstance(cell, Gtk.CellRendererText)][0]
+        text_renderer.ellipsize = 'middle'
+
+    def setup_model(self):
+        self.file_lookup = self.get_image_paths()
+        self.model = LazyLoadingListStore(str, str, str, GdkPixbuf.Pixbuf, init_row=self.init_row,
+                                          load_row=self.load_row, hash_row=self.hash_row)
+        for page_id in self.document.page_ids:
+            file = str(self.file_lookup[page_id])
+            self.model.append((page_id, '', file, None))
+        self.set_model(self.model)
+        GLib.timeout_add(10, self.model.start_loading)
+
+    def init_row(self, row: Gtk.TreeModelRow):
+        row[1] = 'Loading {}'.format(row[2])
+        row[3] = self.loading_image_pixbuf
+
+    @staticmethod
+    def load_row(row):
+        image = cv2.imread(row[2])
+        row[1] = '{} ({}x{})'.format(row[2], image.shape[1], image.shape[0])
+        row[3] = cv_to_pixbuf(cv_scale(image, 100, None))
+        return row
+
+    @staticmethod
+    def hash_row(row: Gtk.TreeModelRow):
+        file = row[2]
+        mtime = os.path.getmtime(file)
+        return '{}:{}'.format(file, mtime)
+
+    def get_image_paths(self, file_group='OCR-D-IMG'):
+        images = self.document.workspace.mets.find_files(fileGrp=file_group)
+        page_ids = self.document.workspace.mets.get_physical_pages(for_fileIds=[image.ID for image in images])
+        file_paths = [self.document.path(image.url) for image in images]
+        return dict(zip(page_ids, file_paths))
+
+    def goto_index(self, index):
+        index = index if index >= 0 else len(self.model) + index
+        if 0 <= index < len(self.model):
+            self.goto_path(Gtk.TreePath(index))
+
+    def skip(self, pos):
+        iterate = self.model.iter_previous if pos < 0 else self.model.iter_next
+        n = iterate(self.current)
+        self.goto_path(self.model.get_path(n))
+
+    def goto_path(self, path):
+        self.unselect_all()
+        self.select_path(path)
+        self.set_cursor(path, None, False)
+        self.emit('activate_cursor_item')
+
+    def do_item_activated(self, path: Gtk.TreePath):
+        self.current = self.model.get_iter(path)
+        # Trigger on_row_changed
+        self.model[self.current][0] = self.model[self.current][0]
+        self.emit('page_selected', self.model[path][0])
+
+    @GObject.Signal()
+    def page_selected(self, page_id: str):
+        pass
