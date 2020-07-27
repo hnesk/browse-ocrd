@@ -12,13 +12,15 @@ import zlib
 from ocrd_models.ocrd_page_generateds import PcGtsType, PageType, MetadataType
 from ocrd_utils import pushd_popd
 
+DEFAULT_FILE_GROUP = 'OCR-D-IMG'
+
 
 class Document:
-    def __init__(self, workspace: Workspace, resolver: Resolver = None, file_group='OCR-D-IMG'):
+
+    def __init__(self, workspace: Workspace, resolver: Resolver = None):
         self.current_file: OcrdFile = None
         self.workspace: Workspace = workspace
         self.resolver: Resolver = resolver if resolver else Resolver()
-        self.file_group: str = file_group
 
     @property
     def page_ids(self) -> list:
@@ -54,8 +56,7 @@ class Document:
 
     def file_for_page_id(self, page_id, file_group=None) -> Optional[OcrdFile]:
         with pushd_popd(self.workspace.directory):
-            files = self.workspace.mets.find_files(fileGrp=file_group if file_group else self.file_group,
-                                                   pageId=page_id)
+            files = self.workspace.mets.find_files(fileGrp=file_group or DEFAULT_FILE_GROUP, pageId=page_id)
             if not files:
                 return None
             return self.workspace.download_file(files[0])
@@ -117,14 +118,14 @@ class Document:
 
         return s[0:idat_offset] + phys_chunk + s[idat_offset:]
 
-    def add_page(self, page_image, page_nr):
-        file_id = '{}_{:04d}'.format(self.file_group, page_nr)
+    def add_page(self, page_image, page_nr, file_group='OCR-D-IMG'):
+        file_id = '{}_{:04d}'.format(file_group, page_nr)
         page_id = 'PAGE_{:04d}'.format(page_nr)
         mime_type = 'image/png'
         basename = file_id + '.png'
         local_filename = self.resolver.download_to_directory(self.workspace.directory, str(page_image), basename,
-                                                             subdir=self.file_group, if_exists='overwrite')
-        self.workspace.add_file(self.file_group, ID=file_id, mimetype=mime_type, force=True, url=local_filename,
+                                                             subdir=file_group, if_exists='overwrite')
+        self.workspace.add_file(file_group, ID=file_id, mimetype=mime_type, force=True, url=local_filename,
                                 local_filename=local_filename, pageId=page_id)
 
 
