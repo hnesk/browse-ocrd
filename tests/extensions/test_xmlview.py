@@ -1,18 +1,12 @@
-import gi
-
-from tests.test_views import TestCaseWithResources
-
-gi.require_version('Gtk', '3.0')
-
 import unittest
+from ocrd_browser.extensions.xmlview import ViewXml
+from ocrd_browser.model import Document
 
 
-class XmlViewTestCase(TestCaseWithResources):
+class XmlViewTestCase(unittest.TestCase):
 
     def setUp(self):
-        from ocrd_browser.extensions.xmlview import ViewXml
-        from ocrd_browser.model import Document
-        self.vx = ViewXml(document = Document.create())
+        self.vx = ViewXml(document=Document.create())
 
     def test_can_construct(self):
         self.assertIsNotNone(self.vx)

@@ -18,7 +18,7 @@ def cv_to_pixbuf(cv_image: ndarray) -> GdkPixbuf:
 
 def pil_to_pixbuf(im: Image) -> GdkPixbuf:
     bytes_io = io.BytesIO()
-    im.save(bytes_io, "PNG" if im.mode in ("LA","RGBA") else "JPEG")
+    im.save(bytes_io, "PNG" if im.mode in ("LA", "RGBA") else "JPEG")
     return bytes_to_pixbuf(bytes_io.getvalue())
 
 
