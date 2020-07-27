@@ -29,6 +29,43 @@ THE SOFTWARE.
   <!-- interface-license-type mit -->
   <!-- interface-name OCRDBrowser -->
   <!-- interface-description A Viewer for OCRD mets files -->
+  <object class="GtkMenu" id="gear_menu">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="reserve_toggle_size">False</property>
+    <child>
+      <object class="GtkMenuItem" id="new_window">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="action_name">app.new</property>
+        <property name="label" translatable="yes">New Window</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="open">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="action_name">app.open</property>
+        <property name="label" translatable="yes">Open mets.xml</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="sep1">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="about">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="action_name">app.about</property>
+        <property name="label" translatable="yes">About OCRD Browser</property>
+      </object>
+    </child>
+  </object>
   <template class="MainWindow" parent="GtkApplicationWindow">
     <property name="can_focus">False</property>
     <property name="default_width">1000</property>
@@ -42,7 +79,45 @@ THE SOFTWARE.
         <property name="title">OCRD Browser</property>
         <property name="subtitle" translatable="yes">~~~</property>
         <property name="show_close_button">True</property>
-        <property name="decoration_layout">:menu,minimize,maximize,close</property>
+        <property name="decoration_layout">menu:minimize,maximize,close</property>
+        <child>
+          <object class="GtkMenuButton">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="focus_on_click">False</property>
+            <property name="receives_default">True</property>
+            <property name="popup">gear_menu</property>
+            <property name="use_popover">False</property>
+            <child>
+              <object class="GtkAlignment">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="valign">baseline</property>
+                <child>
+                  <object class="GtkBox">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="icon_name">open-menu-symbolic</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="pack_type">end</property>
+          </packing>
+        </child>
       </object>
     </child>
     <child>
