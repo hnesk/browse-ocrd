@@ -18,7 +18,7 @@ def cv_to_pixbuf(cv_image: ndarray) -> GdkPixbuf:
 
 def pil_to_pixbuf(im: Image) -> GdkPixbuf:
     bytes_io = io.BytesIO()
-    im.save(bytes_io, "PNG")
+    im.save(bytes_io, "JPEG")
     return bytes_to_pixbuf(bytes_io.getvalue())
 
 
