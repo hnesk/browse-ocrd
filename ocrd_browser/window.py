@@ -25,10 +25,12 @@ class MainWindow(Gtk.ApplicationWindow):
     view_container: Gtk.Box = Gtk.Template.Child()
     create_view_select: Gtk.ComboBoxText = Gtk.Template.Child()
 
-    def __init__(self, file=None, **kwargs):
+    def __init__(self, **kwargs):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
         self.views = []
         self.current_page_id = None
+        self.document = Document.create()
+
         self.actions = ActionRegistry(for_widget=self)
         self.actions.create('close')
         self.actions.create('goto_first')
@@ -38,14 +40,6 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions.create('create_view')
         self.actions.create('close_view', param_type=GLib.Variant("s", ""))
 
-        self.document = Document.load(file)
-
-        title = self.document.workspace.mets.unique_identifier if self.document.workspace.mets.unique_identifier else '<unnamed>'
-
-        self.set_title(title)
-        self.header_bar.set_title(title)
-        self.header_bar.set_subtitle(self.document.workspace.directory)
-
         self.page_list = PagePreviewList(self.document)
         self.page_list_scroller.add(self.page_list)
         self.page_list.connect('page_selected', self.page_selected)
@@ -53,6 +47,30 @@ class MainWindow(Gtk.ApplicationWindow):
         for id_, view in self.view_manager.get_view_options().items():
             self.create_view_select.append(id_, view)
         self.add_view(ViewImages(document=self.document))
+
+        self.update_ui()
+
+    def load(self, file):
+        self.document = Document.create()
+        self.set_title('Loading')
+        self.header_bar.set_title('Loading ...')
+        self.header_bar.set_subtitle(file)
+        self.update_ui()
+        # Give GTK some break to show the Loading message
+        GLib.timeout_add(10, self._load_do, file)
+
+    def _load_do(self, file):
+        self.document = Document.load(file)
+        self.page_list.set_document(self.document)
+
+        title = self.document.workspace.mets.unique_identifier if self.document.workspace.mets.unique_identifier else '<unnamed>'
+        self.set_title(title)
+        self.header_bar.set_title(title)
+        self.header_bar.set_subtitle(self.document.workspace.directory)
+
+        for view in self.views:
+            view.set_document(self.document)
+            view.setup()
 
         if len(self.document.page_ids):
             self.page_selected(None, self.document.page_ids[0])
@@ -82,13 +100,18 @@ class MainWindow(Gtk.ApplicationWindow):
         pass
 
     def update_ui(self):
+        can_go_back = False
+        can_go_forward = False
         if self.current_page_id and len(self.document.page_ids) > 0:
             index = self.document.page_ids.index(self.current_page_id)
             last_page = len(self.document.page_ids) - 1
-            self.actions['goto_first'].set_enabled(index > 0)
-            self.actions['go_back'].set_enabled(index > 0)
-            self.actions['go_forward'].set_enabled(index < last_page)
-            self.actions['goto_last'].set_enabled(index < last_page)
+            can_go_back = index > 0
+            can_go_forward = index < last_page
+
+        self.actions['goto_first'].set_enabled(can_go_back)
+        self.actions['go_back'].set_enabled(can_go_back)
+        self.actions['go_forward'].set_enabled(can_go_forward)
+        self.actions['goto_last'].set_enabled(can_go_forward)
 
     def on_close(self, _a: Gio.SimpleAction, _p):
         self.destroy()
@@ -151,12 +174,16 @@ class PagePreviewList(Gtk.IconView):
 
     def __init__(self, document: Document, **kwargs):
         super().__init__(**kwargs)
-        self.document = document
+        self.document: Document = None
         self.current: Gtk.TreeIter = None
         self.model: LazyLoadingListStore = None
         self.loading_image_pixbuf: GdkPixbuf.Pixbuf = None
         self.file_lookup: dict = None
         self.setup_ui()
+        self.set_document(document)
+
+    def set_document(self, document):
+        self.document = document
         self.setup_model()
 
     def setup_ui(self):
