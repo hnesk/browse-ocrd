@@ -8,26 +8,14 @@ from ocrd_browser.model import Document
 from ocrd_browser.views import ViewManager, ViewImages, View
 from ocrd_browser.icon_store import LazyLoadingListStore
 from ocrd_browser.image_util import cv_scale, cv_to_pixbuf
+from ocrd_browser.gtk_util import ActionRegistry
 
 import cv2
 import os
 
 
-class ActionRegistry:
-    def __init__(self):
-        self.actions = {}
-
-    def create_simple_action(self, name, callback=None):
-        callback = callback if callback else getattr(self, 'on_' + name)
-        action: Gio.SimpleAction = Gio.SimpleAction.new(name)
-        action.connect("activate", callback)
-        self.add_action(action)
-        self.actions[name] = action
-        return action
-
-
 @Gtk.Template(resource_path="/org/readmachine/ocrd-browser/ui/main-window.ui")
-class MainWindow(Gtk.ApplicationWindow, ActionRegistry):
+class MainWindow(Gtk.ApplicationWindow):
     __gtype_name__ = "MainWindow"
 
     header_bar: Gtk.HeaderBar = Gtk.Template.Child()
@@ -39,15 +27,15 @@ class MainWindow(Gtk.ApplicationWindow, ActionRegistry):
 
     def __init__(self, file=None, **kwargs):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
-        ActionRegistry.__init__(self)
         self.views = []
         self.current_page_id = None
-        self.create_simple_action('close')
-        self.create_simple_action('goto_first')
-        self.create_simple_action('go_back')
-        self.create_simple_action('go_forward')
-        self.create_simple_action('goto_last')
-        self.create_simple_action('create_view')
+        self.actions = ActionRegistry(for_widget=self)
+        self.actions.create('close')
+        self.actions.create('goto_first')
+        self.actions.create('go_back')
+        self.actions.create('go_forward')
+        self.actions.create('goto_last')
+        self.actions.create('create_view')
 
         close_view_action = Gio.SimpleAction.new("close_view", GLib.Variant("s", "").get_type())
         close_view_action.connect("activate", self.on_close_view)

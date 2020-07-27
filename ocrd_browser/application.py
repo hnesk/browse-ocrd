@@ -1,26 +1,27 @@
 import gi
-import pkg_resources
-
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gio, Gtk
+
+import pkg_resources
 from typing import List
-from ocrd_browser.window import MainWindow, AboutDialog, OpenDialog, ActionRegistry
+from ocrd_browser.gtk_util import ActionRegistry
+from ocrd_browser.window import MainWindow, AboutDialog, OpenDialog
 from ocrd_browser.views import ViewManager
 
 
-class OcrdBrowserApplication(Gtk.Application, ActionRegistry):
+class OcrdBrowserApplication(Gtk.Application):
     def __init__(self):
         Gtk.Application.__init__(self, application_id='org.readmachine.ocrd-browser',
                                  flags=Gio.ApplicationFlags.HANDLES_OPEN)
-        ActionRegistry.__init__(self)
+        self.actions = ActionRegistry(for_widget=self)
         self.view_manager = ViewManager.create_from_entry_points()
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
-        self.create_simple_action('new')
-        self.create_simple_action('open')
-        self.create_simple_action('about')
-        self.create_simple_action('quit')
+        self.actions.create('new')
+        self.actions.create('open')
+        self.actions.create('about')
+        self.actions.create('quit')
         for entry_point in pkg_resources.iter_entry_points('ocrd_browser_ext'):
             (entry_point.load())(self)
 
