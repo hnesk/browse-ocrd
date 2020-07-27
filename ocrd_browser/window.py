@@ -36,10 +36,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions.create('go_forward')
         self.actions.create('goto_last')
         self.actions.create('create_view')
-
-        close_view_action = Gio.SimpleAction.new("close_view", GLib.Variant("s", "").get_type())
-        close_view_action.connect("activate", self.on_close_view)
-        self.add_action(close_view_action)
+        self.actions.create('close_view', param_type=GLib.Variant("s", ""))
 
         self.document = Document.load(file)
 
@@ -174,8 +171,8 @@ class PagePreviewList(Gtk.IconView):
 
     def setup_model(self):
         self.file_lookup = self.get_image_paths()
-        self.model = LazyLoadingListStore(str, str, str, GdkPixbuf.Pixbuf, init_row=self.init_row,
-                                          load_row=self.load_row, hash_row=self.hash_row)
+        self.model = LazyLoadingListStore(str, str, str, GdkPixbuf.Pixbuf,
+                                          init_row=self.init_row, load_row=self.load_row, hash_row=self.hash_row)
         for page_id in self.document.page_ids:
             file = str(self.file_lookup[page_id])
             self.model.append((page_id, '', file, None))

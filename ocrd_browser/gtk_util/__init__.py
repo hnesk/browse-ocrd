@@ -1,7 +1,4 @@
-import gi
-
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gio
+from gi.repository import Gio, GLib
 
 
 class ActionRegistry:
@@ -9,9 +6,12 @@ class ActionRegistry:
         self.for_widget = for_widget
         self.actions = {}
 
-    def create(self, name, callback=None):
+    def create(self, name, callback=None, param_type: GLib.Variant = None):
         callback = callback if callback else getattr(self.for_widget, 'on_' + name)
-        action: Gio.SimpleAction = Gio.SimpleAction.new(name)
+        if param_type is not None:
+            action: Gio.SimpleAction = Gio.SimpleAction.new(name, param_type.get_type())
+        else:
+            action: Gio.SimpleAction = Gio.SimpleAction.new(name)
         action.connect("activate", callback)
         self.for_widget.add_action(action)
         self.actions[name] = action
