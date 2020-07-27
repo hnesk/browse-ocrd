@@ -1,4 +1,5 @@
 import gi
+
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GObject
 
@@ -13,6 +14,7 @@ class View:
         self.document: Document = document
         self.current: Optional[Page] = None
         self.file_group = file_group
+        self.close_button = None
         self.page_id = None
 
     def setup(self):
@@ -31,14 +33,14 @@ class View:
         self.redraw()
 
     def setup_close_button(self, view_action_box: Gtk.Box):
-        close_button: Gtk.Button = Gtk.Button.new_from_icon_name('window-close',Gtk.IconSize.SMALL_TOOLBAR)
-        close_button.set_name('close_button')
-        close_button.set_visible(True)
-        close_button.set_relief(Gtk.ReliefStyle.NONE)
-        close_button.set_always_show_image(True)
-        close_button.set_detailed_action_name('win.close_view("{}")'.format(self.get_name()))
-        view_action_box.pack_end(close_button, False, False, 6)
-
+        if self.close_button is None:
+            self.close_button: Gtk.Button = Gtk.Button.new_from_icon_name('window-close', Gtk.IconSize.SMALL_TOOLBAR)
+            self.close_button.set_name('close_button')
+            self.close_button.set_visible(True)
+            self.close_button.set_relief(Gtk.ReliefStyle.NONE)
+            self.close_button.set_always_show_image(True)
+            self.close_button.set_detailed_action_name('win.close_view("{}")'.format(self.get_name()))
+            view_action_box.pack_end(self.close_button, False, False, 6)
 
     def setup_file_group_selector(self, file_group_selector):
         for group in self.document.file_groups:
@@ -77,7 +79,6 @@ class ViewImages(Gtk.Box, View):
     def setup(self):
         self.setup_file_group_selector(self.file_group_selector)
         self.setup_close_button(self.view_action_box)
-
 
     def rebuild_images(self):
         existing_images = {child.get_name(): child for child in self.image_box.get_children()}

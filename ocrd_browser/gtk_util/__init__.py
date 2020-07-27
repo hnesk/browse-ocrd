@@ -17,5 +17,5 @@ class ActionRegistry:
         self.actions[name] = action
         return action
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> Gio.SimpleAction:
         return self.actions[item]
