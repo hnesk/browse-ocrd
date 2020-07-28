@@ -51,24 +51,24 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.update_ui()
 
-    def load(self, file):
+    def open(self, uri):
         self.document = Document.create()
         self.set_title('Loading')
         self.header_bar.set_title('Loading ...')
-        self.header_bar.set_subtitle(file)
+        self.header_bar.set_subtitle(uri)
         self.update_ui()
         # Give GTK some break to show the Loading message
-        GLib.timeout_add(10, self._load_do, file)
+        GLib.timeout_add(10, self._open, uri)
 
     @Gtk.Template.Callback()
     def on_recent_menu_item_activated(self, recent_chooser:Gtk.RecentChooserMenu):
         app = self.get_application()
         item: Gtk.RecentInfo = recent_chooser.get_current_item()
-        # TODO: get_uri_display stripped zufälligerweise das file:// Protokoll, besser wäre item.get_uri() und Umgang mit Protokollen in open
-        app.load_in_window(item.get_uri_display(), window=self)
+        app.open_in_window(item.get_uri(), window=self)
 
-    def _load_do(self, file):
-        self.document = Document.load(file)
+    def _open(self, uri):
+
+        self.document = Document.load(uri)
         self.page_list.set_document(self.document)
 
         title = self.document.workspace.mets.unique_identifier if self.document.workspace.mets.unique_identifier else '<unnamed>'

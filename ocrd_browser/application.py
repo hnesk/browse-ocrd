@@ -42,7 +42,7 @@ class OcrdBrowserApplication(Gtk.Application):
         open_dialog = OpenDialog(application=self, transient_for=self.get_active_window(), modal=True)
         response = open_dialog.run()
         if response == Gtk.ResponseType.OK:
-            self.load_in_window(open_dialog.get_filename(), window=open_dialog.get_transient_for())
+            self.open_in_window(open_dialog.get_uri(), window=open_dialog.get_transient_for())
         open_dialog.destroy()
 
     def on_new(self, _action, _param):
@@ -51,11 +51,11 @@ class OcrdBrowserApplication(Gtk.Application):
 
     def do_open(self, files: List[Gio.File], file_count: int, hint: str):
         for file in files:
-            self.load_in_window(file.get_path(), window=None)
+            self.open_in_window(file.get_uri(), window=None)
         return 0
 
-    def load_in_window(self, file, window = None):
+    def open_in_window(self, uri, window = None):
         if not window or not window.document.empty:
             window = MainWindow(application=self)
         window.present()
-        GLib.timeout_add(10, window.load, file)
+        GLib.timeout_add(10, window.open, uri)

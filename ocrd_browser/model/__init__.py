@@ -1,10 +1,10 @@
 from typing import Optional
-
 from PIL.Image import Image
 from ocrd import Workspace, Resolver
 from ocrd_modelfactory import page_from_file
 from ocrd_models import OcrdFile, OcrdExif
 from pathlib import Path
+from urllib.parse import urlparse, urlunparse
 import cv2
 import struct
 import zlib
@@ -41,6 +41,10 @@ class Document:
     def load(cls, mets_url=None, resolver: Resolver = None) -> 'Document':
         if not mets_url:
             return cls.create(None, resolver)
+        result = urlparse(mets_url)
+        if result.scheme == 'file':
+            mets_url = result.path
+
         resolver = resolver if resolver else Resolver()
         workspace = resolver.workspace_from_url(mets_url, download=True)
         doc = cls(workspace, mets_url, resolver)
