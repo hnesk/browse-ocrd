@@ -29,42 +29,25 @@ THE SOFTWARE.
   <!-- interface-license-type mit -->
   <!-- interface-name OCRDBrowser -->
   <!-- interface-description A Viewer for OCRD mets files -->
-  <object class="GtkMenu" id="gear_menu">
+  <object class="GtkRecentFilter" id="recentfilter">
+    <mime-types>
+      <mime-type>text/xml</mime-type>
+    </mime-types>
+    <applications>
+      <application>browse-ocrd</application>
+    </applications>
+  </object>
+  <object class="GtkRecentChooserMenu" id="recent_menu">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="reserve_toggle_size">False</property>
-    <child>
-      <object class="GtkMenuItem" id="new_window">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="action_name">app.new</property>
-        <property name="label" translatable="yes">New Window</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkMenuItem" id="open">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="action_name">app.open</property>
-        <property name="label" translatable="yes">Open mets.xml</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkSeparatorMenuItem" id="sep1">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkMenuItem" id="about">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="action_name">app.about</property>
-        <property name="label" translatable="yes">About OCRD Browser</property>
-      </object>
-    </child>
+    <property name="border_width">4</property>
+    <property name="filter">recentfilter</property>
+    <property name="limit">10</property>
+    <property name="local_only">False</property>
+    <property name="show_not_found">False</property>
+    <property name="show_tips">True</property>
+    <property name="sort_type">mru</property>
+    <signal name="item-activated" handler="on_recent_menu_item_activated" swapped="no"/>
   </object>
   <template class="MainWindow" parent="GtkApplicationWindow">
     <property name="can_focus">False</property>
@@ -79,43 +62,75 @@ THE SOFTWARE.
         <property name="title">OCRD Browser</property>
         <property name="subtitle" translatable="yes">~~~</property>
         <property name="show_close_button">True</property>
-        <property name="decoration_layout">menu:minimize,maximize,close</property>
+        <property name="decoration_layout">:minimize,maximize,close</property>
         <child>
-          <object class="GtkMenuButton">
+          <object class="GtkButtonBox" id="open_button_box">
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="focus_on_click">False</property>
-            <property name="receives_default">True</property>
-            <property name="popup">gear_menu</property>
-            <property name="use_popover">False</property>
+            <property name="can_focus">False</property>
+            <property name="halign">start</property>
+            <property name="layout_style">expand</property>
             <child>
-              <object class="GtkAlignment">
+              <object class="GtkButton">
+                <property name="label" translatable="yes">_Open</property>
+                <property name="name">open-button</property>
                 <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="valign">baseline</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">Open a project</property>
+                <property name="action_name">app.open</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+                <property name="non_homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkMenuButton" id="recent_menu_button">
+                <property name="name">recent-button</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="popup">recent_menu</property>
                 <child>
-                  <object class="GtkBox">
+                  <object class="GtkImage">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <child>
-                      <object class="GtkImage">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="icon_name">open-menu-symbolic</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
+                    <property name="icon_name">pan-down-symbolic</property>
                   </object>
                 </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+                <property name="non_homogeneous">True</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkMenuButton" id="main_menu_button">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="popover">main_menu</property>
+            <child>
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="icon_name">open-menu-symbolic</property>
               </object>
             </child>
           </object>
           <packing>
             <property name="pack_type">end</property>
+            <property name="position">1</property>
           </packing>
         </child>
       </object>
@@ -351,4 +366,74 @@ THE SOFTWARE.
       </object>
     </child>
   </template>
+  <object class="GtkPopoverMenu" id="main_menu">
+    <property name="can_focus">False</property>
+    <property name="relative_to">main_menu_button</property>
+    <child>
+      <object class="GtkBox">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="border_width">4</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child>
+          <object class="GtkModelButton">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="action_name">app.new</property>
+            <property name="text" translatable="yes">New Project</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkModelButton">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="action_name">win.close</property>
+            <property name="text" translatable="yes">Close Project</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSeparator">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">8</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkModelButton">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="action_name">app.about</property>
+            <property name="text" translatable="yes">About OCRD Browser</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">9</property>
+          </packing>
+        </child>
+      </object>
+      <packing>
+        <property name="submenu">main</property>
+        <property name="position">1</property>
+      </packing>
+    </child>
+  </object>
 </interface>
