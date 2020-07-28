@@ -60,6 +60,13 @@ class MainWindow(Gtk.ApplicationWindow):
         # Give GTK some break to show the Loading message
         GLib.timeout_add(10, self._load_do, file)
 
+    @Gtk.Template.Callback()
+    def on_recent_menu_item_activated(self, recent_chooser:Gtk.RecentChooserMenu):
+        app = self.get_application()
+        item: Gtk.RecentInfo = recent_chooser.get_current_item()
+        # TODO: get_uri_display stripped zufälligerweise das file:// Protokoll, besser wäre item.get_uri() und Umgang mit Protokollen in open
+        app.load_in_window(item.get_uri_display(), window=self)
+
     def _load_do(self, file):
         self.document = Document.load(file)
         self.page_list.set_document(self.document)
