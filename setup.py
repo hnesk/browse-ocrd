@@ -12,9 +12,9 @@ print("Generating gresource bundle")
 subprocess.call(
     [
         "glib-compile-resources",
-        "--sourcedir=resources",
+        "--sourcedir=gresources",
         "--target=ocrd_browser/ui.gresource",
-        "resources/ocrd-browser.gresource.xml",
+        "gresources/ocrd-browser.gresource.xml",
     ]
 )
 
