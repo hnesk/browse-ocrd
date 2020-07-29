@@ -2,6 +2,7 @@
 <gresources>
   <gresource prefix="/org/readmachine/ocrd-browser">
     <file compressed="true" preprocess="to-pixdata">icons/logo.png</file>
+    <file compressed="true" preprocess="to-pixdata">icons/icon.png</file>
     <file preprocess="xml-stripblanks">gtk/menus.ui</file>
   </gresource>
 </gresources>
