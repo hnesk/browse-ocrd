@@ -28,9 +28,11 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def __init__(self, **kwargs):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
+        self.set_icon(GdkPixbuf.Pixbuf.new_from_resource("/org/readmachine/ocrd-browser/icons/icon.png"))
         self.views = []
         self.current_page_id = None
         self.document = Document.create()
+
 
         self.actions = ActionRegistry(for_widget=self)
         self.actions.create('close')
