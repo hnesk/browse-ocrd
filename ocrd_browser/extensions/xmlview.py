@@ -51,7 +51,8 @@ class ViewXml(Gtk.Box, View):
         self.connect('notify::file-group', lambda *args: self.reload())
 
     def setup(self):
-        self.setup_file_group_selector(self.file_group_selector)
+        #if not self.document.empty:
+        self.setup_file_group_selector(self.file_group_selector,'page')
         self.setup_close_button(self.view_action_box)
 
     def setup_buffer(self) -> GtkSource.Buffer:

@@ -24,13 +24,10 @@
             <property name="hexpand">True</property>
             <property name="spacing">6</property>
             <child>
-              <object class="GtkAccelLabel">
+              <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">File _Group</property>
-                <property name="use_underline">True</property>
-                <property name="mnemonic_widget">file_group_selector</property>
-                <property name="accel_widget">file_group_selector</property>
+                <property name="label" translatable="yes">File Group</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -39,11 +36,11 @@
               </packing>
             </child>
             <child>
-              <object class="GtkComboBoxText" id="file_group_selector">
+              <object class="GtkComboBox" id="file_group_selector">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="active">0</property>
-                <signal name="changed" handler="change" swapped="no"/>
+                <property name="id_column">1</property>
+                <property name="active_id">OCR-D-IMG</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -64,11 +61,10 @@
               </packing>
             </child>
             <child>
-              <object class="GtkAccelLabel">
+              <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes"># _Pages</property>
-                <property name="use_underline">True</property>
+                <property name="label" translatable="yes"># Pages</property>
               </object>
               <packing>
                 <property name="expand">False</property>

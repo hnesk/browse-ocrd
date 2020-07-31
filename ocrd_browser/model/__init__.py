@@ -1,10 +1,19 @@
+
+import gi
+gi.require_version('Gtk','3.0')
+from gi.repository import Gtk
+
 from typing import Optional
+from collections import OrderedDict
 from PIL.Image import Image
+from pathlib import Path
+from urllib.parse import urlparse
 from ocrd import Workspace, Resolver
 from ocrd_modelfactory import page_from_file
 from ocrd_models import OcrdFile, OcrdExif
-from pathlib import Path
-from urllib.parse import urlparse, urlunparse
+from ocrd_models.constants import NAMESPACES as NS
+from ocrd_utils.constants import MIME_TO_EXT
+
 import cv2
 import struct
 import zlib
@@ -30,6 +39,24 @@ class Document:
     @property
     def file_groups(self) -> list:
         return self.workspace.mets.file_groups
+
+    @property
+    def mime_types(self) -> set:
+        return {el.get('MIMETYPE') for el in
+         self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp/mets:file[@MIMETYPE]', NS)}
+
+
+    @property
+    def file_group_model(self) -> Gtk.ListStore:
+        distinct_groups = OrderedDict()
+        for el in self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]', NS):
+            distinct_groups[(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
+
+        model = Gtk.ListStore(str, str, str, str)
+        for use,mime_type in distinct_groups.keys():
+            model.append(('{}|{}'.format(use,mime_type), use, mime_type, MIME_TO_EXT.get(mime_type,'.???')))
+        return model
+
 
     @classmethod
     def create(cls, directory=None, resolver: Resolver = None) -> 'Document':
@@ -107,6 +134,8 @@ class Document:
     def _add_dpi_to_png_buffer(image_bytes, dpi=300):
         """
         adds dpi information to a png image
+
+        see https://stackoverflow.com/questions/57553641/how-to-save-dpi-info-in-py-opencv/57555123#57555123
 
         :param image_bytes:
         :param dpi:

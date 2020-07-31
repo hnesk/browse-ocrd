@@ -1,10 +1,9 @@
 import gi
-
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GObject
-
+from gi.repository import Gtk, Gdk, GObject, Pango
 from pkg_resources import EntryPoint, iter_entry_points, resource_filename
 from typing import Dict, Optional
+from ocrd_utils.constants import MIMETYPE_PAGE
 from ocrd_browser.image_util import pil_to_pixbuf, pil_scale
 from ocrd_browser.model import Document, Page
 
@@ -42,10 +41,35 @@ class View:
             self.close_button.set_detailed_action_name('win.close_view("{}")'.format(self.get_name()))
             view_action_box.pack_end(self.close_button, False, False, 6)
 
-    def setup_file_group_selector(self, file_group_selector):
-        for group in self.document.file_groups:
-            file_group_selector.append(group, group)
-        file_group_selector.set_active(0)
+    def image_filter(self, model, iter, _data):
+        return model[iter][2].startswith('image/')
+
+    def page_filter(self, model, iter, _data):
+        v = model[iter][2]
+        return v == MIMETYPE_PAGE
+
+    def setup_file_group_selector(self, file_group_selector:Gtk.ComboBox, filter_ = None):
+        if  file_group_selector.get_model() is None:
+            model = self.document.file_group_model
+            if filter_ is not None:
+                model: Gtk.TreeModel = model.filter_new()
+                if filter_ == 'image':
+                    model.set_visible_func(self.image_filter)
+                elif filter_ == 'page':
+                    model.set_visible_func(self.page_filter)
+
+            file_group_selector.set_model(model)
+            file_group_selector.set_id_column(1)
+            renderer_text = Gtk.CellRendererText()
+            renderer_text.props.width = 150
+            renderer_text.props.ellipsize = Pango.EllipsizeMode.MIDDLE
+            file_group_selector.pack_start(renderer_text, False)
+            file_group_selector.add_attribute(renderer_text, "text", 1)
+            renderer_ext = Gtk.CellRendererText()
+            file_group_selector.pack_start(renderer_ext, False)
+            file_group_selector.add_attribute(renderer_ext, "text", 3)
+            file_group_selector.set_active_id('OCR-D-IMG')
+
 
     def redraw(self):
         pass
@@ -59,7 +83,7 @@ class ViewImages(Gtk.Box, View):
     page_qty: int = GObject.Property(type=int, default=1)
 
     image_box: Gtk.Box = Gtk.Template.Child()
-    file_group_selector: Gtk.ComboBoxText = Gtk.Template.Child()
+    file_group_selector: Gtk.ComboBox = Gtk.Template.Child()
     page_qty_selector: Gtk.SpinButton = Gtk.Template.Child()
     view_action_box: Gtk.Box = Gtk.Template.Child()
 
@@ -77,7 +101,8 @@ class ViewImages(Gtk.Box, View):
         self.connect('notify::file-group', lambda *args: self.reload())
 
     def setup(self):
-        self.setup_file_group_selector(self.file_group_selector)
+        if not self.document.empty:
+            self.setup_file_group_selector(self.file_group_selector,'image')
         self.setup_close_button(self.view_action_box)
 
     def rebuild_images(self):
@@ -133,6 +158,7 @@ class ViewManager:
         entry_point: EntryPoint
         for entry_point in iter_entry_points('ocrd_browser_view'):
             view_class = entry_point.load()
+            assert issubclass(view_class, View)
             views[entry_point.name] = view_class
         return cls(views)
 
