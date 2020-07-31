@@ -1,7 +1,7 @@
 import gi
 
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
+from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib, Pango
 
 from ocrd_browser import __version__
 from ocrd_browser.model import Document
@@ -54,13 +54,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.update_ui()
 
     def open(self, uri):
-        self.document = Document.create()
         self.set_title('Loading')
         self.header_bar.set_title('Loading ...')
         self.header_bar.set_subtitle(uri)
         self.update_ui()
         # Give GTK some break to show the Loading message
-        GLib.timeout_add(10, self._open, uri)
+        GLib.timeout_add(50, self._open, uri)
 
     @Gtk.Template.Callback()
     def on_recent_menu_item_activated(self, recent_chooser:Gtk.RecentChooserMenu):
@@ -69,7 +68,6 @@ class MainWindow(Gtk.ApplicationWindow):
         app.open_in_window(item.get_uri(), window=self)
 
     def _open(self, uri):
-
         self.document = Document.load(uri)
         self.page_list.set_document(self.document)
 
@@ -204,7 +202,7 @@ class PagePreviewList(Gtk.IconView):
         self.set_pixbuf_column(3)
         text_renderer: Gtk.CellRendererText = \
             [cell for cell in self.get_cells() if isinstance(cell, Gtk.CellRendererText)][0]
-        text_renderer.ellipsize = 'middle'
+        text_renderer.props.ellipsize = Pango.EllipsizeMode.MIDDLE
 
     def setup_model(self):
         self.file_lookup = self.get_image_paths()
@@ -252,6 +250,7 @@ class PagePreviewList(Gtk.IconView):
     def goto_path(self, path):
         self.unselect_all()
         self.select_path(path)
+        self.set_cursor(path, None, False)
         self.set_cursor(path, None, False)
         self.emit('activate_cursor_item')
 
