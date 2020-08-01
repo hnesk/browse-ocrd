@@ -5,7 +5,7 @@ from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib, Pango
 
 from ocrd_browser import __version__
 from ocrd_browser.model import Document
-from ocrd_browser.view import ViewManager, ViewImages, View
+from ocrd_browser.view import ViewRegistry, ViewImages, View
 from ocrd_browser.icon_store import LazyLoadingListStore
 from ocrd_browser.image_util import cv_scale, cv_to_pixbuf
 from ocrd_browser.gtk_util import ActionRegistry
@@ -46,7 +46,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.page_list_scroller.add(self.page_list)
         self.page_list.connect('page_selected', self.page_selected)
 
-        for id_, view in self.view_manager.get_view_options().items():
+        for id_, view in self.view_registry.get_view_options().items():
             self.create_view_select.append(id_, view)
 
         self.add_view(ViewImages)
@@ -84,8 +84,8 @@ class MainWindow(Gtk.ApplicationWindow):
             self.page_selected(None, self.document.page_ids[0])
 
     @property
-    def view_manager(self) -> ViewManager:
-        return self.get_application().view_manager
+    def view_registry(self) -> ViewRegistry:
+        return self.get_application().view_registry
 
     def add_view(self, view_class):
         name = 'view_{}'.format(len(self.views))
@@ -139,7 +139,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_create_view(self, _a: Gio.SimpleAction, _):
         active_id = self.create_view_select.get_active_id()
-        view_class = self.view_manager.get_view(active_id)
+        view_class = self.view_registry.get_view(active_id)
         if view_class:
             self.add_view(view_class)
 

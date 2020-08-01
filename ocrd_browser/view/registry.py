@@ -3,22 +3,24 @@ from typing import Dict
 from .base import View
 
 
-class ViewManager:
+class ViewRegistry:
     def __init__(self, views: Dict):
         self.views = views
 
     @classmethod
-    def create_from_entry_points(cls) -> 'ViewManager':
+    def create_from_entry_points(cls) -> 'ViewRegistry':
         views = {}
         entry_point: EntryPoint
         for entry_point in iter_entry_points('ocrd_browser_view'):
             view_class = entry_point.load()
             assert issubclass(view_class, View)
-            views[entry_point.name] = view_class
+            label = view_class.label if hasattr(view_class,'label') else view_class.__name__
+            description = view_class.__doc__.strip()
+            views[entry_point.name] = (view_class, label, description)
         return cls(views)
 
     def get_view_options(self) -> Dict:
-        return {id_: view_class.__name__ for id_, view_class in self.views.items()}
+        return {id_: label for id_, (view_class,label,description) in self.views.items()}
 
     def get_view(self, id_):
-        return self.views[id_] if id_ in self.views else None
+        return self.views[id_][0] if id_ in self.views else None

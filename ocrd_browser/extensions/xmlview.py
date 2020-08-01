@@ -14,25 +14,12 @@ from ocrd_browser.view.base import FileGroupSelector, FileGroupFilter
 GObject.type_register(GtkSource.View)
 
 
-# Example for extension point 'ocrd_browser_ext'
-#
-# 'ocrd_browser_ext': [
-#    'xml = ocrd_browser.extensions.xmlview:register',
-# ],
-#
-# def on_xml(action, param):
-#     print(action)
-#
-# def register(application: OcrdBrowserApplication):
-#     application.get_app_menu().append('XML','app.xml')
-#     application.create_simple_action('xml',on_xml)
-
-
-# @Gtk.Template(filename=resource_filename(__name__, 'resources/view-xml.ui'))
 class ViewXml(View):
     """
-    A view of the current Page-Xml with syntax highlighting via GtkSourceView
+    A view of the current PAGE-XML with syntax highlighting
     """
+
+    label = 'PAGE-XML'
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
