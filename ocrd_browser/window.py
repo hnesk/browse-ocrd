@@ -33,7 +33,6 @@ class MainWindow(Gtk.ApplicationWindow):
         self.current_page_id = None
         self.document = Document.create()
 
-
         self.actions = ActionRegistry(for_widget=self)
         self.actions.create('close')
         self.actions.create('goto_first')
@@ -49,9 +48,17 @@ class MainWindow(Gtk.ApplicationWindow):
 
         for id_, view in self.view_manager.get_view_options().items():
             self.create_view_select.append(id_, view)
-        self.add_view(ViewImages(document=self.document))
+
+        self.add_view(ViewImages)
 
         self.update_ui()
+
+    @Gtk.Template.Callback()
+    def on_recent_menu_item_activated(self, recent_chooser: Gtk.RecentChooserMenu):
+        app = self.get_application()
+        item: Gtk.RecentInfo = recent_chooser.get_current_item()
+        app.open_in_window(item.get_uri(), window=self)
+
 
     def open(self, uri):
         self.set_title('Loading')
@@ -60,12 +67,6 @@ class MainWindow(Gtk.ApplicationWindow):
         self.update_ui()
         # Give GTK some break to show the Loading message
         GLib.timeout_add(50, self._open, uri)
-
-    @Gtk.Template.Callback()
-    def on_recent_menu_item_activated(self, recent_chooser:Gtk.RecentChooserMenu):
-        app = self.get_application()
-        item: Gtk.RecentInfo = recent_chooser.get_current_item()
-        app.open_in_window(item.get_uri(), window=self)
 
     def _open(self, uri):
         self.document = Document.load(uri)
@@ -78,7 +79,6 @@ class MainWindow(Gtk.ApplicationWindow):
 
         for view in self.views:
             view.set_document(self.document)
-            view.setup()
 
         if len(self.document.page_ids):
             self.page_selected(None, self.document.page_ids[0])
@@ -87,13 +87,14 @@ class MainWindow(Gtk.ApplicationWindow):
     def view_manager(self) -> ViewManager:
         return self.get_application().view_manager
 
-    def add_view(self, view: 'View'):
+    def add_view(self, view_class):
+        name = 'view_{}'.format(len(self.views))
+        view: View = view_class(name)
+        view.build()
         view.set_document(self.document)
-        view.set_name('view_{}'.format(len(self.views)))
-        view.setup()
         self.views.append(view)
         self.connect('page_activated', view.page_activated)
-        self.view_container.pack_start(view, True, True, 3)
+        self.view_container.pack_start(view.container, True, True, 3)
 
     def page_selected(self, _, page_id):
         if self.current_page_id != page_id:
@@ -138,14 +139,18 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_create_view(self, _a: Gio.SimpleAction, _):
         active_id = self.create_view_select.get_active_id()
-        view = self.view_manager.get_view(active_id)
-        if view:
-            self.add_view(view(document=self.document))
+        view_class = self.view_manager.get_view(active_id)
+        if view_class:
+            self.add_view(view_class)
 
     def on_close_view(self, _action: Gio.SimpleAction, view_name: GLib.Variant):
         for view in self.views:
-            if view.get_name() == view_name.get_string():
-                view.destroy()
+            if view.name == view_name.get_string():
+                view.container.destroy()
+                break
+        self.disconnect_by_func(view.page_activated)
+        self.views.remove(view)
+        del view
 
 
 @Gtk.Template(filename=resource_filename(__name__, 'resources/about-dialog.ui'))

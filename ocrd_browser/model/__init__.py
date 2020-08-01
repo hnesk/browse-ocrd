@@ -1,8 +1,3 @@
-
-import gi
-gi.require_version('Gtk','3.0')
-from gi.repository import Gtk
-
 from typing import Optional
 from collections import OrderedDict
 from PIL.Image import Image
@@ -12,7 +7,6 @@ from ocrd import Workspace, Resolver
 from ocrd_modelfactory import page_from_file
 from ocrd_models import OcrdFile, OcrdExif
 from ocrd_models.constants import NAMESPACES as NS
-from ocrd_utils.constants import MIME_TO_EXT
 
 import cv2
 import struct
@@ -23,9 +17,10 @@ from ocrd_utils import pushd_popd
 
 DEFAULT_FILE_GROUP = 'OCR-D-IMG'
 
+
 class Document:
 
-    def __init__(self, workspace: Workspace, mets_url = None, resolver: Resolver = None):
+    def __init__(self, workspace: Workspace, mets_url=None, resolver: Resolver = None):
         self.empty = True
         self.mets_url = mets_url
         self.current_file: OcrdFile = None
@@ -43,20 +38,15 @@ class Document:
     @property
     def mime_types(self) -> set:
         return {el.get('MIMETYPE') for el in
-         self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp/mets:file[@MIMETYPE]', NS)}
-
+                self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp/mets:file[@MIMETYPE]', NS)}
 
     @property
-    def file_group_model(self) -> Gtk.ListStore:
+    def file_groups_and_mimetypes(self) -> list:
         distinct_groups = OrderedDict()
         for el in self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]', NS):
             distinct_groups[(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
 
-        model = Gtk.ListStore(str, str, str, str)
-        for use,mime_type in distinct_groups.keys():
-            model.append(('{}|{}'.format(use,mime_type), use, mime_type, MIME_TO_EXT.get(mime_type,'.???')))
-        return model
-
+        return list(distinct_groups.keys())
 
     @classmethod
     def create(cls, directory=None, resolver: Resolver = None) -> 'Document':
@@ -164,6 +154,7 @@ class Document:
         self.workspace.add_file(file_group, ID=file_id, mimetype=mime_type, force=True, url=local_filename,
                                 local_filename=local_filename, pageId=page_id)
         self.empty = False
+
 
 class Page:
     def __init__(self, id_: str, file: OcrdFile, pc_gts: PcGtsType, image: Image, exif: OcrdExif):

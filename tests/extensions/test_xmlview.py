@@ -6,7 +6,7 @@ from ocrd_browser.model import Document
 class XmlViewTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.vx = ViewXml(document=MagicMock(spec=Document))
+        self.vx = ViewXml('unique',document=MagicMock(spec=Document))
 
     def test_can_construct(self):
         self.assertIsNotNone(self.vx)
