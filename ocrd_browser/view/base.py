@@ -30,14 +30,12 @@ class View:
         self.current = self.document.page_for_id(self.page_id, self.file_group)
         self.redraw()
 
+    def redraw(self):
+        pass
+
     def setup_close_button(self, view_action_box: Gtk.Box):
         if self.close_button is None:
-            self.close_button: Gtk.Button = Gtk.Button.new_from_icon_name('window-close', Gtk.IconSize.SMALL_TOOLBAR)
-            self.close_button.set_name('close_button')
-            self.close_button.set_visible(True)
-            self.close_button.set_relief(Gtk.ReliefStyle.NONE)
-            self.close_button.set_always_show_image(True)
-            self.close_button.set_detailed_action_name('win.close_view("{}")'.format(self.get_name()))
+            self.close_button = CloseButton(self.get_name())
             view_action_box.pack_end(self.close_button, False, False, 6)
 
     def image_filter(self, model, iter, _data):
@@ -69,5 +67,18 @@ class View:
             file_group_selector.add_attribute(renderer_ext, "text", 3)
             file_group_selector.set_active_id('OCR-D-IMG')
 
-    def redraw(self):
-        pass
+
+class CloseButton(Gtk.Button):
+    def __init__(self, view_name):
+        Gtk.Button.__init__(self, visible=True)
+        self.set_name('close_{}'.format(view_name))
+        self.set_detailed_action_name('win.close_view("{}")'.format(view_name))
+        self.set_relief(Gtk.ReliefStyle.NONE)
+        self.set_always_show_image(True)
+        pixbuf = Gtk.IconTheme.get_default().load_icon('window-close', Gtk.IconSize.SMALL_TOOLBAR, Gtk.IconLookupFlags.FORCE_SYMBOLIC)
+        image = Gtk.Image(visible=True)
+        image.set_from_pixbuf(pixbuf)
+        self.set_image(image)
+        for icon in Gtk.IconTheme.get_default().list_icons():
+            print(icon)
+
