@@ -5,7 +5,7 @@ from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib, Pango
 
 from ocrd_browser import __version__
 from ocrd_browser.model import Document
-from ocrd_browser.views import ViewManager, ViewImages, View
+from ocrd_browser.view import ViewManager, ViewImages, View
 from ocrd_browser.icon_store import LazyLoadingListStore
 from ocrd_browser.image_util import cv_scale, cv_to_pixbuf
 from ocrd_browser.gtk_util import ActionRegistry

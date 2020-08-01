@@ -6,7 +6,7 @@ import pkg_resources
 from typing import List
 from ocrd_browser.gtk_util import ActionRegistry
 from ocrd_browser.window import MainWindow, AboutDialog, OpenDialog
-from ocrd_browser.views import ViewManager
+from ocrd_browser.view import ViewManager
 
 
 class OcrdBrowserApplication(Gtk.Application):

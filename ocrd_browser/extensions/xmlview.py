@@ -9,7 +9,7 @@ except ValueError:
 
 from gi.repository import Gtk, GObject, GtkSource
 from ocrd_models.ocrd_page import to_xml
-from ocrd_browser.views import View
+from ocrd_browser.view import View
 from pkg_resources import resource_filename
 
 GObject.type_register(GtkSource.View)

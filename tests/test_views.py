@@ -1,5 +1,5 @@
 import unittest
-from ocrd_browser.views import ViewImages, ViewManager
+from ocrd_browser.view import ViewImages, ViewManager
 
 
 class ViewManagerTestCase(unittest.TestCase):
