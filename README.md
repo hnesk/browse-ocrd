@@ -11,3 +11,8 @@ An extensible viewer for [OCRD](https://ocr-d.de/) mets.xml files
 ```
 pip install browse-ocrd
 ```
+
+## Usage
+```
+browse-ocrd ./path/to/mets.xml
+```
