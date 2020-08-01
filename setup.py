@@ -49,7 +49,7 @@ setup(
         ],
         'ocrd_browser_view': [
             'xml = ocrd_browser.extensions.xmlview:ViewXml',
-            'images = ocrd_browser.views:ViewImages',
+            'images = ocrd_browser.view:ViewImages',
         ],
 
     },
