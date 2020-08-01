@@ -111,7 +111,7 @@ class MainWindow(Gtk.ApplicationWindow):
     @GObject.Signal(arg_types=(str,))
     def page_activated(self, page_id):
         index = self.document.page_ids.index(page_id)
-        self.current_page_label.set_text('#{} ({}/{})'.format(page_id, index + 1, len(self.document.page_ids)))
+        self.current_page_label.set_text('{}/{}'.format(index + 1, len(self.document.page_ids)))
         self.update_ui()
         pass
 
@@ -206,8 +206,8 @@ class PagePreviewList(Gtk.IconView):
         self.setup_model()
 
     def setup_ui(self):
-        theme = Gtk.IconTheme.get_default()
-        self.loading_image_pixbuf = theme.load_icon_for_scale('image-loading', Gtk.IconSize.LARGE_TOOLBAR, 48, 0)
+        self.loading_image_pixbuf = GdkPixbuf.Pixbuf.new_from_resource('/org/readmachine/ocrd-browser/icons/loading.png')
+
         self.set_text_column(0)
         self.set_tooltip_column(1)
         self.set_pixbuf_column(3)
