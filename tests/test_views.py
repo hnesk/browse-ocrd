@@ -1,11 +1,11 @@
 import unittest
-from ocrd_browser.view import ViewImages, ViewManager
+from ocrd_browser.view import ViewImages, ViewRegistry
 
 
 class ViewManagerTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.vm = ViewManager({'images': ViewImages})
+        self.vm = ViewRegistry({'images': ViewImages})
 
     def test_get_view_options(self):
         expected = {'images': 'ViewImages'}

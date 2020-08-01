@@ -9,6 +9,12 @@ from .base import View, FileGroupSelector, FileGroupFilter, PageQtySelector
 
 
 class ViewImages(View):
+    """
+    View of one or more consecutive images
+    """
+
+    label = 'Image'
+
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
         self.file_group = ('OCR-D-IMG-BIN', None)

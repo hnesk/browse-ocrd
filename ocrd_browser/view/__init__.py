@@ -1,3 +1,3 @@
 from .base import View
-from .manager import ViewManager
+from .registry import ViewRegistry
 from .images import ViewImages
