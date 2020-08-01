@@ -1,4 +1,5 @@
 import gi
+
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gio, Gtk, GLib
 
@@ -54,7 +55,7 @@ class OcrdBrowserApplication(Gtk.Application):
             self.open_in_window(file.get_uri(), window=None)
         return 0
 
-    def open_in_window(self, uri, window = None):
+    def open_in_window(self, uri, window=None):
         if not window or not window.document.empty:
             window = MainWindow(application=self)
         window.present()
