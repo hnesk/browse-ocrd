@@ -24,7 +24,8 @@ class MainWindow(Gtk.ApplicationWindow):
     panes: Gtk.Paned = Gtk.Template.Child()
     current_page_label: Gtk.Label = Gtk.Template.Child()
     view_container: Gtk.Box = Gtk.Template.Child()
-    create_view_select: Gtk.ComboBoxText = Gtk.Template.Child()
+    view_menu_box: Gtk.Box = Gtk.Template.Child()
+
 
     def __init__(self, **kwargs):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
@@ -33,25 +34,31 @@ class MainWindow(Gtk.ApplicationWindow):
         self.current_page_id = None
         self.document = Document.create()
 
+        vstring = GLib.Variant("s", "")
+
         self.actions = ActionRegistry(for_widget=self)
         self.actions.create('close')
         self.actions.create('goto_first')
         self.actions.create('go_back')
         self.actions.create('go_forward')
         self.actions.create('goto_last')
-        self.actions.create('create_view')
-        self.actions.create('close_view', param_type=GLib.Variant("s", ""))
+        self.actions.create('close_view', param_type=vstring)
+        self.actions.create('create_view', param_type=vstring)
 
         self.page_list = PagePreviewList(self.document)
         self.page_list_scroller.add(self.page_list)
         self.page_list.connect('page_selected', self.page_selected)
 
         for id_, view in self.view_registry.get_view_options().items():
-            self.create_view_select.append(id_, view)
+            menu_item = Gtk.ModelButton(visible=True,centered=False,halign=Gtk.Align.FILL,label = view, hexpand=True)
+            menu_item.set_detailed_action_name('win.create_view("{}")'.format(id_))
+            self.view_menu_box.pack_start(menu_item, True, True, 0)
 
         self.add_view(ViewImages)
 
         self.update_ui()
+
+
 
     @Gtk.Template.Callback()
     def on_recent_menu_item_activated(self, recent_chooser: Gtk.RecentChooserMenu):
@@ -137,9 +144,8 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_goto_last(self, _a: Gio.SimpleAction, _p):
         self.page_list.goto_index(-1)
 
-    def on_create_view(self, _a: Gio.SimpleAction, _):
-        active_id = self.create_view_select.get_active_id()
-        view_class = self.view_registry.get_view(active_id)
+    def on_create_view(self, _a, selected_view_id: GLib.Variant):
+        view_class = self.view_registry.get_view(selected_view_id.get_string())
         if view_class:
             self.add_view(view_class)
 
