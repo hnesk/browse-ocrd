@@ -48,7 +48,7 @@ setup(
             'browse-ocrd = ocrd_browser.main:main',
         ],
         'ocrd_browser_view': [
-            'xml = ocrd_browser.extensions.xmlview:ViewXml',
+            'xml = ocrd_browser.view:ViewXml',
             'images = ocrd_browser.view:ViewImages',
         ],
 

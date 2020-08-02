@@ -29,7 +29,7 @@ class ViewXml(View):
         self.buffer: GtkSource.Buffer = None
 
     def build(self):
-        super(ViewXml, self).build()
+        super().build()
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.PAGE))
 
         lang_manager = GtkSource.LanguageManager()
