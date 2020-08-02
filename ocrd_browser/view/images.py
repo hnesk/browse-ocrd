@@ -17,7 +17,7 @@ class ViewImages(View):
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.file_group = ('OCR-D-IMG-BIN', None)
+        self.file_group = ('OCR-D-IMG', None)
         self.page_qty = 1
         self.preview_height = 10
         self.image_box = None
