@@ -1,4 +1,5 @@
 import gi
+
 gi.require_version('Gtk', '3.0')
 try:
     gi.require_version('GtkSource', '4')
@@ -24,25 +25,24 @@ class ViewXml(View):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
         self.file_group = (None, MIMETYPE_PAGE)
-        self.buffer = None
+        self.text_view: GtkSource.View = None
+        self.buffer: GtkSource.Buffer = None
 
     def build(self):
         super(ViewXml, self).build()
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.PAGE))
 
-        text_view = GtkSource.View(visible=True, vexpand=False, editable=False, monospace=True, show_line_numbers=True,
-                                   width_request=400)
-        self.buffer: GtkSource.Buffer = self.setup_buffer(text_view)
-        self.viewport.add(text_view)
-
-    @staticmethod
-    def setup_buffer(text_view) -> GtkSource.Buffer:
         lang_manager = GtkSource.LanguageManager()
         style_manager = GtkSource.StyleSchemeManager()
-        buffer: GtkSource.Buffer = text_view.get_buffer()
-        buffer.set_language(lang_manager.get_language('xml'))
-        buffer.set_style_scheme(style_manager.get_scheme('tango'))
-        return buffer
+
+        self.text_view = GtkSource.View(visible=True, vexpand=False, editable=False, monospace=True,
+                                        show_line_numbers=True,
+                                        width_request=400)
+        self.buffer: GtkSource.Buffer = self.text_view.get_buffer()
+        self.buffer.set_language(lang_manager.get_language('xml'))
+        self.buffer.set_style_scheme(style_manager.get_scheme('tango'))
+
+        self.viewport.add(self.text_view)
 
     @property
     def use_file_group(self):
@@ -54,4 +54,19 @@ class ViewXml(View):
 
     def redraw(self):
         if self.current:
-            self.buffer.set_text(to_xml(self.current.pc_gts))
+            text = to_xml(self.current.pc_gts)
+            # TODO: Crashes with big XML, as a workaround shorten the file
+            if len(text) > 50000:
+                self.buffer.set_highlight_syntax(False)
+                line_break_start = text.find("\n", 45000)
+                line_break_end = text.find("\n", len(text) - 5000)
+
+                text = text[:line_break_start] + "\n\n\n" + \
+                       "... I'm sorry Dave, I'm afraid I can't do that ...\n" + \
+                       "... With bigger XML files there are frequent crashes ...\n\n" + \
+                       text[line_break_end:]
+
+            else:
+                self.buffer.set_highlight_syntax(True)
+
+            self.buffer.set_text(text)
