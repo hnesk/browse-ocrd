@@ -1,11 +1,7 @@
 import io
-
 import cv2
-import gi
 from PIL.Image import Image
 from numpy import array as ndarray
-
-gi.require_version('GdkPixbuf', '2.0')
 from gi.repository import GdkPixbuf
 
 __all__ = ['cv_scale', 'cv_to_pixbuf', 'pil_to_pixbuf', 'pil_scale']

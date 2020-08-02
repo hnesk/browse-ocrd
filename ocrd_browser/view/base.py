@@ -1,8 +1,4 @@
-import gi
-
-gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Pango, GObject, Gdk
-
 from enum import Enum
 from typing import Optional
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
