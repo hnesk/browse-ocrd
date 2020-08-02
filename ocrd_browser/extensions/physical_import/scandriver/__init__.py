@@ -1,5 +1,5 @@
 import os
-from time import sleep, clock
+from time import sleep, process_time
 from PIL import Image
 from pathlib import Path
 from ppadb.client import Client as AdbClient
@@ -64,10 +64,10 @@ class AndroidADBDriver(AbstractScanDriver):
         return local_file
 
     def _wait_for_image_file(self, previous_photo, timeout=1):
-        start = clock()
+        start = process_time()
         newest_photo = previous_photo
         while previous_photo == self._get_newest_photo():
-            if clock() - start > timeout:
+            if process_time() - start > timeout:
                 raise TimeoutError('Waited {0} seconds, still no image', str(timeout))
             sleep(0.1)
             newest_photo = self._get_newest_photo()
