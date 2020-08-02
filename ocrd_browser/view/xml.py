@@ -1,10 +1,3 @@
-import gi
-
-gi.require_version('Gtk', '3.0')
-try:
-    gi.require_version('GtkSource', '4')
-except ValueError:
-    gi.require_version('GtkSource', '3.0')
 from gi.repository import GObject, GtkSource
 
 from ocrd_utils.constants import MIMETYPE_PAGE
