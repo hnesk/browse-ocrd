@@ -93,7 +93,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def add_view(self, view_class):
         name = 'view_{}'.format(len(self.views))
-        view: View = view_class(name)
+        view: View = view_class(name, self)
         view.build()
         view.set_document(self.document)
         self.views.append(view)
