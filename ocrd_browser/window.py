@@ -1,6 +1,7 @@
 from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib, Pango
 
 from ocrd_browser import __version__
+from ocrd_browser.extensions.physical_import import ViewScan
 from ocrd_browser.model import Document
 from ocrd_browser.view import ViewRegistry, ViewImages, View
 from ocrd_browser.icon_store import LazyLoadingListStore
@@ -51,7 +52,7 @@ class MainWindow(Gtk.ApplicationWindow):
             menu_item.set_detailed_action_name('win.create_view("{}")'.format(id_))
             self.view_menu_box.pack_start(menu_item, True, True, 0)
 
-        self.add_view(ViewImages)
+        self.add_view(ViewScan)
 
         self.update_ui()
 
@@ -93,7 +94,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def add_view(self, view_class):
         name = 'view_{}'.format(len(self.views))
-        view: View = view_class(name)
+        view: View = view_class(name, self)
         view.build()
         view.set_document(self.document)
         self.views.append(view)
