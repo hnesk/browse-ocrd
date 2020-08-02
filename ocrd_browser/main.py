@@ -4,6 +4,13 @@ import gi
 import sys
 
 gi.require_version('Gtk', '3.0')
+gi.require_version('GdkPixbuf', '2.0')
+try:
+    gi.require_version('GtkSource', '4')
+except ValueError:
+    gi.require_version('GtkSource', '3.0')
+
+
 from gi.repository import Gtk, Gio
 from pathlib import Path
 
