@@ -50,6 +50,7 @@ setup(
         'ocrd_browser_view': [
             'xml = ocrd_browser.view:ViewXml',
             'images = ocrd_browser.view:ViewImages',
+            'scan = ocrd_browser.extensions.physical_import:ViewScan',
         ],
 
     },
