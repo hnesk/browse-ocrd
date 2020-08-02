@@ -15,8 +15,8 @@ class ViewXml(View):
 
     label = 'PAGE-XML'
 
-    def __init__(self, name, **kwargs):
-        super().__init__(name, **kwargs)
+    def __init__(self, name, window, **kwargs):
+        super().__init__(name, window, **kwargs)
         self.file_group = (None, MIMETYPE_PAGE)
         self.text_view: GtkSource.View = None
         self.buffer: GtkSource.Buffer = None

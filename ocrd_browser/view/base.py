@@ -6,8 +6,9 @@ from ocrd_browser.model import Document, Page
 
 
 class View:
-    def __init__(self, name: str):
+    def __init__(self, name: str, window):
         self.name: str = name
+        self.window = window
         self.document: Optional[Document] = None
         self.current: Optional[Page] = None
         self.page_id: Optional[str] = None
