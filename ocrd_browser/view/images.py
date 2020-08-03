@@ -60,10 +60,11 @@ class ViewImages(View):
 
 
     def reload(self):
-        display_ids = self.document.display_id_range(self.page_id, self.page_qty)
-        self.pages = []
-        for display_id in display_ids:
-            self.pages.append(self.document.page_for_id(display_id, self.use_file_group))
+        if self.document:
+            display_ids = self.document.display_id_range(self.page_id, self.page_qty)
+            self.pages = []
+            for display_id in display_ids:
+                self.pages.append(self.document.page_for_id(display_id, self.use_file_group))
         self.redraw()
 
     def on_size(self, _w, h, _x, _y):

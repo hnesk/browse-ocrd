@@ -1,5 +1,3 @@
-from typing import List
-
 from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib, Pango, Gdk
 
 from ocrd_browser import __version__
@@ -10,6 +8,7 @@ from ocrd_browser.icon_store import LazyLoadingListStore
 from ocrd_browser.image_util import cv_scale, cv_to_pixbuf
 from ocrd_browser.gtk_util import ActionRegistry
 from pkg_resources import resource_filename
+from typing import List
 
 import cv2
 import os
