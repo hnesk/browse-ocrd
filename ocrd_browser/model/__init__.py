@@ -3,10 +3,12 @@ from collections import OrderedDict
 from PIL.Image import Image
 from pathlib import Path
 from urllib.parse import urlparse
+
 from ocrd import Workspace, Resolver
 from ocrd_modelfactory import page_from_file
 from ocrd_models import OcrdFile, OcrdExif
 from ocrd_models.constants import NAMESPACES as NS
+from ocrd_utils.constants import MIME_TO_EXT
 
 import cv2
 import struct
@@ -20,12 +22,12 @@ DEFAULT_FILE_GROUP = 'OCR-D-IMG'
 
 class Document:
 
-    def __init__(self, workspace: Workspace, mets_url=None, resolver: Resolver = None):
-        self.empty = True
+    def __init__(self, window, workspace: Workspace, mets_url=None, resolver: Resolver = None):
+        self.window = window
         self.mets_url = mets_url
-        self.current_file: OcrdFile = None
         self.workspace: Workspace = workspace
         self.resolver: Resolver = resolver if resolver else Resolver()
+        self.empty = True
 
     @property
     def page_ids(self) -> list:
@@ -49,22 +51,22 @@ class Document:
         return list(distinct_groups.keys())
 
     @classmethod
-    def create(cls, directory=None, resolver: Resolver = None) -> 'Document':
+    def create(cls, window, directory=None, resolver: Resolver = None) -> 'Document':
         resolver = resolver if resolver else Resolver()
         workspace = resolver.workspace_from_nothing(directory=directory, mets_basename='mets.xml')
-        return cls(workspace, None, resolver)
+        return cls(window, workspace, None, resolver)
 
     @classmethod
-    def load(cls, mets_url=None, resolver: Resolver = None) -> 'Document':
+    def load(cls, window, mets_url=None, resolver: Resolver = None) -> 'Document':
         if not mets_url:
-            return cls.create(None, resolver)
+            return cls.create(window,None, resolver)
         result = urlparse(mets_url)
         if result.scheme == 'file':
             mets_url = result.path
 
         resolver = resolver if resolver else Resolver()
         workspace = resolver.workspace_from_url(mets_url, download=True)
-        doc = cls(workspace, mets_url, resolver)
+        doc = cls(window, workspace, mets_url, resolver)
         doc.empty = False
         return doc
 
@@ -76,6 +78,7 @@ class Document:
         page = pcgts.get_Page()
         image, info, exif = self.workspace.image_from_page(page, page_id)
         return Page(page_id, page_file, pcgts, image, exif)
+
 
     def file_for_page_id(self, page_id, file_group=None) -> Optional[OcrdFile]:
         with pushd_popd(self.workspace.directory):
@@ -102,23 +105,50 @@ class Document:
 
     def save(self):
         self.workspace.save_mets()
+        self.window.emit('document_saved')
 
-    def add_image(self, image, page_nr, dpi: int = 300) -> 'OcrdFile':
-        retval, image_bytes = cv2.imencode(".png", image)
+    def delete_image(self, page_id, file_group = 'OCR-D-IMG') -> OcrdFile:
+        image_files = self.workspace.mets.find_files(pageId= page_id, fileGrp = file_group, local_only = True, mimetype = '//image/.+')
+        if len(image_files) !=1:
+            print('oh oh', image_files)
+            return
+        image_file = image_files[0]
+        self.workspace.remove_file(image_file, force=False, keep_file=False, page_recursive=True, page_same_group=True)
+        self.window.emit('document_changed', [page_id])
+        return image_file
+
+    def delete_page(self, page_id) -> OcrdFile:
+        files = self.workspace.mets.find_files(pageId = page_id, local_only = True)
+        for file in files:
+            self.workspace.remove_file(file, force=False, keep_file=False)
+        self.window.emit('document_changed', [page_id])
+
+
+    def display_id_range(self, page_id, page_qty):
+        if not page_id:
+            return []
+        try:
+            index = self.document.page_ids.index(page_id)
+        except ValueError:
+            return []
+        index = index - index % page_qty
+        return self.document.page_ids[index:index + page_qty]
+
+
+
+
+    def add_image(self, image, page_id, file_id, file_group = 'OCR-D-IMG', dpi: int = 300, mimetype='image/png') -> 'OcrdFile':
+        extension = MIME_TO_EXT[mimetype]
+        retval, image_bytes = cv2.imencode(extension, image)
         image_bytes = self._add_dpi_to_png_buffer(image_bytes, dpi)
-        file_group = 'OCR-D-IMG'
-        file_id = '{}_{:04d}'.format(file_group, page_nr)
-        page_id = 'PAGE_{:04d}'.format(page_nr)
-
-        extension = '.png'
-        mime_type = 'image/png'
         local_filename = Path(file_group, '%s%s' % (file_id, extension))
-        url = Path(self.workspace.directory) / local_filename
-        self.current_file = self.workspace.add_file(file_group, ID=file_id, mimetype=mime_type, force=True,
+        url = (Path(self.workspace.directory) / local_filename)
+        current_file = self.workspace.add_file(file_group, ID=file_id, mimetype=mimetype, force=True,
                                                     content=image_bytes, url=str(url),
                                                     local_filename=str(local_filename), pageId=page_id)
         self.empty = False
-        return self.current_file
+        self.window.emit('document_changed', [page_id])
+        return current_file
 
     @staticmethod
     def _add_dpi_to_png_buffer(image_bytes, dpi=300):
