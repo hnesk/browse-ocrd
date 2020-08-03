@@ -60,14 +60,7 @@ class ViewImages(View):
 
 
     def reload(self):
-        if not self.page_id:
-            return
-        try:
-            index = self.document.page_ids.index(self.page_id)
-        except ValueError:
-            return
-        index = index - index % self.page_qty
-        display_ids = self.document.page_ids[index:index + self.page_qty]
+        display_ids = self.document.display_id_range(self.page_id, self.page_qty)
         self.pages = []
         for display_id in display_ids:
             self.pages.append(self.document.page_for_id(display_id, self.use_file_group))
