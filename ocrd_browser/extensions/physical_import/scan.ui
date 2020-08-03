@@ -2,10 +2,23 @@
 <!-- Generated with glade 3.22.2 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
+  <object class="GtkImage" id="button_add_icon">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">add</property>
+    <property name="icon_size">2</property>
+  </object>
+  <object class="GtkImage" id="button_replace_icon">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">revert</property>
+    <property name="icon_size">2</property>
+  </object>
   <object class="GtkImage" id="button_scan_icon">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="icon_name">camera-photo</property>
+    <property name="icon_size">2</property>
   </object>
   <template class="ScanUi" parent="GtkBox">
     <property name="visible">True</property>
@@ -70,23 +83,37 @@
     </child>
     <child>
       <object class="GtkActionBar">
+        <property name="height_request">52</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <child>
-          <placeholder/>
-        </child>
-        <child type="center">
-          <object class="GtkBox">
+          <object class="GtkButton" id="button_replace">
+            <property name="label" translatable="yes">Replace</property>
+            <property name="height_request">-1</property>
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <child>
-              <placeholder/>
-            </child>
-            <child>
-              <placeholder/>
-            </child>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="action_name">win.replace</property>
+            <property name="image">button_replace_icon</property>
+            <property name="always_show_image">True</property>
           </object>
           <packing>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="button_add">
+            <property name="label" translatable="yes">Add</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="action_name">win.add</property>
+            <property name="image">button_add_icon</property>
+            <property name="always_show_image">True</property>
+          </object>
+          <packing>
+            <property name="pack_type">end</property>
             <property name="position">0</property>
           </packing>
         </child>
@@ -99,7 +126,7 @@
             <property name="action_name">win.scan</property>
             <property name="image">button_scan_icon</property>
             <property name="always_show_image">True</property>
-            <accelerator key="space" signal="clicked"/>
+            <accelerator key="Return" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
           </object>
           <packing>
             <property name="pack_type">end</property>
