@@ -115,6 +115,7 @@ class Document:
         image_file = image_files[0]
         self.workspace.remove_file(image_file, force=False, keep_file=False, page_recursive=True, page_same_group=True)
         self.window.emit('document_changed', [page_id])
+        self.save()
         return image_file
 
     def delete_page(self, page_id) -> OcrdFile:
@@ -122,19 +123,17 @@ class Document:
         for file in files:
             self.workspace.remove_file(file, force=False, keep_file=False)
         self.window.emit('document_changed', [page_id])
-
+        self.save()
 
     def display_id_range(self, page_id, page_qty):
         if not page_id:
             return []
         try:
-            index = self.document.page_ids.index(page_id)
+            index = self.page_ids.index(page_id)
         except ValueError:
             return []
         index = index - index % page_qty
-        return self.document.page_ids[index:index + page_qty]
-
-
+        return self.page_ids[index:index + page_qty]
 
 
     def add_image(self, image, page_id, file_id, file_group = 'OCR-D-IMG', dpi: int = 300, mimetype='image/png') -> 'OcrdFile':
@@ -148,6 +147,7 @@ class Document:
                                                     local_filename=str(local_filename), pageId=page_id)
         self.empty = False
         self.window.emit('document_changed', [page_id])
+        self.save()
         return current_file
 
     @staticmethod
