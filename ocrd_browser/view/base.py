@@ -1,6 +1,6 @@
 from gi.repository import Gtk, Pango, GObject, Gdk
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
 from ocrd_browser.model import Document, Page
 
@@ -62,6 +62,9 @@ class View:
     def page_activated(self, sender, page_id):
         self.page_id = page_id
         self.reload()
+
+    def pages_selected(self, sender, page_ids: List[str]):
+        pass
 
     def reload(self):
         self.current = self.document.page_for_id(self.page_id, self.use_file_group)
