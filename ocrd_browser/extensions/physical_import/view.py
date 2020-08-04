@@ -1,6 +1,7 @@
 import cv2
 from gi.repository import Gtk, Gdk, Gio
 from pkg_resources import resource_filename
+from typing import List
 from voussoir.pagewarper import PageWarper
 
 from ocrd_browser.extensions.physical_import.scandriver import DummyDriver, AndroidADBDriver
@@ -26,6 +27,7 @@ class ViewScan(View):
         self.previews = []
         self.layouts = []
         self.images = []
+        self.selected_page_ids = []
 
     def build(self):
         super().build()
@@ -33,9 +35,9 @@ class ViewScan(View):
         self.previews = [self.ui.preview_left, self.ui.preview_right]
         self.viewport.add(self.ui)
         self.window.actions.create('scan', self.on_scan)
-        self.window.actions.create('add', self.on_add)
+        self.window.actions.create('append', self.on_append)
         self.window.actions.create('replace', self.on_replace)
-
+        self.update_ui()
 
     def on_scan(self, _action: Gio.SimpleAction, _param):
         try:
@@ -51,31 +53,40 @@ class ViewScan(View):
             self.layouts = pw.guess_layouts(0.1, 0.65, 0.5, -0.15, 300)
 
         try:
-            self.images =  []
+            self.images = []
             for n, layout in enumerate(self.layouts):
                 self.images.append(pw.get_warped_image(layout, n == 1))
         except Exception as err:
             print('Warp: ' + str(err))
-
         self.redraw()
 
-
-    def on_add(self, _action: Gio.SimpleAction, _param):
+    def on_append(self, _action: Gio.SimpleAction, _param):
         file_group = DEFAULT_FILE_GROUP
+        template_page_id = 'PAGE_{page_nr:04d}'
+        template_file_id = '{file_group}_{page_nr:04d}'
         for image in self.images:
-            page_nr = len(self.document.page_ids)+1
-            vars = {'page_nr': page_nr, 'file_group':file_group}
-            page_id = 'PAGE_{page_nr:04d}'.format(**vars)
-            file_id = '{file_group}_{page_nr:04d}'.format(**vars)
+            page_id, page_nr = self.document.get_unused_page_id(template_page_id)
+            file_id = template_file_id.format(**{'page_nr': page_nr, 'file_group': file_group})
             self.document.add_image(image, page_id, file_id)
+        self.images = []
+        self.update_ui()
 
     def on_replace(self, _action: Gio.SimpleAction, _param):
         file_group = DEFAULT_FILE_GROUP
-        page_ids = self.display_id_range(self.page_id, 2)
-        for page_id,image in zip(page_ids,self.images):
+        page_ids = self.document.display_id_range(self.page_id, 2)
+        for page_id, image in zip(page_ids, self.images):
             file = self.document.delete_image(page_id, file_group)
             self.document.add_image(image, page_id, file_id=file.ID, file_group=file_group, mimetype=file.mimetype)
+        self.images = []
+        self.update_ui()
 
+    def pages_selected(self, sender, page_ids: List[str]):
+        self.selected_page_ids = page_ids
+        self.update_ui()
+
+    def update_ui(self):
+        self.window.actions['replace'].set_enabled(self.images and len(self.selected_page_ids) == len(self.images))
+        self.window.actions['append'].set_enabled(self.images)
 
     @property
     def use_file_group(self):
@@ -86,6 +97,7 @@ class ViewScan(View):
         self.reload()
 
     def redraw(self):
+        self.update_ui()
         if self.images:
             for image, preview in zip(self.images, self.previews):
                 scaled = cv_scale(image, None, self.ui.preview_height)

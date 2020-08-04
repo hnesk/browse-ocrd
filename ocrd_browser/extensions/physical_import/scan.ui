@@ -104,11 +104,11 @@
         </child>
         <child>
           <object class="GtkButton" id="button_add">
-            <property name="label" translatable="yes">Add</property>
+            <property name="label" translatable="yes">Append</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="action_name">win.add</property>
+            <property name="action_name">win.append</property>
             <property name="image">button_add_icon</property>
             <property name="always_show_image">True</property>
           </object>
