@@ -25,7 +25,6 @@ class MainWindow(Gtk.ApplicationWindow):
     view_container: Gtk.Box = Gtk.Template.Child()
     view_menu_box: Gtk.Box = Gtk.Template.Child()
 
-
     def __init__(self, **kwargs):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
         self.set_icon(GdkPixbuf.Pixbuf.new_from_resource("/org/readmachine/ocrd-browser/icons/icon.png"))
@@ -48,10 +47,10 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.page_list = PagePreviewList(self.document)
         self.page_list_scroller.add(self.page_list)
-        self.page_list.connect('page_selected', self.page_selected)
+        self.page_list.connect('page_activated', self.on_page_activated)
 
         for id_, view in self.view_registry.get_view_options().items():
-            menu_item = Gtk.ModelButton(visible=True,centered=False,halign=Gtk.Align.FILL,label = view, hexpand=True)
+            menu_item = Gtk.ModelButton(visible=True, centered=False, halign=Gtk.Align.FILL, label=view, hexpand=True)
             menu_item.set_detailed_action_name('win.create_view("{}")'.format(id_))
             self.view_menu_box.pack_start(menu_item, True, True, 0)
 
@@ -66,13 +65,11 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_page_properties(self, _a: Gio.SimpleAction, _p):
         print(self.page_list.get_selected_items())
 
-
     @Gtk.Template.Callback()
     def on_recent_menu_item_activated(self, recent_chooser: Gtk.RecentChooserMenu):
         app = self.get_application()
         item: Gtk.RecentInfo = recent_chooser.get_current_item()
         app.open_in_window(item.get_uri(), window=self)
-
 
     def open(self, uri):
         self.set_title('Loading')
@@ -83,7 +80,7 @@ class MainWindow(Gtk.ApplicationWindow):
         GLib.timeout_add(50, self._open, uri)
 
     def _open(self, uri):
-        self.document = Document.load(self,uri)
+        self.document = Document.load(self, uri)
         self.page_list.set_document(self.document)
 
         title = self.document.workspace.mets.unique_identifier if self.document.workspace.mets.unique_identifier else '<unnamed>'
@@ -95,7 +92,7 @@ class MainWindow(Gtk.ApplicationWindow):
             view.set_document(self.document)
 
         if len(self.document.page_ids):
-            self.page_selected(None, self.document.page_ids[0])
+            self.on_page_activated(None, self.document.page_ids[0])
 
     @property
     def view_registry(self) -> ViewRegistry:
@@ -108,9 +105,10 @@ class MainWindow(Gtk.ApplicationWindow):
         view.set_document(self.document)
         self.views.append(view)
         self.connect('page_activated', view.page_activated)
+        self.page_list.connect('pages_selected', view.pages_selected)
         self.view_container.pack_start(view.container, True, True, 3)
 
-    def page_selected(self, _, page_id):
+    def on_page_activated(self, _, page_id):
         if self.current_page_id != page_id:
             self.current_page_id = page_id
             self.emit('page_activated', page_id)
@@ -130,7 +128,6 @@ class MainWindow(Gtk.ApplicationWindow):
     @GObject.Signal()
     def document_saved(self):
         print('saved')
-
 
     def update_ui(self):
         can_go_back = False
@@ -238,12 +235,12 @@ class PagePreviewList(Gtk.IconView):
 
     def document_changed(self, page_ids: List):
         to_delete = []
-        for n,row in enumerate(self.model):
+        for n, row in enumerate(self.model):
             if row[0] in page_ids:
                 page_ids.remove(row[0])
                 files = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=row[0])
                 if files:
-                    file_name = str(self.document.path(files[0].local_filename))
+                    file_name = str(self.document.path(files[0]))
                     row[2] = file_name
                 else:
                     to_delete.append(n)
@@ -256,11 +253,11 @@ class PagePreviewList(Gtk.IconView):
             file_name = str(self.document.path(file.local_filename))
             self.model.append((page_id, '', file_name, None))
 
-
-
+        self.scroll_to_id(page_id)
 
     def setup_ui(self):
-        self.loading_image_pixbuf = GdkPixbuf.Pixbuf.new_from_resource('/org/readmachine/ocrd-browser/icons/loading.png')
+        self.loading_image_pixbuf = GdkPixbuf.Pixbuf.new_from_resource(
+            '/org/readmachine/ocrd-browser/icons/loading.png')
         self.set_text_column(0)
         self.set_tooltip_column(1)
         self.set_pixbuf_column(3)
@@ -276,12 +273,12 @@ class PagePreviewList(Gtk.IconView):
             self.emit('on_context_menu', event, row, path, renderer)
 
     @GObject.Signal(arg_types=(object, object, object, object))
-    def on_context_menu(self, event: Gdk.EventButton, row: Gtk.TreeModelRow, path: Gtk.TreePath, renderer: Gtk.CellRenderer):
+    def on_context_menu(self, event: Gdk.EventButton, row: Gtk.TreeModelRow, path: Gtk.TreePath,
+                        renderer: Gtk.CellRenderer):
         if len(self.get_selected_items()) <= 1:
             self.set_cursor(path, None, False)
             self.emit('select_cursor_item')
         self.cmenu.popup_at_pointer(event)
-
 
     def setup_model(self):
         self.file_lookup = self.get_image_paths(self.document)
@@ -325,11 +322,23 @@ class PagePreviewList(Gtk.IconView):
         if 0 <= index < len(self.model):
             self.goto_path(Gtk.TreePath(index))
 
+    def path_for_id(self, page_id):
+        for n, row in enumerate(self.model):
+            if row[0] == page_id:
+                return Gtk.TreePath(n)
+        return None
+
+    def scroll_to_id(self, page_id):
+        path = self.path_for_id(page_id)
+        self.scroll_to_path(path, False, 0, 1.0)
+
     def skip(self, pos):
         if not self.current:
             self.current = self.model.get_iter(Gtk.TreePath(0))
         iterate = self.model.iter_previous if pos < 0 else self.model.iter_next
-        n = iterate(self.current)
+        n = self.current
+        for _ in range(0, abs(pos)):
+            n = iterate(n)
         self.goto_path(self.model.get_path(n))
 
     def goto_path(self, path):
@@ -338,10 +347,18 @@ class PagePreviewList(Gtk.IconView):
         self.emit('activate_cursor_item')
         self.grab_focus()
 
+    def do_selection_changed(self):
+        self.emit('pages_selected', self.get_selected_ids())
+
     def do_item_activated(self, path: Gtk.TreePath):
         self.current = self.model.get_iter(path)
-        self.emit('page_selected', self.model[path][0])
+        self.emit('page_activated', self.model[path][0])
 
     @GObject.Signal()
-    def page_selected(self, page_id: str):
+    def page_activated(self, page_id: str):
+        pass
+
+    @GObject.Signal(arg_types=(object,))
+    def pages_selected(self, page_ids: List[str]):
+        print(page_ids)
         pass
