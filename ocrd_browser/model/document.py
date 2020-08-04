@@ -1,8 +1,3 @@
-from typing import Optional, Tuple, List, Set
-from collections import OrderedDict
-from pathlib import Path
-from urllib.parse import urlparse
-
 from ocrd import Workspace, Resolver
 from ocrd_browser.model import Page
 from ocrd_modelfactory import page_from_file
@@ -12,6 +7,11 @@ from ocrd_models.constants import NAMESPACES as NS
 from ocrd_utils import pushd_popd
 from ocrd_utils.constants import MIME_TO_EXT
 from . import DEFAULT_FILE_GROUP
+
+from typing import Optional, Tuple, List, Set, Union
+from collections import OrderedDict
+from pathlib import Path
+from urllib.parse import urlparse
 
 import cv2
 import struct
@@ -25,6 +25,44 @@ class Document:
         self.workspace: Workspace = workspace
         self.resolver: Resolver = resolver if resolver else Resolver()
         self.empty = True
+
+    @classmethod
+    def create(cls, window, directory=None, resolver: Resolver = None) -> 'Document':
+        resolver = resolver if resolver else Resolver()
+        workspace = resolver.workspace_from_nothing(directory=directory, mets_basename='mets.xml')
+        return cls(window, workspace, None, resolver)
+
+    @classmethod
+    def load(cls, window, mets_url=None, resolver: Resolver = None) -> 'Document':
+        if not mets_url:
+            return cls.create(window, None, resolver)
+        result = urlparse(mets_url)
+        if result.scheme == 'file':
+            mets_url = result.path
+
+        resolver = resolver if resolver else Resolver()
+        workspace = resolver.workspace_from_url(mets_url, download=True)
+        doc = cls(window, workspace, mets_url, resolver)
+        doc.empty = False
+        return doc
+
+    @property
+    def directory(self) -> Path:
+        """
+        Get workspace directory as a Path object
+        """
+        return Path(self.workspace.directory)
+
+    def path(self, other: Union[OcrdFile,Path, str]) -> Path:
+        """
+        Resolves other relative to current workspace
+        """
+        if isinstance(other, OcrdFile):
+            return self.directory / other.local_filename
+        elif isinstance(other, Path):
+            return self.directory / other
+        elif isinstance(other, str):
+            return self.directory / other
 
     @property
     def page_ids(self) -> list:
@@ -58,7 +96,7 @@ class Document:
                 self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp/mets:file[@MIMETYPE]', NS)}
 
     @property
-    def file_groups_and_mimetypes(self) -> List[Tuple[str,str]]:
+    def file_groups_and_mimetypes(self) -> List[Tuple[str, str]]:
         """
         A list with the distinct file_group/mimetype pairs in this workspace
 
@@ -70,7 +108,7 @@ class Document:
 
         return list(distinct_groups.keys())
 
-    def get_unused_page_id(self,template_page_id:str = 'PAGE_{page_nr}') -> Tuple[str, int]:
+    def get_unused_page_id(self, template_page_id: str = 'PAGE_{page_nr}') -> Tuple[str, int]:
         """
         Finds a page_nr that yields an unused page_id for the workspace and returns page_id, page_nr
 
@@ -80,44 +118,28 @@ class Document:
         page_nr = len(self.page_ids) + 1
         page_ids = self.page_ids
         while page_nr < 9999:
-            page_id = template_page_id.format(**{'page_nr':page_nr})
+            page_id = template_page_id.format(**{'page_nr': page_nr})
             if page_id not in page_ids:
                 return page_id, page_nr
             page_nr += 1
 
         raise RuntimeError('No unused page_id found')
 
-    @classmethod
-    def create(cls, window, directory=None, resolver: Resolver = None) -> 'Document':
-        resolver = resolver if resolver else Resolver()
-        workspace = resolver.workspace_from_nothing(directory=directory, mets_basename='mets.xml')
-        return cls(window, workspace, None, resolver)
-
-    @classmethod
-    def load(cls, window, mets_url=None, resolver: Resolver = None) -> 'Document':
-        if not mets_url:
-            return cls.create(window, None, resolver)
-        result = urlparse(mets_url)
-        if result.scheme == 'file':
-            mets_url = result.path
-
-        resolver = resolver if resolver else Resolver()
-        workspace = resolver.workspace_from_url(mets_url, download=True)
-        doc = cls(window, workspace, mets_url, resolver)
-        doc.empty = False
-        return doc
-
-    @property
-    def directory(self) -> Path:
-        return Path(self.workspace.directory)
-
-    def path(self, other) -> Path:
-        if isinstance(other, OcrdFile):
-            return self.directory / other.local_filename
-        elif isinstance(other, Path):
-            return self.directory / other
-        elif isinstance(other, str):
-            return self.directory / other
+    def display_id_range(self, page_id, page_qty):
+        """
+        Calculates an page_id range of size page_qty around page_id
+        @param page_id:
+        @param page_qty:
+        @return:
+        """
+        if not page_id:
+            return []
+        try:
+            index = self.page_ids.index(page_id)
+        except ValueError:
+            return []
+        index = index - index % page_qty
+        return self.page_ids[index:index + page_qty]
 
     def page_for_id(self, page_id: str, file_group: str = None) -> Optional['Page']:
         page_file = self.file_for_page_id(page_id, file_group)
@@ -161,16 +183,6 @@ class Document:
             self.workspace.remove_file(file, force=False, keep_file=False)
         self.window.emit('document_changed', [page_id])
         self.save()
-
-    def display_id_range(self, page_id, page_qty):
-        if not page_id:
-            return []
-        try:
-            index = self.page_ids.index(page_id)
-        except ValueError:
-            return []
-        index = index - index % page_qty
-        return self.page_ids[index:index + page_qty]
 
     def add_image(self, image, page_id, file_id, file_group='OCR-D-IMG', dpi: int = 300,
                   mimetype='image/png') -> 'OcrdFile':
