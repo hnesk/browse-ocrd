@@ -1,3 +1,4 @@
+import tests
 import unittest
 from ocrd_browser.view import ViewImages, ViewRegistry
 
@@ -5,10 +6,10 @@ from ocrd_browser.view import ViewImages, ViewRegistry
 class ViewManagerTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.vm = ViewRegistry({'images': ViewImages})
+        self.vm = ViewRegistry({'images': (ViewImages, 'Images', 'Displays Images')})
 
     def test_get_view_options(self):
-        expected = {'images': 'ViewImages'}
+        expected = {'images': 'Images'}
         actual = self.vm.get_view_options()
         self.assertEqual(expected, actual)
 
