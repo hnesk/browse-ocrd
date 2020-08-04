@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple, List, Set
 from collections import OrderedDict
 from pathlib import Path
 from urllib.parse import urlparse
@@ -28,24 +28,64 @@ class Document:
 
     @property
     def page_ids(self) -> list:
+        """
+        List of page_ids in this workspace
+
+        TODO: This is unsorted (or sorted in document order) use @ORDER attribute or keep document order in sync with the correct order
+
+        @return: List[str]
+        """
         return self.workspace.mets.physical_pages
 
     @property
-    def file_groups(self) -> list:
+    def file_groups(self) -> List[str]:
+        """
+        List of file_groups in this workspace
+
+        @return: List[str]
+        """
+
         return self.workspace.mets.file_groups
 
     @property
-    def mime_types(self) -> set:
+    def mime_types(self) -> Set[str]:
+        """
+        Set with the distinct mime-types in this workspace
+
+        @return: Set[str]
+        """
         return {el.get('MIMETYPE') for el in
                 self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp/mets:file[@MIMETYPE]', NS)}
 
     @property
-    def file_groups_and_mimetypes(self) -> list:
+    def file_groups_and_mimetypes(self) -> List[Tuple[str,str]]:
+        """
+        A list with the distinct file_group/mimetype pairs in this workspace
+
+        @return: List[Tuple[str,str]]
+        """
         distinct_groups = OrderedDict()
         for el in self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]', NS):
             distinct_groups[(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
 
         return list(distinct_groups.keys())
+
+    def get_unused_page_id(self,template_page_id:str = 'PAGE_{page_nr}') -> Tuple[str, int]:
+        """
+        Finds a page_nr that yields an unused page_id for the workspace and returns page_id, page_nr
+
+        @param template_page_id: str
+        @return: Tuple[str, int]
+        """
+        page_nr = len(self.page_ids) + 1
+        page_ids = self.page_ids
+        while page_nr < 9999:
+            page_id = template_page_id.format(**{'page_nr':page_nr})
+            if page_id not in page_ids:
+                return page_id, page_nr
+            page_nr += 1
+
+        raise RuntimeError('No unused page_id found')
 
     @classmethod
     def create(cls, window, directory=None, resolver: Resolver = None) -> 'Document':
@@ -67,6 +107,18 @@ class Document:
         doc.empty = False
         return doc
 
+    @property
+    def directory(self) -> Path:
+        return Path(self.workspace.directory)
+
+    def path(self, other) -> Path:
+        if isinstance(other, OcrdFile):
+            return self.directory / other.local_filename
+        elif isinstance(other, Path):
+            return self.directory / other
+        elif isinstance(other, str):
+            return self.directory / other
+
     def page_for_id(self, page_id: str, file_group: str = None) -> Optional['Page']:
         page_file = self.file_for_page_id(page_id, file_group)
         if not page_file:
@@ -82,18 +134,6 @@ class Document:
             if not files:
                 return None
             return self.workspace.download_file(files[0])
-
-    @property
-    def directory(self) -> Path:
-        return Path(self.workspace.directory)
-
-    def path(self, other) -> Path:
-        if isinstance(other, OcrdFile):
-            return self.directory / other.local_filename
-        elif isinstance(other, Path):
-            return self.directory / other
-        elif isinstance(other, str):
-            return self.directory / other
 
     def page_for_file(self, page_file: OcrdFile) -> PcGtsType:
         with pushd_popd(self.workspace.directory):
@@ -154,9 +194,6 @@ class Document:
 
         see https://stackoverflow.com/questions/57553641/how-to-save-dpi-info-in-py-opencv/57555123#57555123
 
-        :param image_bytes:
-        :param dpi:
-        :return:
         """
         if isinstance(dpi, (int, float)):
             dpi = (dpi, dpi)
@@ -170,14 +207,3 @@ class Document:
         phys_chunk = struct.pack('!I', 9) + phys_chunk + struct.pack('!I', zlib.crc32(phys_chunk))
 
         return s[0:idat_offset] + phys_chunk + s[idat_offset:]
-
-    def add_page(self, page_image, page_nr, file_group='OCR-D-IMG'):
-        file_id = '{}_{:04d}'.format(file_group, page_nr)
-        page_id = 'PAGE_{:04d}'.format(page_nr)
-        mime_type = 'image/png'
-        basename = file_id + '.png'
-        local_filename = self.resolver.download_to_directory(self.workspace.directory, str(page_image), basename,
-                                                             subdir=file_group, if_exists='overwrite')
-        self.workspace.add_file(file_group, ID=file_id, mimetype=mime_type, force=True, url=local_filename,
-                                local_filename=local_filename, pageId=page_id)
-        self.empty = False
