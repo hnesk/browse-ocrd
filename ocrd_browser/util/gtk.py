@@ -1,17 +1,19 @@
+from typing import Callable, Dict
+
 from gi.repository import Gio, GLib
 
 
 class ActionRegistry:
     def __init__(self, for_widget: Gio.ActionMap):
         self.for_widget = for_widget
-        self.actions = {}
+        self.actions: Dict[str, Gio.SimpleAction] = {}
 
-    def create(self, name, callback=None, param_type: GLib.Variant = None):
+    def create(self, name, callback=Callable[[Gio.SimpleAction,GLib.Variant], None], param_type: GLib.Variant = None) -> Gio.SimpleAction:
         callback = callback if callback else getattr(self.for_widget, 'on_' + name)
         if param_type is not None:
-            action: Gio.SimpleAction = Gio.SimpleAction.new(name, param_type.get_type())
+            action = Gio.SimpleAction.new(name, param_type.get_type())
         else:
-            action: Gio.SimpleAction = Gio.SimpleAction.new(name)
+            action = Gio.SimpleAction.new(name)
         action.connect("activate", callback)
         self.for_widget.add_action(action)
         self.actions[name] = action

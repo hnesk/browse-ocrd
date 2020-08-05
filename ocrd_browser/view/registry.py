@@ -1,11 +1,11 @@
 from pkg_resources import EntryPoint, iter_entry_points
-from typing import Dict
+from typing import Dict, Tuple, Optional
 from .base import View
 
 
 class ViewRegistry:
-    def __init__(self, views: Dict):
-        self.views = views
+    def __init__(self, views):
+        self.views: Dict[str, Tuple[str,str,str]] = views
 
     @classmethod
     def create_from_entry_points(cls) -> 'ViewRegistry':
@@ -19,8 +19,8 @@ class ViewRegistry:
             views[entry_point.name] = (view_class, label, description)
         return cls(views)
 
-    def get_view_options(self) -> Dict:
+    def get_view_options(self) -> Dict[str,str]:
         return {id_: label for id_, (view_class, label, description) in self.views.items()}
 
-    def get_view(self, id_):
+    def get_view(self, id_) -> Optional[str]:
         return self.views[id_][0] if id_ in self.views else None

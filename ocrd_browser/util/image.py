@@ -1,4 +1,6 @@
 import io
+from typing import Tuple
+
 import cv2
 from PIL.Image import Image
 from numpy import array as ndarray
@@ -25,7 +27,7 @@ def bytes_to_pixbuf(bytes_: bytes) -> GdkPixbuf:
     return loader.get_pixbuf()
 
 
-def cv_scale(orig: ndarray, w=None, h=None) -> ndarray:
+def cv_scale(orig: ndarray, w:int=None, h:int=None) -> ndarray:
     """
     Scale a cv2 image
     :param orig: ndarray Original cv2 image
@@ -38,7 +40,7 @@ def cv_scale(orig: ndarray, w=None, h=None) -> ndarray:
     return cv2.resize(orig, (new_width, new_height))
 
 
-def pil_scale(orig: Image, w=None, h=None) -> ndarray:
+def pil_scale(orig: Image, w: int=None, h:int=None) -> ndarray:
     """
     Scale a Pillow image
     :param orig: ndarray Original cv2 image
@@ -52,7 +54,7 @@ def pil_scale(orig: Image, w=None, h=None) -> ndarray:
     return thumb
 
 
-def _calculate_scale(old_width, old_height, new_width: None, new_height: None):
+def _calculate_scale(old_width: int, old_height:int, new_width:int = None, new_height: int =  None) -> Tuple[int, int]:
     """
     Calculate scaled image size, while keeping the aspect ratio
     :param old_height:int
