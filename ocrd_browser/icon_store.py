@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from gi.repository import GObject, Gtk, GLib
 
 import concurrent.futures
@@ -18,6 +20,15 @@ class LazyLoadingListStore(Gtk.ListStore):
         self.futures = None
         self.row_inserted_handler = self.connect('row-inserted', self._on_row_inserted)
         self.row_changed_handler = self.connect('row-changed', self._on_row_changed)
+
+    def get_row_by_column_value(self, column, value) -> Tuple[int, Gtk.TreeModelRow]:
+        """
+        Find index and row by column value
+        """
+        for n, row in enumerate(self):
+            if row[column] == value:
+                return n, row
+        return None, None
 
     def start_loading(self):
         self.futures = {}
