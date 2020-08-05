@@ -3,7 +3,7 @@ from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
 from ocrd_browser.extensions.physical_import import ViewScan
 from ocrd_browser.model import Document, DEFAULT_FILE_GROUP
 from ocrd_browser.view import ViewRegistry, View
-from ocrd_browser.gtk_util import ActionRegistry
+from ocrd_browser.util.gtk import ActionRegistry
 from .page_browser import PagePreviewList
 from pkg_resources import resource_filename
 from typing import List

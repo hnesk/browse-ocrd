@@ -2,7 +2,7 @@ from gi.repository import Gtk, Gdk, GdkPixbuf, Pango, GLib, Gio, GObject
 from pkg_resources import resource_filename
 from typing import List, Optional
 from itertools import count
-from ocrd_browser.image_util import cv_scale, cv_to_pixbuf
+from ocrd_browser.util.image import cv_scale, cv_to_pixbuf
 from ocrd_browser.model import Document, DEFAULT_FILE_GROUP
 from . import LazyLoadingListStore
 

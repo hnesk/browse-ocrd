@@ -2,7 +2,7 @@ from gi.repository import Gio, Gtk, GLib
 
 import pkg_resources
 from typing import List
-from ocrd_browser.gtk_util import ActionRegistry
+from ocrd_browser.util.gtk import ActionRegistry
 from ocrd_browser.ui import MainWindow, AboutDialog, OpenDialog
 from ocrd_browser.view import ViewRegistry
 
