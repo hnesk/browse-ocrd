@@ -36,7 +36,7 @@ class ViewScan(View):
         self.viewport.add(self.ui)
         self.window.actions.create('scan', self.on_scan)
         self.window.actions.create('append', self.on_append)
-        self.window.actions.create('replace', self.on_replace)
+        self.window.actions.create('insert', self.on_insert)
         self.update_ui()
 
     def on_scan(self, _action: Gio.SimpleAction, _param):
@@ -71,12 +71,23 @@ class ViewScan(View):
         self.images = []
         self.update_ui()
 
-    def on_replace(self, _action: Gio.SimpleAction, _param):
+    def on_insert(self, _action: Gio.SimpleAction, _param):
         file_group = DEFAULT_FILE_GROUP
-        page_ids = self.document.display_id_range(self.page_id, 2)
-        for page_id, image in zip(page_ids, self.images):
-            file = self.document.delete_image(page_id, file_group)
-            self.document.add_image(image, page_id, file_id=file.ID, file_group=file_group, mimetype=file.mimetype)
+        template_page_id = 'PAGE_{page_nr:04d}'
+        template_file_id = '{file_group}_{page_nr:04d}'
+        page_ids = self.document.page_ids
+        inserted_page_ids = []
+        for image in self.images:
+            page_id, page_nr = self.document.get_unused_page_id(template_page_id)
+            file_id = template_file_id.format(**{'page_nr': page_nr, 'file_group': file_group})
+            self.document.add_image(image, page_id, file_id)
+            inserted_page_ids.append(page_id)
+
+        index = page_ids.index(self.page_id)
+        new_page_order = page_ids[:index] + inserted_page_ids + page_ids[index:]
+        self.document.reorder(new_page_order)
+        self.document.save()
+
         self.images = []
         self.update_ui()
 
@@ -85,7 +96,7 @@ class ViewScan(View):
         self.update_ui()
 
     def update_ui(self):
-        self.window.actions['replace'].set_enabled(self.images and len(self.selected_page_ids) == len(self.images))
+        self.window.actions['insert'].set_enabled(self.images)
         self.window.actions['append'].set_enabled(self.images)
 
     @property
