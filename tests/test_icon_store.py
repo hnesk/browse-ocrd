@@ -4,7 +4,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf, GObject, GLib
 
 import unittest
-from ocrd_browser.icon_store import LazyLoadingListStore
+from ocrd_browser.ui import LazyLoadingListStore
 
 
 class LazyLoadingListStoreTestCase(unittest.TestCase):

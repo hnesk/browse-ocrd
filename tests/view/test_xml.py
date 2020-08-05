@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 from ocrd_browser.view import ViewXml
-from ocrd_browser.window import MainWindow
+from ocrd_browser.ui import MainWindow
 
 class XmlViewTestCase(unittest.TestCase):
 

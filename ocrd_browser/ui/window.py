@@ -5,8 +5,8 @@ from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib, Pango, Gdk
 from ocrd_browser import __version__
 from ocrd_browser.extensions.physical_import import ViewScan
 from ocrd_browser.model import Document, DEFAULT_FILE_GROUP
-from ocrd_browser.view import ViewRegistry, ViewImages, View
-from ocrd_browser.icon_store import LazyLoadingListStore
+from ocrd_browser.view import ViewRegistry, View
+from ocrd_browser.ui.icon_store import LazyLoadingListStore
 from ocrd_browser.image_util import cv_scale, cv_to_pixbuf
 from ocrd_browser.gtk_util import ActionRegistry
 from pkg_resources import resource_filename
@@ -16,7 +16,7 @@ import cv2
 import os
 
 
-@Gtk.Template(filename=resource_filename(__name__, 'resources/main-window.ui'))
+@Gtk.Template(filename=resource_filename(__name__, '../resources/main-window.ui'))
 class MainWindow(Gtk.ApplicationWindow):
     __gtype_name__ = "MainWindow"
 
@@ -175,7 +175,7 @@ class MainWindow(Gtk.ApplicationWindow):
         del view
 
 
-@Gtk.Template(filename=resource_filename(__name__, 'resources/about-dialog.ui'))
+@Gtk.Template(filename=resource_filename(__name__, '../resources/about-dialog.ui'))
 class AboutDialog(Gtk.AboutDialog):
     __gtype_name__ = "AboutDialog"
 
@@ -185,7 +185,7 @@ class AboutDialog(Gtk.AboutDialog):
         self.set_version(__version__)
 
 
-@Gtk.Template(filename=resource_filename(__name__, 'resources/open-dialog.ui'))
+@Gtk.Template(filename=resource_filename(__name__, '../resources/open-dialog.ui'))
 class OpenDialog(Gtk.FileChooserDialog):
     __gtype_name__ = "OpenDialog"
 
@@ -203,7 +203,7 @@ class OpenDialog(Gtk.FileChooserDialog):
         self.add_filter(filter_any)
 
 
-@Gtk.Template(filename=resource_filename(__name__, 'resources/page-list.ui'))
+@Gtk.Template(filename=resource_filename(__name__, '../resources/page-list.ui'))
 class PagePreviewList(Gtk.IconView):
     __gtype_name__ = "PagePreviewList"
 
