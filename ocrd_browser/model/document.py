@@ -12,6 +12,7 @@ from typing import Optional, Tuple, List, Set, Union
 from collections import OrderedDict
 from pathlib import Path
 from urllib.parse import urlparse
+from lxml.etree import ElementBase as Element
 
 import cv2
 import struct
@@ -36,6 +37,7 @@ class Document:
     def load(cls, window, mets_url=None, resolver: Resolver = None) -> 'Document':
         if not mets_url:
             return cls.create(window, None, resolver)
+        mets_url = str(mets_url)
         result = urlparse(mets_url)
         if result.scheme == 'file':
             mets_url = result.path
@@ -160,6 +162,35 @@ class Document:
     def page_for_file(self, page_file: OcrdFile) -> PcGtsType:
         with pushd_popd(self.workspace.directory):
             return page_from_file(page_file)
+
+    def reorder(self, ordered_page_ids: List[str]):
+        """
+        Orders the pages in physSequence according to ordered_page_ids
+
+        """
+        if set(self.page_ids) != set(ordered_page_ids):
+            raise ValueError('page_ids do not match: missing in mets.xml: {} / missing in order: {}'.format(
+                set(ordered_page_ids).difference(set(self.page_ids)),
+                set(self.page_ids).difference(set(ordered_page_ids))
+            ))
+
+        page_sequence: Element = self.workspace.mets._tree.getroot().xpath(
+            '/mets:mets/mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]',
+            namespaces=NS)[0]
+
+        ordered_divs = []
+        for page_id in ordered_page_ids:
+                divs = page_sequence.xpath('mets:div[@TYPE="page"][@ID="%s"]' % page_id,namespaces=NS)
+                if divs:
+                    ordered_divs.append(divs[0])
+                    page_sequence.remove(divs[0])
+
+        if len(page_sequence) > 0:
+            raise RuntimeError('page_sequence not empty, still has: {}'.format(page_sequence.getchildren()))
+
+        for div in ordered_divs:
+            page_sequence.append(div)
+
 
     def save(self):
         self.workspace.save_mets()
