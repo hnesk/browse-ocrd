@@ -5,7 +5,7 @@ from typing import List
 from voussoir.pagewarper import PageWarper
 
 from ocrd_browser.extensions.physical_import.scandriver import DummyDriver, AndroidADBDriver
-from ocrd_browser.image_util import cv_scale, cv_to_pixbuf
+from ocrd_browser.util.image import cv_scale, cv_to_pixbuf
 from ocrd_browser.view import View
 from ocrd_browser.model import DEFAULT_FILE_GROUP
 

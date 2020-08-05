@@ -1,7 +1,7 @@
 from gi.repository import Gtk
 
 from itertools import zip_longest
-from ocrd_browser.image_util import pil_to_pixbuf, pil_scale
+from ocrd_browser.util.image import pil_to_pixbuf, pil_scale
 from .base import View, FileGroupSelector, FileGroupFilter, PageQtySelector
 
 
