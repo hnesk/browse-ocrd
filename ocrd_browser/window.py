@@ -1,3 +1,5 @@
+from itertools import count
+
 from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib, Pango, Gdk
 
 from ocrd_browser import __version__
@@ -251,9 +253,11 @@ class PagePreviewList(Gtk.IconView):
         for page_id in page_ids:
             file = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)[0]
             file_name = str(self.document.path(file.local_filename))
-            self.model.append((page_id, '', file_name, None))
+            self.model.append((page_id, '', file_name, None, len(self.model)))
 
         self.scroll_to_id(page_id)
+
+        #self.update_order()
 
     def setup_ui(self):
         self.loading_image_pixbuf = GdkPixbuf.Pixbuf.new_from_resource(
@@ -282,13 +286,22 @@ class PagePreviewList(Gtk.IconView):
 
     def setup_model(self):
         self.file_lookup = self.get_image_paths(self.document)
-        self.model = LazyLoadingListStore(str, str, str, GdkPixbuf.Pixbuf,
+        self.model = LazyLoadingListStore(str, str, str, GdkPixbuf.Pixbuf, int,
                                           init_row=self.init_row, load_row=self.load_row, hash_row=self.hash_row)
+        order = count(start=1)
         for page_id in self.document.page_ids:
             file = str(self.file_lookup[page_id])
-            self.model.append((page_id, '', file, None))
+            self.model.append((page_id, '', file, None, next(order)))
         self.set_model(self.model)
+        self.model.set_sort_column_id(4, Gtk.SortType.ASCENDING)
         GLib.timeout_add(10, self.model.start_loading)
+
+    def update_order(self):
+        #with self.model.handler_block(self.model.row_changed_handler):
+        order = count(start=1)
+        for page_id in self.document.page_ids:
+            n, row = self.model.get_row_by_id(page_id)
+            row[4] = next(order)
 
     def init_row(self, row: Gtk.TreeModelRow):
         row[1] = 'Loading {}'.format(row[2])
@@ -323,10 +336,8 @@ class PagePreviewList(Gtk.IconView):
             self.goto_path(Gtk.TreePath(index))
 
     def path_for_id(self, page_id):
-        for n, row in enumerate(self.model):
-            if row[0] == page_id:
-                return Gtk.TreePath(n)
-        return None
+        n, row = self.model.get_row_by_column_value(0, page_id)
+        return Gtk.TreePath(n) if n is not None else None
 
     def scroll_to_id(self, page_id):
         path = self.path_for_id(page_id)
