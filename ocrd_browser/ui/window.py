@@ -152,6 +152,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_goto_last(self, _a: Gio.SimpleAction, _p):
         self.page_list.goto_index(-1)
+        return 1
 
     def on_create_view(self, _a, selected_view_id: GLib.Variant):
         view_class = self.view_registry.get_view(selected_view_id.get_string())

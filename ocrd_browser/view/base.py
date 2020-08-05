@@ -1,8 +1,21 @@
 from gi.repository import Gtk, Pango, GObject, Gdk
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
 from ocrd_browser.model import Document, Page
+
+
+class Configurator:
+    def __init__(self):
+        self.document = None
+        self.value = None
+
+    def set_document(self, document: Document):
+        self.document = document
+
+    def set_value(self, value):
+        raise NotImplementedError('You have to override set_value')
+
 
 
 class View:
@@ -13,10 +26,10 @@ class View:
         self.current: Optional[Page] = None
         self.page_id: Optional[str] = None
 
-        self.configurators = []
-        self.container: Optional[Gtk.Box] = None
-        self.action_bar: Optional[Gtk.ActionBar] = None
-        self.viewport: Optional[Gtk.Viewport] = None
+        self.configurators: List[Tuple[str,Configurator]] = []
+        self.container: Gtk.Box = None
+        self.action_bar: Gtk.ActionBar = None
+        self.viewport: Gtk.Viewport = None
 
     def build(self):
         self.container = Gtk.Box(visible=True, orientation="vertical")
@@ -32,11 +45,11 @@ class View:
         self.container.pack_start(scroller, True, True, 0)
 
     def set_document(self, document: Document):
-        self.document: Document = document
+        self.document = document
         for (_name, configurator) in self.configurators:
             configurator.set_document(document)
 
-    def add_configurator(self, name, configurator):
+    def add_configurator(self, name: str, configurator: Configurator) -> None:
         """
         Adds a configurator for property self.{name}
 
@@ -78,18 +91,6 @@ class View:
 
     def on_size(self, w, h, x, y):
         pass
-
-
-class Configurator:
-    def __init__(self):
-        self.document = None
-        self.value = None
-
-    def set_document(self, document: Document):
-        self.document = document
-
-    def set_value(self, value):
-        raise NotImplementedError('You have to override set_value')
 
 
 class PageQtySelector(Gtk.Box, Configurator):
@@ -199,9 +200,9 @@ class FileGroupModel(Gtk.ListStore):
             self.append(('{}|{}'.format(group, mime), group, mime, MIME_TO_EXT.get(mime, '.???')))
 
     @classmethod
-    def build(cls, document: Document, filter_: 'FileGroupFilter' = None):
+    def build(cls, document: Document, filter_: 'FileGroupFilter' = None) -> 'FileGroupModel':
         model = cls(document)
-        model: Gtk.TreeModel = model.filter_new()
+        model = model.filter_new()
         model.set_visible_func(filter_ if filter_ else FileGroupFilter.ALL)
         return model
 
@@ -214,7 +215,7 @@ class FileGroupModel(Gtk.ListStore):
         return model[it][FileGroupComboBox.COLUMN_MIME] == MIMETYPE_PAGE
 
     @staticmethod
-    def all_filter(_model, _it, _data):
+    def all_filter(_model, _it, _data) -> bool:
         return True
 
 

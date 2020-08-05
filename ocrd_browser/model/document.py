@@ -8,7 +8,7 @@ from ocrd_utils import pushd_popd
 from ocrd_utils.constants import MIME_TO_EXT
 from . import DEFAULT_FILE_GROUP
 
-from typing import Optional, Tuple, List, Set, Union
+from typing import Optional, Tuple, List, Set, Union, cast
 from collections import OrderedDict
 from pathlib import Path
 from urllib.parse import urlparse
@@ -61,14 +61,17 @@ class Document:
         Resolves other relative to current workspace
         """
         if isinstance(other, OcrdFile):
-            return self.directory / other.local_filename
+            return self.directory.joinpath(other.local_filename)
         elif isinstance(other, Path):
-            return self.directory / other
+            return self.directory.joinpath(other)
         elif isinstance(other, str):
-            return self.directory / other
+            return self.directory.joinpath(other)
+        else:
+            raise ValueError('Unsupported other of type {}'.format(type(other)))
+
 
     @property
-    def page_ids(self) -> list:
+    def page_ids(self) -> List[str]:
         """
         List of page_ids in this workspace
 
@@ -76,7 +79,7 @@ class Document:
 
         @return: List[str]
         """
-        return self.workspace.mets.physical_pages
+        return cast(List[str], self.workspace.mets.physical_pages)
 
     @property
     def file_groups(self) -> List[str]:
@@ -86,7 +89,7 @@ class Document:
         @return: List[str]
         """
 
-        return self.workspace.mets.file_groups
+        return cast(List[str], self.workspace.mets.file_groups)
 
     @property
     def mime_types(self) -> Set[str]:
@@ -105,7 +108,7 @@ class Document:
 
         @return: List[Tuple[str,str]]
         """
-        distinct_groups = OrderedDict()
+        distinct_groups:OrderedDict[Tuple[str, str], None] = OrderedDict()
         for el in self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]', NS):
             distinct_groups[(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
 
