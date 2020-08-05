@@ -64,7 +64,7 @@ class PagePreviewList(Gtk.IconView):
 
         self.scroll_to_id(page_id)
 
-        #self.update_order()
+        # self.update_order()
 
     def setup_ui(self):
         self.loading_image_pixbuf = GdkPixbuf.Pixbuf.new_from_resource(
@@ -104,7 +104,7 @@ class PagePreviewList(Gtk.IconView):
         GLib.timeout_add(10, self.model.start_loading)
 
     def update_order(self):
-        #with self.model.handler_block(self.model.row_changed_handler):
+        # with self.model.handler_block(self.model.row_changed_handler):
         order = count(start=1)
         for page_id in self.document.page_ids:
             n, row = self.model.get_row_by_id(page_id)

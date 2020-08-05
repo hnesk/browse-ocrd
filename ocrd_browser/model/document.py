@@ -18,6 +18,7 @@ import cv2
 import struct
 import zlib
 
+
 class Document:
 
     def __init__(self, window, workspace: Workspace, mets_url=None, resolver: Resolver = None):
@@ -55,7 +56,7 @@ class Document:
         """
         return Path(self.workspace.directory)
 
-    def path(self, other: Union[OcrdFile,Path, str]) -> Path:
+    def path(self, other: Union[OcrdFile, Path, str]) -> Path:
         """
         Resolves other relative to current workspace
         """
@@ -180,17 +181,16 @@ class Document:
 
         ordered_divs = []
         for page_id in ordered_page_ids:
-                divs = page_sequence.xpath('mets:div[@TYPE="page"][@ID="%s"]' % page_id,namespaces=NS)
-                if divs:
-                    ordered_divs.append(divs[0])
-                    page_sequence.remove(divs[0])
+            divs = page_sequence.xpath('mets:div[@TYPE="page"][@ID="%s"]' % page_id, namespaces=NS)
+            if divs:
+                ordered_divs.append(divs[0])
+                page_sequence.remove(divs[0])
 
         if len(page_sequence) > 0:
             raise RuntimeError('page_sequence not empty, still has: {}'.format(page_sequence.getchildren()))
 
         for div in ordered_divs:
             page_sequence.append(div)
-
 
     def save(self):
         self.workspace.save_mets()
