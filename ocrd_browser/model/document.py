@@ -199,6 +199,7 @@ class Document:
     def delete_image(self, page_id, file_group='OCR-D-IMG') -> OcrdFile:
         image_files = self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group, local_only=True,
                                                      mimetype='//image/.+')
+        # TODO rename to delete_images and cope with it, e.g. for file groups with segementation images
         if len(image_files) != 1:
             print('oh oh', image_files)
             return
