@@ -58,7 +58,6 @@ class ViewImages(View):
     def use_file_group(self):
         return self.file_group[0]
 
-
     def reload(self):
         if self.document:
             display_ids = self.document.display_id_range(self.page_id, self.page_qty)
