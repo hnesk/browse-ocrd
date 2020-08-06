@@ -6,7 +6,7 @@ from ocrd_browser.view import ViewRegistry, View
 from ocrd_browser.util.gtk import ActionRegistry
 from .page_browser import PagePreviewList
 from pkg_resources import resource_filename
-from typing import List
+from typing import List, cast
 
 
 @Gtk.Template(filename=resource_filename(__name__, '../resources/main-window.ui'))
@@ -91,7 +91,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     @property
     def view_registry(self) -> ViewRegistry:
-        return self.get_application().view_registry
+        return cast(MainWindow,self.get_application()).view_registry
 
     def add_view(self, view_class):
         name = 'view_{}'.format(len(self.views))
@@ -116,8 +116,7 @@ class MainWindow(Gtk.ApplicationWindow):
         pass
 
     @GObject.Signal(arg_types=(object,))
-    def document_changed(self, page_ids: List):
-        print(page_ids)
+    def document_changed(self, page_ids: List[str]):
         self.page_list.document_changed(page_ids)
 
     @GObject.Signal()

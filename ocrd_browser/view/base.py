@@ -5,7 +5,7 @@ from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
 from ocrd_browser.model import Document, Page
 
 
-class Configurator:
+class Configurator(Gtk.Widget):
     def __init__(self):
         self.document = None
         self.value = None
@@ -22,9 +22,9 @@ class View:
     def __init__(self, name: str, window):
         self.name: str = name
         self.window = window
-        self.document: Optional[Document] = None
-        self.current: Optional[Page] = None
-        self.page_id: Optional[str] = None
+        self.document: Document = None
+        self.current: Page = None
+        self.page_id: str = None
 
         self.configurators: List[Tuple[str,Configurator]] = []
         self.container: Gtk.Box = None
