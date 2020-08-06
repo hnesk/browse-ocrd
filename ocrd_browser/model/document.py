@@ -1,5 +1,6 @@
 from ocrd import Workspace, Resolver
 from ocrd_browser.model import Page
+from ocrd_browser.util.image import add_dpi_to_png_buffer
 from ocrd_modelfactory import page_from_file
 from ocrd_models import OcrdFile
 from ocrd_models.ocrd_page_generateds import PcGtsType
@@ -16,28 +17,29 @@ from lxml.etree import ElementBase as Element
 from numpy import array as ndarray
 
 import cv2
-import struct
-import zlib
 
-EventCallBack = Optional[Callable[[str, Any],None]]
+EventCallBack = Optional[Callable[[str, Any], None]]
+
 
 class Document:
 
-    def __init__(self, workspace: Workspace, mets_url:Union[Path,str] = None, resolver: Resolver = None, emitter: EventCallBack = None):
-        self.emitter:EventCallBack = emitter
+    def __init__(self, workspace: Workspace, mets_url: Union[Path, str] = None, resolver: Resolver = None,
+                 emitter: EventCallBack = None):
+        self.emitter: EventCallBack = emitter
         self.mets_url = mets_url
         self.workspace: Workspace = workspace
         self.resolver: Resolver = resolver if resolver else Resolver()
         self.empty = True
 
     @classmethod
-    def create(cls, directory:str = None, resolver: Resolver = None, emitter: EventCallBack = None) -> 'Document':
+    def create(cls, directory: str = None, resolver: Resolver = None, emitter: EventCallBack = None) -> 'Document':
         resolver = resolver if resolver else Resolver()
         workspace = resolver.workspace_from_nothing(directory=directory, mets_basename='mets.xml')
         return cls(workspace, None, resolver=resolver, emitter=emitter)
 
     @classmethod
-    def load(cls, mets_url:Union[Path,str] = None, resolver: Resolver = None, emitter: EventCallBack = None) -> 'Document':
+    def load(cls, mets_url: Union[Path, str] = None, resolver: Resolver = None,
+             emitter: EventCallBack = None) -> 'Document':
         if not mets_url:
             return cls.create(None, resolver=resolver, emitter=emitter)
         mets_url = str(mets_url)
@@ -70,7 +72,6 @@ class Document:
             return self.directory.joinpath(other)
         else:
             raise ValueError('Unsupported other of type {}'.format(type(other)))
-
 
     @property
     def page_ids(self) -> List[str]:
@@ -110,7 +111,7 @@ class Document:
 
         @return: List[Tuple[str,str]]
         """
-        distinct_groups:OrderedDict[Tuple[str, str], None] = OrderedDict()
+        distinct_groups: OrderedDict[Tuple[str, str], None] = OrderedDict()
         for el in self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]', NS):
             distinct_groups[(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
 
@@ -133,7 +134,7 @@ class Document:
 
         raise RuntimeError('No unused page_id found')
 
-    def display_id_range(self, page_id: str, page_qty:int) -> List[str]:
+    def display_id_range(self, page_id: str, page_qty: int) -> List[str]:
         """
         Calculates an page_id range of size page_qty around page_id
         @param page_id:
@@ -158,7 +159,7 @@ class Document:
         image, info, exif = self.workspace.image_from_page(page, page_id)
         return Page(page_id, page_file, pcgts, image, exif)
 
-    def file_for_page_id(self, page_id:str, file_group:str=None) -> Optional[OcrdFile]:
+    def file_for_page_id(self, page_id: str, file_group: str = None) -> Optional[OcrdFile]:
         with pushd_popd(self.workspace.directory):
             files = self.workspace.mets.find_files(fileGrp=file_group or DEFAULT_FILE_GROUP, pageId=page_id)
             if not files:
@@ -201,7 +202,7 @@ class Document:
         self.workspace.save_mets()
         self._emit('document_saved')
 
-    def delete_image(self, page_id:str, file_group:str ='OCR-D-IMG') -> OcrdFile:
+    def delete_image(self, page_id: str, file_group: str = 'OCR-D-IMG') -> OcrdFile:
         image_files = self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group, local_only=True,
                                                      mimetype='//image/.+')
         # TODO rename to delete_images and cope with it, e.g. for file groups with segementation images
@@ -213,21 +214,21 @@ class Document:
         self._emit('document_changed', [page_id])
         return image_file
 
-    def _emit(self, event:str, *args: Any) -> None:
+    def _emit(self, event: str, *args: Any) -> None:
         if self.emitter is not None:
             self.emitter(event, *args)
 
-    def delete_page(self, page_id:str) -> None:
+    def delete_page(self, page_id: str) -> None:
         files = self.workspace.mets.find_files(pageId=page_id, local_only=True)
         for file in files:
             self.workspace.remove_file(file, force=False, keep_file=False)
         self._emit('document_changed', [page_id])
 
-    def add_image(self, image:ndarray, page_id:str, file_id:str, file_group:str='OCR-D-IMG', dpi: int = 300,
-                  mimetype:str='image/png') -> 'OcrdFile':
+    def add_image(self, image: ndarray, page_id: str, file_id: str, file_group: str = 'OCR-D-IMG', dpi: int = 300,
+                  mimetype: str = 'image/png') -> 'OcrdFile':
         extension = MIME_TO_EXT[mimetype]
         retval, image_array = cv2.imencode(extension, image)
-        image_bytes = self._add_dpi_to_png_buffer(image_array.tostring(), dpi)
+        image_bytes = add_dpi_to_png_buffer(image_array.tostring(), dpi)
         local_filename = Path(file_group, '%s%s' % (file_id, extension))
         url = (Path(self.workspace.directory) / local_filename)
         current_file = self.workspace.add_file(file_group, ID=file_id, mimetype=mimetype, force=True,
@@ -236,23 +237,3 @@ class Document:
         self.empty = False
         self._emit('document_changed', [page_id])
         return current_file
-
-    @staticmethod
-    def _add_dpi_to_png_buffer(image_bytes:bytes , dpi:Union[int,Tuple[int,int]] = 300) -> bytes:
-        """
-        adds dpi information to a png image
-
-        see https://stackoverflow.com/questions/57553641/how-to-save-dpi-info-in-py-opencv/57555123#57555123
-
-        """
-        if isinstance(dpi, (int, float)):
-            dpi = (dpi, dpi)
-
-        # Find start of IDAT chunk
-        idat_offset = image_bytes.find(b'IDAT') - 4
-
-        # Create our lovely new pHYs chunk - https://www.w3.org/TR/2003/REC-PNG-20031110/#11pHYs
-        phys_chunk = b'pHYs' + struct.pack('!IIc', int(dpi[0] / 0.0254), int(dpi[1] / 0.0254), b"\x01")
-        phys_chunk = struct.pack('!I', 9) + phys_chunk + struct.pack('!I', zlib.crc32(phys_chunk))
-
-        return image_bytes[0:idat_offset] + phys_chunk + image_bytes[idat_offset:]
