@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 from gi.repository import GObject, Gtk, GLib
 
@@ -21,7 +21,7 @@ class LazyLoadingListStore(Gtk.ListStore):
         self.row_inserted_handler = self.connect('row-inserted', self._on_row_inserted)
         self.row_changed_handler = self.connect('row-changed', self._on_row_changed)
 
-    def get_row_by_column_value(self, column, value) -> Tuple[int, Gtk.TreeModelRow]:
+    def get_row_by_column_value(self, column, value) -> Tuple[Optional[int], Optional[Gtk.TreeModelRow]]:
         """
         Find index and row by column value
         """

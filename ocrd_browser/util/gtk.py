@@ -1,4 +1,4 @@
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 
 from gi.repository import Gio, GLib
 
@@ -8,7 +8,7 @@ class ActionRegistry:
         self.for_widget = for_widget
         self.actions: Dict[str, Gio.SimpleAction] = {}
 
-    def create(self, name, callback=Callable[[Gio.SimpleAction,GLib.Variant], None], param_type: GLib.Variant = None) -> Gio.SimpleAction:
+    def create(self, name: str, callback:Optional[Callable[[Gio.SimpleAction,str], None]] = None, param_type: GLib.Variant = None) -> Gio.SimpleAction:
         callback = callback if callback else getattr(self.for_widget, 'on_' + name)
         if param_type is not None:
             action = Gio.SimpleAction.new(name, param_type.get_type())
@@ -19,5 +19,5 @@ class ActionRegistry:
         self.actions[name] = action
         return action
 
-    def __getitem__(self, item) -> Gio.SimpleAction:
+    def __getitem__(self, item:str) -> Gio.SimpleAction:
         return self.actions[item]

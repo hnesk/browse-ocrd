@@ -1,6 +1,8 @@
+from pathlib import Path
+
 from gi.repository import Gtk, Gdk, GdkPixbuf, Pango, GLib, Gio, GObject
 from pkg_resources import resource_filename
-from typing import List, Optional
+from typing import List, Optional, Dict
 from itertools import count
 from ocrd_browser.util.image import cv_scale, cv_to_pixbuf
 from ocrd_browser.model import Document, DEFAULT_FILE_GROUP
@@ -16,11 +18,11 @@ class PagePreviewList(Gtk.IconView):
 
     def __init__(self, document: Document, **kwargs):
         super().__init__(**kwargs)
-        self.document: Document = None
-        self.current: Gtk.TreeIter = None
-        self.model: LazyLoadingListStore = None
-        self.loading_image_pixbuf: GdkPixbuf.Pixbuf = None
-        self.file_lookup: dict = None
+        self.document: Document
+        self.current: Gtk.TreeIter
+        self.model: LazyLoadingListStore
+        self.loading_image_pixbuf: GdkPixbuf.Pixbuf
+        self.cmenu : Gtk.Menu
         self.setup_ui()
         self.setup_context_menu()
         self.set_document(document)
@@ -42,7 +44,7 @@ class PagePreviewList(Gtk.IconView):
         self.document = document
         self.setup_model()
 
-    def document_changed(self, page_ids: List):
+    def document_changed(self, page_ids: List[str]):
         to_delete = []
         for n, row in enumerate(self.model):
             if row[0] in page_ids:
@@ -92,12 +94,12 @@ class PagePreviewList(Gtk.IconView):
         self.cmenu.popup_at_pointer(event)
 
     def setup_model(self):
-        self.file_lookup = self.get_image_paths(self.document)
+        file_lookup = self.get_image_paths(self.document)
         self.model = LazyLoadingListStore(str, str, str, GdkPixbuf.Pixbuf, int,
                                           init_row=self.init_row, load_row=self.load_row, hash_row=self.hash_row)
         order = count(start=1)
         for page_id in self.document.page_ids:
-            file = str(self.file_lookup[page_id])
+            file = str(file_lookup[page_id])
             self.model.append((page_id, '', file, None, next(order)))
         self.set_model(self.model)
         self.model.set_sort_column_id(4, Gtk.SortType.ASCENDING)
@@ -128,7 +130,7 @@ class PagePreviewList(Gtk.IconView):
         return '{}:{}'.format(file, mtime)
 
     @staticmethod
-    def get_image_paths(document: Document, file_group='OCR-D-IMG'):
+    def get_image_paths(document: Document, file_group='OCR-D-IMG') -> Dict[str, Path]:
         images = document.workspace.mets.find_files(fileGrp=file_group)
         page_ids = document.workspace.mets.get_physical_pages(for_fileIds=[image.ID for image in images])
         file_paths = [document.path(image.url) for image in images]

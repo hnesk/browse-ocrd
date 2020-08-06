@@ -23,7 +23,7 @@ class ViewScan(View):
         self.driver = DummyDriver('/home/jk/Projekte/archive-tools/projects/exit1/orig/')
         self.driver.setup()
 
-        self.ui: ScanUi = None
+        self.ui: ScanUi
         self.previews = []
         self.layouts = []
         self.images = []
@@ -47,7 +47,6 @@ class ViewScan(View):
         except Exception as err:
             print(err)
             raise err
-            return
 
         if not self.layouts:
             self.layouts = pw.guess_layouts(0.1, 0.65, 0.5, -0.15, 300)
