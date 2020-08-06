@@ -1,12 +1,14 @@
 import io
-from typing import Tuple
-
 import cv2
+import struct
+import zlib
+
+from typing import Tuple, Union
 from PIL.Image import Image
 from numpy import array as ndarray
 from gi.repository import GdkPixbuf
 
-__all__ = ['cv_scale', 'cv_to_pixbuf', 'pil_to_pixbuf', 'pil_scale']
+__all__ = ['cv_scale', 'cv_to_pixbuf', 'pil_to_pixbuf', 'pil_scale', 'add_dpi_to_png_buffer']
 
 
 def cv_to_pixbuf(cv_image: ndarray) -> GdkPixbuf:
@@ -27,7 +29,7 @@ def bytes_to_pixbuf(bytes_: bytes) -> GdkPixbuf:
     return loader.get_pixbuf()
 
 
-def cv_scale(orig: ndarray, w:int=None, h:int=None) -> ndarray:
+def cv_scale(orig: ndarray, w: int = None, h: int = None) -> ndarray:
     """
     Scale a cv2 image
     :param orig: ndarray Original cv2 image
@@ -40,7 +42,7 @@ def cv_scale(orig: ndarray, w:int=None, h:int=None) -> ndarray:
     return cv2.resize(orig, (new_width, new_height))
 
 
-def pil_scale(orig: Image, w: int=None, h:int=None) -> ndarray:
+def pil_scale(orig: Image, w: int = None, h: int = None) -> ndarray:
     """
     Scale a Pillow image
     :param orig: ndarray Original cv2 image
@@ -54,7 +56,27 @@ def pil_scale(orig: Image, w: int=None, h:int=None) -> ndarray:
     return thumb
 
 
-def _calculate_scale(old_width: int, old_height:int, new_width:int = None, new_height: int =  None) -> Tuple[int, int]:
+def add_dpi_to_png_buffer(image_bytes: bytes, dpi: Union[int, Tuple[int, int]] = 300) -> bytes:
+    """
+    adds dpi information to a png image
+
+    see https://stackoverflow.com/questions/57553641/how-to-save-dpi-info-in-py-opencv/57555123#57555123
+
+    """
+    if isinstance(dpi, (int, float)):
+        dpi = (dpi, dpi)
+
+    # Find start of IDAT chunk
+    idat_offset = image_bytes.find(b'IDAT') - 4
+
+    # Create our lovely new pHYs chunk - https://www.w3.org/TR/2003/REC-PNG-20031110/#11pHYs
+    phys_chunk = b'pHYs' + struct.pack('!IIc', int(dpi[0] / 0.0254), int(dpi[1] / 0.0254), b"\x01")
+    phys_chunk = struct.pack('!I', 9) + phys_chunk + struct.pack('!I', zlib.crc32(phys_chunk))
+
+    return image_bytes[0:idat_offset] + phys_chunk + image_bytes[idat_offset:]
+
+
+def _calculate_scale(old_width: int, old_height: int, new_width: int = None, new_height: int = None) -> Tuple[int, int]:
     """
     Calculate scaled image size, while keeping the aspect ratio
     :param old_height:int
