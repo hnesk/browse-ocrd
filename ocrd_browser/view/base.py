@@ -17,7 +17,6 @@ class Configurator(Gtk.Widget):
         raise NotImplementedError('You have to override set_value')
 
 
-
 class View:
     def __init__(self, name: str, window):
         self.name: str = name
@@ -26,7 +25,7 @@ class View:
         self.current: Page = None
         self.page_id: str = None
 
-        self.configurators: List[Tuple[str,Configurator]] = []
+        self.configurators: List[Tuple[str, Configurator]] = []
         self.container: Gtk.Box = None
         self.action_bar: Gtk.ActionBar = None
         self.viewport: Gtk.Viewport = None

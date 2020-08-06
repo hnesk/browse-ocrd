@@ -22,7 +22,7 @@ class PagePreviewList(Gtk.IconView):
         self.current: Gtk.TreeIter = None
         self.model: LazyLoadingListStore = None
         self.loading_image_pixbuf: GdkPixbuf.Pixbuf = None
-        self.context_menu : Gtk.Menu = None
+        self.context_menu: Gtk.Menu = None
         self.setup_ui()
         self.setup_context_menu()
         self.set_document(document)
