@@ -18,11 +18,11 @@ class PagePreviewList(Gtk.IconView):
 
     def __init__(self, document: Document, **kwargs):
         super().__init__(**kwargs)
-        self.document: Document
-        self.current: Gtk.TreeIter
-        self.model: LazyLoadingListStore
-        self.loading_image_pixbuf: GdkPixbuf.Pixbuf
-        self.cmenu : Gtk.Menu
+        self.document: Document = None
+        self.current: Gtk.TreeIter = None
+        self.model: LazyLoadingListStore = None
+        self.loading_image_pixbuf: GdkPixbuf.Pixbuf = None
+        self.context_menu : Gtk.Menu = None
         self.setup_ui()
         self.setup_context_menu()
         self.set_document(document)
@@ -35,10 +35,10 @@ class PagePreviewList(Gtk.IconView):
         prop_menu = Gio.Menu()
         prop_menu.append('Properties', 'win.page_properties')
         menu.append_section(None, prop_menu)
-        self.cmenu: Gtk.Menu = Gtk.Menu()
-        self.cmenu.bind_model(menu, None, True)
-        self.cmenu.attach_to_widget(self)
-        self.cmenu.show_all()
+        self.context_menu: Gtk.Menu = Gtk.Menu()
+        self.context_menu.bind_model(menu, None, True)
+        self.context_menu.attach_to_widget(self)
+        self.context_menu.show_all()
 
     def set_document(self, document):
         self.document = document
@@ -91,7 +91,7 @@ class PagePreviewList(Gtk.IconView):
         if len(self.get_selected_items()) <= 1:
             self.set_cursor(path, None, False)
             self.emit('select_cursor_item')
-        self.cmenu.popup_at_pointer(event)
+        self.context_menu.popup_at_pointer(event)
 
     def setup_model(self):
         file_lookup = self.get_image_paths(self.document)

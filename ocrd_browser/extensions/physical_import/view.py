@@ -23,7 +23,7 @@ class ViewScan(View):
         self.driver = DummyDriver('/home/jk/Projekte/archive-tools/projects/exit1/orig/')
         self.driver.setup()
 
-        self.ui: ScanUi
+        self.ui: ScanUi = None
         self.previews = []
         self.layouts = []
         self.images = []
@@ -31,9 +31,9 @@ class ViewScan(View):
 
     def build(self):
         super().build()
-        self.ui = ScanUi(self)
+        self.ui = ScanUi(self, parent=self.viewport)
         self.previews = [self.ui.preview_left, self.ui.preview_right]
-        self.viewport.add(self.ui)
+        #self.viewport.add(self.ui)
         self.window.actions.create('scan', self.on_scan)
         self.window.actions.create('append', self.on_append)
         self.window.actions.create('insert', self.on_insert)
