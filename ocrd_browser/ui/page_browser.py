@@ -44,29 +44,30 @@ class PagePreviewList(Gtk.IconView):
         self.document = document
         self.setup_model()
 
-    def document_changed(self, page_ids: List[str]):
-        to_delete = []
-        for n, row in enumerate(self.model):
-            if row[0] in page_ids:
-                page_ids.remove(row[0])
-                files = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=row[0])
+    def document_changed(self, subtype: str, page_ids: List[str]):
+        if subtype == 'page_added':
+            for page_id in page_ids:
+                file = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)[0]
+                file_name = str(self.document.path(file.local_filename))
+                self.model.append((page_id, '', file_name, None, len(self.model)))
+            if page_id:
+                self.scroll_to_id(page_id)
+        elif subtype == 'page_deleted':
+            for delete_page_id in reversed(page_ids):
+                n, row = self.model.get_row_by_column_value(0, delete_page_id)
+                self.model.remove(self.model.get_iter(Gtk.TreePath(n)))
+        elif subtype == 'page_changed':
+            for page_id in page_ids:
+                n, row = self.model.get_row_by_column_value(0, page_id)
+                files = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)
                 if files:
                     file_name = str(self.document.path(files[0]))
                     row[2] = file_name
-                else:
-                    to_delete.append(n)
-
-        for delete in reversed(to_delete):
-            self.model.remove(self.model.get_iter(Gtk.TreePath(delete)))
-
-        for page_id in page_ids:
-            file = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)[0]
-            file_name = str(self.document.path(file.local_filename))
-            self.model.append((page_id, '', file_name, None, len(self.model)))
-
-        self.scroll_to_id(page_id)
-
-        # self.update_order()
+        elif subtype == 'reordered':
+            order = count(start=1)
+            for page_id in self.document.page_ids:
+                n, row = self.model.get_row_by_column_value(0, page_id)
+                row[4] = next(order)
 
     def setup_ui(self):
         self.loading_image_pixbuf = GdkPixbuf.Pixbuf.new_from_resource(
@@ -104,13 +105,6 @@ class PagePreviewList(Gtk.IconView):
         self.set_model(self.model)
         self.model.set_sort_column_id(4, Gtk.SortType.ASCENDING)
         GLib.timeout_add(10, self.model.start_loading)
-
-    def update_order(self):
-        # with self.model.handler_block(self.model.row_changed_handler):
-        order = count(start=1)
-        for page_id in self.document.page_ids:
-            n, row = self.model.get_row_by_id(page_id)
-            row[4] = next(order)
 
     def init_row(self, row: Gtk.TreeModelRow):
         row[1] = 'Loading {}'.format(row[2])
