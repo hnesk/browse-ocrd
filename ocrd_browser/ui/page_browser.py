@@ -45,29 +45,42 @@ class PagePreviewList(Gtk.IconView):
         self.setup_model()
 
     def document_changed(self, subtype: str, page_ids: List[str]):
-        if subtype == 'page_added':
+        def _document_page_added(page_ids: List[str]):
+            page_id = None
             for page_id in page_ids:
                 file = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)[0]
                 file_name = str(self.document.path(file.local_filename))
                 self.model.append((page_id, '', file_name, None, len(self.model)))
-            if page_id:
+            if page_id is not None:
                 self.scroll_to_id(page_id)
-        elif subtype == 'page_deleted':
+
+        def _document_page_deleted(page_ids: List[str]):
             for delete_page_id in reversed(page_ids):
                 n, row = self.model.get_row_by_column_value(0, delete_page_id)
                 self.model.remove(self.model.get_iter(Gtk.TreePath(n)))
-        elif subtype == 'page_changed':
+
+        def _document_page_changed(page_ids: List[str]):
             for page_id in page_ids:
                 n, row = self.model.get_row_by_column_value(0, page_id)
                 files = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)
                 if files:
                     file_name = str(self.document.path(files[0]))
                     row[2] = file_name
-        elif subtype == 'reordered':
+
+        def _document_reordered(_page_ids: List[str]):
             order = count(start=1)
             for page_id in self.document.page_ids:
                 n, row = self.model.get_row_by_column_value(0, page_id)
                 row[4] = next(order)
+
+        handler = {
+            'page_added': _document_page_added,
+            'page_deleted': _document_page_deleted,
+            'page_changed': _document_page_changed,
+            'reordered': _document_reordered,
+        }
+        handler[subtype](page_ids)
+
 
     def setup_ui(self):
         self.loading_image_pixbuf = GdkPixbuf.Pixbuf.new_from_resource(

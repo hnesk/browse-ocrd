@@ -1,8 +1,10 @@
 import cv2
-from gi.repository import Gtk, Gdk, Gio
+from gi.repository import Gtk, Gdk, Gio, GdkPixbuf
+from ocrd_models import OcrdFile
 from pkg_resources import resource_filename
 from typing import List
-from voussoir.pagewarper import PageWarper
+from voussoir.pagewarper import PageWarper, LayoutInfo
+from numpy import array as ndarray
 
 from ocrd_browser.extensions.physical_import.scandriver import DummyDriver, AndroidADBDriver
 from ocrd_browser.util.image import cv_scale, cv_to_pixbuf
@@ -24,10 +26,11 @@ class ViewScan(View):
         self.driver.setup()
 
         self.ui: ScanUi = None
-        self.previews = []
-        self.layouts = []
-        self.images = []
-        self.selected_page_ids = []
+        self.previews: List[GdkPixbuf.Pixbuf] = []
+        self.layouts: List[LayoutInfo] = []
+        self.images: List[ndarray] = []
+        # TODO: Braucht man das noch?
+        self.selected_page_ids: List[str] = []
 
     def build(self):
         super().build()
@@ -59,44 +62,42 @@ class ViewScan(View):
         self.redraw()
 
     def on_append(self, _action: Gio.SimpleAction, _param):
-        file_group = DEFAULT_FILE_GROUP
-        template_page_id = 'PAGE_{page_nr:04d}'
-        template_file_id = '{file_group}_{page_nr:04d}'
         for image in self.images:
-            page_id, page_nr = self.document.get_unused_page_id(template_page_id)
-            file_id = template_file_id.format(**{'page_nr': page_nr, 'file_group': file_group})
-            self.document.add_image(image, page_id, file_id)
+            self._add_image(image)
 
         self.document.save()
         self.images = []
         self.update_ui()
 
     def on_insert(self, _action: Gio.SimpleAction, _param):
-        file_group = DEFAULT_FILE_GROUP
-        template_page_id = 'PAGE_{page_nr:04d}'
-        template_file_id = '{file_group}_{page_nr:04d}'
         page_ids = self.document.page_ids
         inserted_page_ids = []
         for image in self.images:
-            page_id, page_nr = self.document.get_unused_page_id(template_page_id)
-            file_id = template_file_id.format(**{'page_nr': page_nr, 'file_group': file_group})
-            self.document.add_image(image, page_id, file_id)
-            inserted_page_ids.append(page_id)
+            inserted_page_ids.append(self._add_image(image).pageId)
 
-        index = page_ids.index(self.page_id)
-        new_page_order = page_ids[:index] + inserted_page_ids + page_ids[index:]
-        self.document.reorder(new_page_order)
+        if len(page_ids):
+            index = page_ids.index(self.page_id)
+            new_page_order = page_ids[:index] + inserted_page_ids + page_ids[index:]
+            self.document.reorder(new_page_order)
 
         self.document.save()
         self.images = []
         self.update_ui()
+
+    def _add_image(self, image:ndarray) -> OcrdFile:
+        file_group = DEFAULT_FILE_GROUP
+        template_page_id = 'PAGE_{page_nr:04d}'
+        template_file_id = '{file_group}_{page_nr:04d}'
+        page_id, page_nr = self.document.get_unused_page_id(template_page_id)
+        file_id = template_file_id.format(**{'page_nr': page_nr, 'file_group': file_group})
+        return self.document.add_image(image, page_id, file_id)
 
     def pages_selected(self, sender, page_ids: List[str]):
         self.selected_page_ids = page_ids
         self.update_ui()
 
     def update_ui(self):
-        self.window.actions['insert'].set_enabled(self.images)
+        self.window.actions['insert'].set_enabled(self.images and self.page_id)
         self.window.actions['append'].set_enabled(self.images)
 
     @property
