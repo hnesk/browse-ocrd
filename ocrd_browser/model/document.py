@@ -198,6 +198,9 @@ class Document:
         for div in ordered_divs:
             page_sequence.append(div)
 
+        self._emit('document_changed', 'reordered', self.page_ids)
+
+
     def save(self) -> None:
         self.workspace.save_mets()
         self._emit('document_saved')
@@ -211,14 +214,14 @@ class Document:
             return
         image_file = image_files[0]
         self.workspace.remove_file(image_file, force=False, keep_file=False, page_recursive=True, page_same_group=True)
-        self._emit('document_changed', [page_id])
+        self._emit('document_changed', 'page_changed', [page_id])
         return image_file
 
     def delete_page(self, page_id: str) -> None:
         files = self.workspace.mets.find_files(pageId=page_id, local_only=True)
         for file in files:
             self.workspace.remove_file(file, force=False, keep_file=False)
-        self._emit('document_changed', [page_id])
+        self._emit('document_changed', 'page_deleted', [page_id])
 
     def add_image(self, image: ndarray, page_id: str, file_id: str, file_group: str = 'OCR-D-IMG', dpi: int = 300,
                   mimetype: str = 'image/png') -> 'OcrdFile':
@@ -231,9 +234,9 @@ class Document:
                                                content=image_bytes, url=str(url),
                                                local_filename=str(local_filename), pageId=page_id)
         self.empty = False
-        self._emit('document_changed', [page_id])
+        self._emit('document_changed', 'page_added', [page_id])
         return current_file
 
     def _emit(self, event: str, *args: Any) -> None:
         if self.emitter is not None:
-            self.emitter(event, *args)
+            self.emitter(event,  *args)

@@ -115,9 +115,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self.update_ui()
         pass
 
-    @GObject.Signal(arg_types=(object,))
-    def document_changed(self, page_ids: List[str]):
-        self.page_list.document_changed(page_ids)
+    @GObject.Signal(arg_types=(str, object,))
+    def document_changed(self, subtype: str, page_ids: List[str]):
+        self.page_list.document_changed(subtype, page_ids)
 
     @GObject.Signal()
     def document_saved(self):
