@@ -43,8 +43,7 @@
                                     <object class="GtkImage" id="preview_left">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
-                                        <property name="resource">/org/readmachine/ocrd-browser/icons/loading.png
-                                        </property>
+                                        <property name="resource">/org/readmachine/ocrd-browser/icons/loading.png</property>
                                     </object>
                                     <packing>
                                         <property name="expand">True</property>
@@ -56,8 +55,7 @@
                                     <object class="GtkImage" id="preview_right">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
-                                        <property name="resource">/org/readmachine/ocrd-browser/icons/loading.png
-                                        </property>
+                                        <property name="resource">/org/readmachine/ocrd-browser/icons/loading.png</property>
                                     </object>
                                     <packing>
                                         <property name="expand">True</property>
@@ -119,7 +117,6 @@
                         <property name="action_name">win.scan</property>
                         <property name="image">button_scan_icon</property>
                         <property name="always_show_image">True</property>
-                        <accelerator key="Return" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
                     </object>
                     <packing>
                         <property name="pack_type">end</property>
