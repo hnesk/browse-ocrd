@@ -33,7 +33,6 @@ class ViewScan(View):
         super().build()
         self.ui = ScanUi(self, parent=self.viewport)
         self.previews = [self.ui.preview_left, self.ui.preview_right]
-        #self.viewport.add(self.ui)
         self.window.actions.create('scan', self.on_scan)
         self.window.actions.create('append', self.on_append)
         self.window.actions.create('insert', self.on_insert)
@@ -67,6 +66,8 @@ class ViewScan(View):
             page_id, page_nr = self.document.get_unused_page_id(template_page_id)
             file_id = template_file_id.format(**{'page_nr': page_nr, 'file_group': file_group})
             self.document.add_image(image, page_id, file_id)
+
+        self.document.save()
         self.images = []
         self.update_ui()
 
@@ -85,8 +86,8 @@ class ViewScan(View):
         index = page_ids.index(self.page_id)
         new_page_order = page_ids[:index] + inserted_page_ids + page_ids[index:]
         self.document.reorder(new_page_order)
-        self.document.save()
 
+        self.document.save()
         self.images = []
         self.update_ui()
 
