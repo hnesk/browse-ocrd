@@ -159,9 +159,9 @@ class Document:
         image, info, exif = self.workspace.image_from_page(page, page_id)
         return Page(page_id, page_file, pcgts, image, exif)
 
-    def file_for_page_id(self, page_id: str, file_group: str = None) -> Optional[OcrdFile]:
+    def file_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP) -> Optional[OcrdFile]:
         with pushd_popd(self.workspace.directory):
-            files = self.workspace.mets.find_files(fileGrp=file_group or DEFAULT_FILE_GROUP, pageId=page_id)
+            files = self.workspace.mets.find_files(fileGrp=file_group, pageId=page_id)
             if not files:
                 return None
             return self.workspace.download_file(files[0])
@@ -214,10 +214,6 @@ class Document:
         self._emit('document_changed', [page_id])
         return image_file
 
-    def _emit(self, event: str, *args: Any) -> None:
-        if self.emitter is not None:
-            self.emitter(event, *args)
-
     def delete_page(self, page_id: str) -> None:
         files = self.workspace.mets.find_files(pageId=page_id, local_only=True)
         for file in files:
@@ -237,3 +233,7 @@ class Document:
         self.empty = False
         self._emit('document_changed', [page_id])
         return current_file
+
+    def _emit(self, event: str, *args: Any) -> None:
+        if self.emitter is not None:
+            self.emitter(event, *args)

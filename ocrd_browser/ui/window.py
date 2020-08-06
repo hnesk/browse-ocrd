@@ -91,7 +91,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     @property
     def view_registry(self) -> ViewRegistry:
-        return cast(MainWindow,self.get_application()).view_registry
+        return cast(MainWindow, self.get_application()).view_registry
 
     def add_view(self, view_class):
         name = 'view_{}'.format(len(self.views))

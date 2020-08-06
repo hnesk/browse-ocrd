@@ -3,4 +3,4 @@ from .registry import ViewRegistry
 from .images import ViewImages
 from .xml import ViewXml
 
-__all__ = ['View','ViewRegistry','ViewImages','ViewXml']
+__all__ = ['View', 'ViewRegistry', 'ViewImages', 'ViewXml']

@@ -5,7 +5,7 @@ from .base import View
 
 class ViewRegistry:
     def __init__(self, views):
-        self.views: Dict[str, Tuple[str,str,str]] = views
+        self.views: Dict[str, Tuple[str, str, str]] = views
 
     @classmethod
     def create_from_entry_points(cls) -> 'ViewRegistry':
@@ -19,7 +19,7 @@ class ViewRegistry:
             views[entry_point.name] = (view_class, label, description)
         return cls(views)
 
-    def get_view_options(self) -> Dict[str,str]:
+    def get_view_options(self) -> Dict[str, str]:
         return {id_: label for id_, (view_class, label, description) in self.views.items()}
 
     def get_view(self, id_) -> Optional[str]:
