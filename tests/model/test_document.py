@@ -5,7 +5,7 @@ from ocrd_browser.model import Document
 class DocumentTestCase(TestCase):
 
     def setUp(self):
-        self.doc = Document.load(None, ASSETS_PATH / 'kant_aufklaerung_1784/data/mets.xml')
+        self.doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784/data/mets.xml')
 
     def test_get_page_ids(self):
         self.assertEqual(['PHYS_0017','PHYS_0020'], self.doc.page_ids)
