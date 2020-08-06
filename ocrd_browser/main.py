@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- Mode: Python; coding: utf-8; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*-
-import gi
 import sys
+
+import gi
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkPixbuf', '2.0')
@@ -12,18 +13,20 @@ except ValueError:
 
 from gi.repository import Gtk, Gio
 from pathlib import Path
+from typing import Type
+from types import TracebackType
 
 BASE_PATH = Path(__file__).absolute().parent
 resources = Gio.resource_load(str(BASE_PATH / "ui.gresource"))
 Gio.resources_register(resources)
 
 
-def install_excepthook():
+def install_excepthook() -> None:
     """ Make sure we exit when an unhandled exception occurs. """
     old_hook = sys.excepthook
 
-    def new_hook(etype, evalue, etb):
-        old_hook(etype, evalue, etb)
+    def new_hook(type_: Type[BaseException], value: BaseException, traceback: TracebackType) -> None:
+        old_hook(type_, value, traceback)
         while Gtk.main_level():
             Gtk.main_quit()
         sys.exit()
@@ -31,7 +34,7 @@ def install_excepthook():
     sys.excepthook = new_hook
 
 
-def main():
+def main() -> None:
     from ocrd_browser.application import OcrdBrowserApplication
     install_excepthook()
     app = OcrdBrowserApplication()
@@ -41,4 +44,5 @@ def main():
 if __name__ == "__main__":
     # WHY OH WHY
     sys.path.append(str(BASE_PATH.parent))
-    sys.exit(main())
+    main()
+    sys.exit()
