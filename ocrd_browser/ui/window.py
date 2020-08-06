@@ -25,7 +25,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.set_icon(GdkPixbuf.Pixbuf.new_from_resource("/org/readmachine/ocrd-browser/icons/icon.png"))
         self.views = []
         self.current_page_id = None
-        self.document = Document.create(self)
+        self.document = Document.create(emitter=self.emit)
 
         vstring = GLib.Variant("s", "")
 
@@ -75,7 +75,7 @@ class MainWindow(Gtk.ApplicationWindow):
         GLib.timeout_add(50, self._open, uri)
 
     def _open(self, uri):
-        self.document = Document.load(self, uri)
+        self.document = Document.load(uri, emitter=self.emit)
         self.page_list.set_document(self.document)
 
         title = self.document.workspace.mets.unique_identifier if self.document.workspace.mets.unique_identifier else '<unnamed>'

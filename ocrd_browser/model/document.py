@@ -8,7 +8,7 @@ from ocrd_utils import pushd_popd
 from ocrd_utils.constants import MIME_TO_EXT
 from . import DEFAULT_FILE_GROUP
 
-from typing import Optional, Tuple, List, Set, Union, cast
+from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any
 from collections import OrderedDict
 from pathlib import Path
 from urllib.parse import urlparse
@@ -18,26 +18,27 @@ import cv2
 import struct
 import zlib
 
+EventCallBack = Optional[Callable[[str, Any],None]]
 
 class Document:
 
-    def __init__(self, window, workspace: Workspace, mets_url=None, resolver: Resolver = None):
-        self.window = window
+    def __init__(self, workspace: Workspace, mets_url:Union[Path,str] = None, resolver: Resolver = None, emitter: EventCallBack = None):
+        self.emitter:EventCallBack = emitter
         self.mets_url = mets_url
         self.workspace: Workspace = workspace
         self.resolver: Resolver = resolver if resolver else Resolver()
         self.empty = True
 
     @classmethod
-    def create(cls, window, directory=None, resolver: Resolver = None) -> 'Document':
+    def create(cls, directory=None, resolver: Resolver = None, emitter: EventCallBack = None) -> 'Document':
         resolver = resolver if resolver else Resolver()
         workspace = resolver.workspace_from_nothing(directory=directory, mets_basename='mets.xml')
-        return cls(window, workspace, None, resolver)
+        return cls(workspace, None, resolver=resolver, emitter=emitter)
 
     @classmethod
-    def load(cls, window, mets_url=None, resolver: Resolver = None) -> 'Document':
+    def load(cls, mets_url=None, resolver: Resolver = None, emitter: EventCallBack = None) -> 'Document':
         if not mets_url:
-            return cls.create(window, None, resolver)
+            return cls.create(None, resolver=resolver, emitter=emitter)
         mets_url = str(mets_url)
         result = urlparse(mets_url)
         if result.scheme == 'file':
@@ -45,7 +46,7 @@ class Document:
 
         resolver = resolver if resolver else Resolver()
         workspace = resolver.workspace_from_url(mets_url, download=True)
-        doc = cls(window, workspace, mets_url, resolver)
+        doc = cls(workspace, mets_url, resolver=resolver, emitter=emitter)
         doc.empty = False
         return doc
 
@@ -197,7 +198,7 @@ class Document:
 
     def save(self):
         self.workspace.save_mets()
-        self.window.emit('document_saved')
+        self._emit('document_saved')
 
     def delete_image(self, page_id, file_group='OCR-D-IMG') -> OcrdFile:
         image_files = self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group, local_only=True,
@@ -208,14 +209,18 @@ class Document:
             return
         image_file = image_files[0]
         self.workspace.remove_file(image_file, force=False, keep_file=False, page_recursive=True, page_same_group=True)
-        self.window.emit('document_changed', [page_id])
+        self._emit('document_changed', [page_id])
         return image_file
+
+    def _emit(self, event:str, *args: Any):
+        if self.emitter is not None:
+            self.emitter(event, *args)
 
     def delete_page(self, page_id) -> OcrdFile:
         files = self.workspace.mets.find_files(pageId=page_id, local_only=True)
         for file in files:
             self.workspace.remove_file(file, force=False, keep_file=False)
-        self.window.emit('document_changed', [page_id])
+        self._emit('document_changed', [page_id])
 
     def add_image(self, image, page_id, file_id, file_group='OCR-D-IMG', dpi: int = 300,
                   mimetype='image/png') -> 'OcrdFile':
@@ -228,7 +233,7 @@ class Document:
                                                content=image_bytes, url=str(url),
                                                local_filename=str(local_filename), pageId=page_id)
         self.empty = False
-        self.window.emit('document_changed', [page_id])
+        self._emit('document_changed', [page_id])
         return current_file
 
     @staticmethod
