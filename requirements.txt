@@ -4,3 +4,4 @@ numpy >= 1.17.0
 opencv-python-headless
 PyGObject
 python-magic
+wheel
