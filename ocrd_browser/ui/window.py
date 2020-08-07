@@ -1,8 +1,7 @@
 from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
 
-from ocrd_browser.extensions.physical_import import ViewScan
 from ocrd_browser.model import Document, DEFAULT_FILE_GROUP
-from ocrd_browser.view import ViewRegistry, View
+from ocrd_browser.view import ViewRegistry, View, ViewImages
 from ocrd_browser.util.gtk import ActionRegistry
 from .page_browser import PagePreviewList
 from pkg_resources import resource_filename
@@ -49,7 +48,7 @@ class MainWindow(Gtk.ApplicationWindow):
             menu_item.set_detailed_action_name('win.create_view("{}")'.format(id_))
             self.view_menu_box.pack_start(menu_item, True, True, 0)
 
-        self.add_view(ViewScan)
+        self.add_view(ViewImages)
 
         self.update_ui()
 

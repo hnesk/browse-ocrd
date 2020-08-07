@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Optional, List, Tuple, Any
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
 from ocrd_browser.model import Document, Page
-from ocrd_browser.ui import MainWindow
 
 
 class Configurator(Gtk.Widget):
@@ -19,9 +18,9 @@ class Configurator(Gtk.Widget):
 
 
 class View:
-    def __init__(self, name: str, window: MainWindow):
+    def __init__(self, name: str, window: Gtk.Window):
         self.name: str = name
-        self.window: MainWindow = window
+        self.window: Gtk.Window = window
         self.document: Document = None
         self.current: Page = None
         self.page_id: str = None
