@@ -1,8 +1,9 @@
 from gi.repository import Gtk, Pango, GObject, Gdk
 from enum import Enum
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Any
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
 from ocrd_browser.model import Document, Page
+from ocrd_browser.ui import MainWindow
 
 
 class Configurator(Gtk.Widget):
@@ -18,9 +19,9 @@ class Configurator(Gtk.Widget):
 
 
 class View:
-    def __init__(self, name: str, window):
+    def __init__(self, name: str, window: MainWindow):
         self.name: str = name
-        self.window = window
+        self.window: MainWindow = window
         self.document: Document = None
         self.current: Page = None
         self.page_id: str = None
@@ -62,20 +63,20 @@ class View:
         configurator.connect('changed', lambda _source, *value: self.config_changed(name, value))
         self.action_bar.pack_start(configurator)
 
-    def config_changed(self, name, value):
+    def config_changed(self, name: str, value: Any) -> None:
         if len(value) == 1:
             value = value[0]
         setattr(self, name, value)
 
     @property
-    def use_file_group(self):
+    def use_file_group(self) -> str:
         return 'OCR-D-IMG'
 
     def page_activated(self, sender, page_id):
         self.page_id = page_id
         self.reload()
 
-    def pages_selected(self, sender, page_ids: List[str]):
+    def pages_selected(self, _sender: Gtk.Widget, page_ids: List[str]) -> None:
         pass
 
     def reload(self):

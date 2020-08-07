@@ -1,3 +1,5 @@
+from typing import Any, Optional, Tuple
+
 from gi.repository import GObject, GtkSource
 
 from ocrd_utils.constants import MIMETYPE_PAGE
@@ -17,7 +19,7 @@ class ViewXml(View):
 
     def __init__(self, name, window, **kwargs):
         super().__init__(name, window, **kwargs)
-        self.file_group = (None, MIMETYPE_PAGE)
+        self.file_group: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
         self.text_view: GtkSource.View = None
         self.buffer: GtkSource.Buffer = None
 
@@ -45,7 +47,7 @@ class ViewXml(View):
         super().config_changed(name, value)
         self.reload()
 
-    def redraw(self):
+    def redraw(self) -> None:
         if self.current:
             text = to_xml(self.current.pc_gts)
             # TODO: Crashes with big XML, as a workaround shorten the file

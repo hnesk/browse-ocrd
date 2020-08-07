@@ -2,11 +2,12 @@ import cv2
 from gi.repository import Gtk, Gdk, Gio, GdkPixbuf
 from ocrd_models import OcrdFile
 from pkg_resources import resource_filename
-from typing import List
+from typing import List, Any, Optional
 from voussoir.pagewarper import PageWarper, LayoutInfo
 from numpy import array as ndarray
 
-from ocrd_browser.extensions.physical_import.scandriver import DummyDriver, AndroidADBDriver
+from ocrd_browser.extensions.physical_import.scandriver import DummyDriver, AndroidADBDriver, AbstractScanDriver
+from ocrd_browser.ui import MainWindow
 from ocrd_browser.util.image import cv_scale, cv_to_pixbuf
 from ocrd_browser.view import View
 from ocrd_browser.model import DEFAULT_FILE_GROUP
@@ -19,10 +20,10 @@ class ViewScan(View):
 
     label = 'Scan'
 
-    def __init__(self, name, window, **kwargs):
-        super().__init__(name, window, **kwargs)
+    def __init__(self, name: str, window: MainWindow):
+        super().__init__(name, window)
         # self.driver = AndroidADBDriver()
-        self.driver = DummyDriver('/home/jk/Projekte/archive-tools/projects/exit1/orig/')
+        self.driver: AbstractScanDriver = DummyDriver('/home/jk/Projekte/archive-tools/projects/exit1/orig/')
         self.driver.setup()
 
         self.ui: ScanUi = None
@@ -32,7 +33,7 @@ class ViewScan(View):
         # TODO: Braucht man das noch?
         self.selected_page_ids: List[str] = []
 
-    def build(self):
+    def build(self) -> None:
         super().build()
         self.ui = ScanUi(self, parent=self.viewport)
         self.previews = [self.ui.preview_left, self.ui.preview_right]
@@ -41,7 +42,7 @@ class ViewScan(View):
         self.window.actions.create('insert', self.on_insert)
         self.update_ui()
 
-    def on_scan(self, _action: Gio.SimpleAction, _param):
+    def on_scan(self, _action: Gio.SimpleAction, _param: Optional[str]) -> None:
         try:
             file = str(self.driver.scan())
             image = cv2.imread(file)
@@ -61,7 +62,7 @@ class ViewScan(View):
             print('Warp: ' + str(err))
         self.redraw()
 
-    def on_append(self, _action: Gio.SimpleAction, _param):
+    def on_append(self, _action: Gio.SimpleAction, _param: Optional[str]) -> None:
         for image in self.images:
             self._add_image(image)
 
@@ -69,7 +70,7 @@ class ViewScan(View):
         self.images = []
         self.update_ui()
 
-    def on_insert(self, _action: Gio.SimpleAction, _param):
+    def on_insert(self, _action: Gio.SimpleAction, _param: Optional[str]) -> None:
         page_ids = self.document.page_ids
         inserted_page_ids = []
         for image in self.images:
@@ -92,23 +93,23 @@ class ViewScan(View):
         file_id = template_file_id.format(**{'page_nr': page_nr, 'file_group': file_group})
         return self.document.add_image(image, page_id, file_id)
 
-    def pages_selected(self, sender, page_ids: List[str]):
+    def pages_selected(self, _sender: Gtk.Widget, page_ids: List[str]) -> None:
         self.selected_page_ids = page_ids
         self.update_ui()
 
-    def update_ui(self):
+    def update_ui(self) -> None:
         self.window.actions['insert'].set_enabled(self.images and self.page_id)
         self.window.actions['append'].set_enabled(self.images)
 
     @property
-    def use_file_group(self):
+    def use_file_group(self) -> str:
         return 'OCR-D-IMG'
 
-    def config_changed(self, name, value):
+    def config_changed(self, name: str, value: Any) -> None:
         super().config_changed(name, value)
         self.reload()
 
-    def redraw(self):
+    def redraw(self) -> None:
         self.update_ui()
         if self.images:
             for image, preview in zip(self.images, self.previews):
@@ -123,13 +124,13 @@ class ScanUi(Gtk.Box):
     preview_left: Gtk.Image = Gtk.Template.Child()
     preview_right: Gtk.Image = Gtk.Template.Child()
 
-    def __init__(self, view, **kwargs):
+    def __init__(self, view: ViewScan, **kwargs: Any):
         Gtk.Box.__init__(self, **kwargs)
-        self.view = view
-        self.preview_height = 10
+        self.view: ViewScan = view
+        self.preview_height: int = 10
 
     @Gtk.Template.Callback()
-    def on_size_allocate(self, widget, rect: Gdk.Rectangle):
+    def on_size_allocate(self, sender: Gtk.Widget, rect: Gdk.Rectangle) -> None:
         if abs(self.preview_height - rect.height) > 4:
             self.preview_height = rect.height
             self.view.redraw()
