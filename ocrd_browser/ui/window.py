@@ -3,6 +3,7 @@ from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
 from ocrd_browser.model import Document, DEFAULT_FILE_GROUP
 from ocrd_browser.view import ViewRegistry, View, ViewImages
 from ocrd_browser.util.gtk import ActionRegistry
+from .dialogs import SaveDialog
 from .page_browser import PagePreviewList
 from pkg_resources import resource_filename
 from typing import List, cast
@@ -38,6 +39,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions.create('page_properties')
         self.actions.create('close_view', param_type=vstring)
         self.actions.create('create_view', param_type=vstring)
+        self.actions.create('save')
 
         self.page_list = PagePreviewList(self.document)
         self.page_list_scroller.add(self.page_list)
@@ -119,8 +121,13 @@ class MainWindow(Gtk.ApplicationWindow):
         self.page_list.document_changed(subtype, page_ids)
 
     @GObject.Signal()
-    def document_saved(self):
-        print('saved')
+    def document_saved(self, saved):
+        print('saved', saved)
+
+    @GObject.Signal()
+    def document_saving(self, progress: float):
+        print('saving', progress)
+
 
     def update_ui(self):
         can_go_back = False
@@ -165,3 +172,11 @@ class MainWindow(Gtk.ApplicationWindow):
         self.disconnect_by_func(view.page_activated)
         self.views.remove(view)
         del view
+
+    def on_save(self, _a, _p):
+        save_dialog = SaveDialog(application=self.get_application(), transient_for=self, modal=True)
+        response = save_dialog.run()
+        if response == Gtk.ResponseType.OK:
+            self.document.save(save_dialog.get_uri())
+        save_dialog.destroy()
+

@@ -29,3 +29,21 @@ class OpenDialog(Gtk.FileChooserDialog):
         filter_any.set_name("Any files")
         filter_any.add_pattern("*")
         self.add_filter(filter_any)
+
+
+@Gtk.Template(filename=resource_filename(__name__, '../resources/save-dialog.ui'))
+class SaveDialog(Gtk.FileChooserDialog):
+    __gtype_name__ = "SaveDialog"
+
+    def __init__(self, **kwargs):
+        Gtk.FileChooserDialog.__init__(self, **kwargs)
+
+        filter_text = Gtk.FileFilter()
+        filter_text.set_name("METS files")
+        filter_text.add_mime_type("text/xml")
+        self.add_filter(filter_text)
+
+        filter_any = Gtk.FileFilter()
+        filter_any.set_name("Any files")
+        filter_any.add_pattern("*")
+        self.add_filter(filter_any)
