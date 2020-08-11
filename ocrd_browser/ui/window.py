@@ -1,4 +1,5 @@
 from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
+from ocrd import Workspace
 
 from ocrd_browser.model import Document, DEFAULT_FILE_GROUP
 from ocrd_browser.view import ViewRegistry, View, ViewImages
@@ -39,7 +40,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions.create('page_properties')
         self.actions.create('close_view', param_type=vstring)
         self.actions.create('create_view', param_type=vstring)
-        self.actions.create('save')
+        self.actions.create('save_as')
+        #self.actions.create('save')
+
 
         self.page_list = PagePreviewList(self.document)
         self.page_list_scroller.add(self.page_list)
@@ -120,14 +123,13 @@ class MainWindow(Gtk.ApplicationWindow):
     def document_changed(self, subtype: str, page_ids: List[str]):
         self.page_list.document_changed(subtype, page_ids)
 
-    @GObject.Signal()
-    def document_saved(self, saved):
-        print('saved', saved)
+    @GObject.Signal(arg_types=(object,))
+    def document_saved(self, saved: Document):
+        print('saved', saved.baseurl_mets)
 
     @GObject.Signal()
     def document_saving(self, progress: float):
         print('saving', progress)
-
 
     def update_ui(self):
         can_go_back = False
@@ -173,8 +175,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.views.remove(view)
         del view
 
-    def on_save(self, _a, _p):
+    def on_save_as(self, _a, _p):
         save_dialog = SaveDialog(application=self.get_application(), transient_for=self, modal=True)
+        if self.document.empty:
+            save_dialog.set_current_name('mets.xml')
+        else:
+            save_dialog.set_filename(self.document.baseurl_mets)
         response = save_dialog.run()
         if response == Gtk.ResponseType.OK:
             self.document.save(save_dialog.get_uri())

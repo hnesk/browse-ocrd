@@ -162,8 +162,9 @@ THE SOFTWARE.
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="action_name">win.save</property>
+            <property name="action_name">win.save_as</property>
             <property name="use_stock">True</property>
+            <accelerator key="s" signal="activate" modifiers="GDK_CONTROL_MASK"/>
           </object>
           <packing>
             <property name="pack_type">end</property>

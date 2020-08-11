@@ -103,7 +103,7 @@ class Document:
         """
         Gets the uri of the original mets file name
         """
-        return self.workspace.baseurl + '/' + self.mets_filename
+        return str(self.workspace.baseurl) + '/' + self.mets_filename
 
 
     def path(self, other: Union[OcrdFile, Path, str]) -> Path:
@@ -205,7 +205,7 @@ class Document:
         image, info, exif = self.workspace.image_from_page(page, page_id)
         return Page(page_id, page_file, pcgts, image, exif)
 
-    def file_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP, mimetype = None) -> Optional[OcrdFile]:
+    def file_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP, mimetype: str = None) -> Optional[OcrdFile]:
         with pushd_popd(self.workspace.directory):
             files = self.workspace.mets.find_files(fileGrp=file_group, pageId=page_id, mimetype=mimetype)
             if not files:
