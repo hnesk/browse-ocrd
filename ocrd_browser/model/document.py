@@ -25,9 +25,8 @@ EventCallBack = Optional[Callable[[str, Any], None]]
 
 class Document:
 
-    def __init__(self, workspace: Workspace, mets_url: Union[Path, str] = None, emitter: EventCallBack = None):
+    def __init__(self, workspace: Workspace, emitter: EventCallBack = None):
         self.emitter: EventCallBack = emitter
-        self.mets_url = mets_url
         self.workspace: Workspace = workspace
         self.empty = True
 
@@ -42,7 +41,7 @@ class Document:
             mets_basename = 'mets.xml'
 
         workspace = Resolver().workspace_from_nothing(directory=workspace_directory, mets_basename=mets_basename)
-        return cls(workspace, None, emitter=emitter)
+        return cls(workspace, emitter=emitter)
 
     @classmethod
     def load(cls, mets_url: Union[Path, str] = None, emitter: EventCallBack = None) -> 'Document':
@@ -51,7 +50,7 @@ class Document:
         mets_url = cls._strip_local(mets_url)
 
         workspace = Resolver().workspace_from_url(mets_url, download=True)
-        doc = cls(workspace, mets_url, emitter=emitter)
+        doc = cls(workspace, emitter=emitter)
         doc.empty = False
         return doc
 
@@ -61,7 +60,7 @@ class Document:
         temporary_workspace = mkdtemp(prefix='browse-ocrd-clone-')
         # TODO download = False and lazy loading would be nice for responsiveness
         workspace = Resolver().workspace_from_url(mets_url=mets_url, dst_dir=temporary_workspace, download=True)
-        doc = cls(workspace, mets_url, emitter=emitter)
+        doc = cls(workspace, emitter=emitter)
         doc.empty = False
         return doc
 
@@ -81,16 +80,8 @@ class Document:
             self._emit('document_saving', n/len(saved_files))
 
         self._emit('document_saving', 1)
-        self._emit('document_saved', saved_space)
+        self._emit('document_saved', Document(saved_space, self.emitter))
 
-    @staticmethod
-    def _strip_local(mets_url: Union[Path, str], disallow_remote:bool = True) -> str:
-        result = urlparse(str(mets_url))
-        if result.scheme == 'file' or result.scheme == '':
-            mets_url = result.path
-        elif disallow_remote:
-            raise ValueError('invalid url {}'.format(mets_url))
-        return str(mets_url)
 
     @property
     def directory(self) -> Path:
@@ -98,6 +89,22 @@ class Document:
         Get workspace directory as a Path object
         """
         return Path(self.workspace.directory)
+
+    @property
+    def mets_filename(self) -> str:
+        """
+        Gets the mets file name (e.g. "mets.xml")
+        """
+        return Path(self.workspace.mets_target).name
+
+
+    @property
+    def baseurl_mets(self) -> str:
+        """
+        Gets the uri of the original mets file name
+        """
+        return self.workspace.baseurl + '/' + self.mets_filename
+
 
     def path(self, other: Union[OcrdFile, Path, str]) -> Path:
         """
@@ -274,3 +281,12 @@ class Document:
     def _emit(self, event: str, *args: Any) -> None:
         if self.emitter is not None:
             self.emitter(event,  *args)
+
+    @staticmethod
+    def _strip_local(mets_url: Union[Path, str], disallow_remote:bool = True) -> str:
+        result = urlparse(str(mets_url))
+        if result.scheme == 'file' or result.scheme == '':
+            mets_url = result.path
+        elif disallow_remote:
+            raise ValueError('invalid url {}'.format(mets_url))
+        return str(mets_url)
