@@ -12,6 +12,8 @@ from . import DEFAULT_FILE_GROUP
 from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any
 from collections import OrderedDict
 from pathlib import Path
+from os import makedirs
+from tempfile import mkdtemp
 from urllib.parse import urlparse
 from lxml.etree import ElementBase as Element
 from numpy import array as ndarray
@@ -23,35 +25,72 @@ EventCallBack = Optional[Callable[[str, Any], None]]
 
 class Document:
 
-    def __init__(self, workspace: Workspace, mets_url: Union[Path, str] = None, resolver: Resolver = None,
-                 emitter: EventCallBack = None):
+    def __init__(self, workspace: Workspace, mets_url: Union[Path, str] = None, emitter: EventCallBack = None):
         self.emitter: EventCallBack = emitter
         self.mets_url = mets_url
         self.workspace: Workspace = workspace
-        self.resolver: Resolver = resolver if resolver else Resolver()
         self.empty = True
 
     @classmethod
-    def create(cls, directory: str = None, resolver: Resolver = None, emitter: EventCallBack = None) -> 'Document':
-        resolver = resolver if resolver else Resolver()
-        workspace = resolver.workspace_from_nothing(directory=directory, mets_basename='mets.xml')
-        return cls(workspace, None, resolver=resolver, emitter=emitter)
+    def create(cls, mets_url: Union[Path, str] = None, emitter: EventCallBack = None) -> 'Document':
+        if mets_url:
+            mets_path = Path(cls._strip_local(mets_url, disallow_remote=True))
+            workspace_directory = mets_path.parent
+            mets_basename = mets_path.name
+        else:
+            workspace_directory = None
+            mets_basename = 'mets.xml'
+
+        workspace = Resolver().workspace_from_nothing(directory=workspace_directory, mets_basename=mets_basename)
+        return cls(workspace, None, emitter=emitter)
 
     @classmethod
-    def load(cls, mets_url: Union[Path, str] = None, resolver: Resolver = None,
-             emitter: EventCallBack = None) -> 'Document':
+    def load(cls, mets_url: Union[Path, str] = None, emitter: EventCallBack = None) -> 'Document':
         if not mets_url:
-            return cls.create(None, resolver=resolver, emitter=emitter)
-        mets_url = str(mets_url)
-        result = urlparse(mets_url)
-        if result.scheme == 'file':
-            mets_url = result.path
+            return cls.create(None, emitter=emitter)
+        mets_url = cls._strip_local(mets_url)
 
-        resolver = resolver if resolver else Resolver()
-        workspace = resolver.workspace_from_url(mets_url, download=True)
-        doc = cls(workspace, mets_url, resolver=resolver, emitter=emitter)
+        workspace = Resolver().workspace_from_url(mets_url, download=True)
+        doc = cls(workspace, mets_url, emitter=emitter)
         doc.empty = False
         return doc
+
+    @classmethod
+    def clone(cls, mets_url: Union[Path, str], emitter: EventCallBack = None) -> 'Document':
+        mets_url = cls._strip_local(mets_url, disallow_remote=False)
+        temporary_workspace = mkdtemp(prefix='browse-ocrd-clone-')
+        # TODO download = False and lazy loading would be nice for responsiveness
+        workspace = Resolver().workspace_from_url(mets_url=mets_url, dst_dir=temporary_workspace, download=True)
+        doc = cls(workspace, mets_url, emitter=emitter)
+        doc.empty = False
+        return doc
+
+    def save(self, mets_url:Union[Path,str]) -> None:
+        mets_path = Path(self._strip_local(mets_url, disallow_remote=True))
+        workspace_directory = mets_path.parent
+        mets_basename = mets_path.name
+        makedirs(workspace_directory, exist_ok=True)
+
+        self._emit('document_saving',0)
+        self.workspace.save_mets()
+
+        saved_space = Resolver().workspace_from_url(mets_url=self.workspace.mets_target, mets_basename=mets_basename, download=False, dst_dir=workspace_directory)
+        saved_files = saved_space.mets.find_files()
+        for n,f in enumerate(saved_files):
+            saved_space.download_file(f)
+            self._emit('document_saving', n/len(saved_files))
+
+        self._emit('document_saving', 1)
+        self._emit('document_saved', saved_space)
+
+    @staticmethod
+    def _strip_local(mets_url: Union[Path, str], disallow_remote:bool = True) -> str:
+        result = urlparse(str(mets_url))
+        if result.scheme == 'file' or result.scheme == '':
+            mets_url = result.path
+        elif disallow_remote:
+            raise ValueError('invalid url {}'.format(mets_url))
+        return str(mets_url)
 
     @property
     def directory(self) -> Path:
@@ -159,9 +198,9 @@ class Document:
         image, info, exif = self.workspace.image_from_page(page, page_id)
         return Page(page_id, page_file, pcgts, image, exif)
 
-    def file_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP) -> Optional[OcrdFile]:
+    def file_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP, mimetype = None) -> Optional[OcrdFile]:
         with pushd_popd(self.workspace.directory):
-            files = self.workspace.mets.find_files(fileGrp=file_group, pageId=page_id)
+            files = self.workspace.mets.find_files(fileGrp=file_group, pageId=page_id, mimetype=mimetype)
             if not files:
                 return None
             return self.workspace.download_file(files[0])
@@ -199,11 +238,6 @@ class Document:
             page_sequence.append(div)
 
         self._emit('document_changed', 'reordered', self.page_ids)
-
-
-    def save(self) -> None:
-        self.workspace.save_mets()
-        self._emit('document_saved')
 
     def delete_image(self, page_id: str, file_group: str = 'OCR-D-IMG') -> OcrdFile:
         image_files = self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group, local_only=True,
