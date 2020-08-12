@@ -105,7 +105,6 @@ class Document:
         """
         return str(self.workspace.baseurl) + '/' + self.mets_filename
 
-
     def path(self, other: Union[OcrdFile, Path, str]) -> Path:
         """
         Resolves other relative to current workspace
@@ -221,9 +220,11 @@ class Document:
         Orders the pages in physSequence according to ordered_page_ids
 
         """
-        if set(self.page_ids) != set(ordered_page_ids):
+        old_page_ids = self.page_ids
+
+        if set(old_page_ids) != set(ordered_page_ids):
             raise ValueError('page_ids do not match: missing in mets.xml: {} / missing in order: {}'.format(
-                set(ordered_page_ids).difference(set(self.page_ids)),
+                set(ordered_page_ids).difference(set(old_page_ids)),
                 set(self.page_ids).difference(set(ordered_page_ids))
             ))
 
@@ -244,7 +245,8 @@ class Document:
         for div in ordered_divs:
             page_sequence.append(div)
 
-        self._emit('document_changed', 'reordered', self.page_ids)
+        old_to_new = dict(zip(old_page_ids, self.page_ids))
+        self._emit('document_changed', 'reordered', old_to_new)
 
     def delete_image(self, page_id: str, file_group: str = 'OCR-D-IMG') -> OcrdFile:
         image_files = self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group, local_only=True,
