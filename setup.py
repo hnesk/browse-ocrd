@@ -23,7 +23,7 @@ setup(
     version=__version__,
     author='Johannes Künsebeck',
     author_email='kuensebeck@googlemail.com',
-    description='An extensible viewer for OCRD mets.xml files',
+    description='An extensible viewer for OCR-D mets.xml files',
     license='MIT License',
     long_description=codecs.open('README.md', encoding='utf-8').read(),
     long_description_content_type='text/markdown',
@@ -42,7 +42,7 @@ setup(
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Image Recognition'
     ],
-    keywords=['OCR', 'OCRD', 'mets', 'PAGE Xml'],
+    keywords=['OCR', 'OCR-D', 'mets', 'PAGE Xml'],
     entry_points={
         'console_scripts': [
             'browse-ocrd = ocrd_browser.main:main',

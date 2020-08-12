@@ -5,13 +5,13 @@
     <template class="AboutDialog" parent="GtkAboutDialog">
         <property name="can_focus">False</property>
         <property name="type">popup</property>
-        <property name="title" translatable="yes">About OCRD Browser</property>
+        <property name="title" translatable="yes">About OCR-D Browser</property>
         <property name="resizable">False</property>
         <property name="modal">True</property>
         <property name="window_position">center-on-parent</property>
         <property name="destroy_with_parent">True</property>
         <property name="type_hint">dialog</property>
-        <property name="program_name">OCRD Browser</property>
+        <property name="program_name">OCR-D Browser</property>
         <property name="copyright" translatable="yes">2020 Johannes Künsebeck</property>
         <property name="website">https://github.com/hnesk/browse-ocrd</property>
         <property name="authors">Johannes Künsebeck</property>
