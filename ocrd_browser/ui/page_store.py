@@ -56,8 +56,6 @@ class PageListStore(LazyLoadingListStore):
             file = str(file_lookup[page_id])
             self.append((page_id, '', file, None, next(order)))
 
-        for row in self:
-            print(row[:])
         GLib.timeout_add(10, self.start_loading)
 
     def get_row_by_page_id(self, page_id: str) -> RowResult:

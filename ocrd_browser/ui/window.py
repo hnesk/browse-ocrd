@@ -62,7 +62,8 @@ class MainWindow(Gtk.ApplicationWindow):
             self.document.delete_page(page_id)
 
     def on_page_properties(self, _a: Gio.SimpleAction, _p: None) -> None:
-        print(self.page_list.get_selected_items())
+        # TODO: implement or remove
+        pass
 
     @Gtk.Template.Callback()
     def on_recent_menu_item_activated(self, recent_chooser: Gtk.RecentChooserMenu) -> None:
@@ -126,11 +127,11 @@ class MainWindow(Gtk.ApplicationWindow):
 
     @GObject.Signal(arg_types=[object])
     def document_saved(self, saved: Document) -> None:
-        print('saved', saved.baseurl_mets)
+        pass
 
     @GObject.Signal()
     def document_saving(self, progress: float) -> None:
-        print('saving', progress)
+        pass
 
     def update_ui(self) -> None:
         can_go_back = False

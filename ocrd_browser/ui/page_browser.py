@@ -106,5 +106,4 @@ class PagePreviewList(Gtk.IconView):
 
     @GObject.Signal(arg_types=[object])
     def pages_selected(self, page_ids: List[str]) -> None:
-        print(page_ids)
         pass
