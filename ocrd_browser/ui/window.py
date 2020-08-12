@@ -6,7 +6,7 @@ from ocrd_browser.util.gtk import ActionRegistry
 from .dialogs import SaveDialog
 from .page_browser import PagePreviewList
 from pkg_resources import resource_filename
-from typing import List, cast
+from typing import List, cast, Any, Optional
 
 
 @Gtk.Template(filename=resource_filename(__name__, '../resources/main-window.ui'))
@@ -20,12 +20,12 @@ class MainWindow(Gtk.ApplicationWindow):
     view_container: Gtk.Box = Gtk.Template.Child()
     view_menu_box: Gtk.Box = Gtk.Template.Child()
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
         # noinspection PyCallByClass,PyArgumentList
         self.set_icon(GdkPixbuf.Pixbuf.new_from_resource("/org/readmachine/ocrd-browser/icons/icon.png"))
-        self.views = []
-        self.current_page_id = None
+        self.views: List[View] = []
+        self.current_page_id: Optional[str] = None
         # noinspection PyTypeChecker
         self.document = Document.create(emitter=self.emit)
 
@@ -57,20 +57,20 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.update_ui()
 
-    def on_page_remove(self, _a: Gio.SimpleAction, _p):
+    def on_page_remove(self, _a: Gio.SimpleAction, _p: None) -> None:
         for page_id in self.page_list.get_selected_ids():
             self.document.delete_page(page_id)
 
-    def on_page_properties(self, _a: Gio.SimpleAction, _p):
+    def on_page_properties(self, _a: Gio.SimpleAction, _p: None) -> None:
         print(self.page_list.get_selected_items())
 
     @Gtk.Template.Callback()
-    def on_recent_menu_item_activated(self, recent_chooser: Gtk.RecentChooserMenu):
+    def on_recent_menu_item_activated(self, recent_chooser: Gtk.RecentChooserMenu) -> None:
         app = self.get_application()
         item: Gtk.RecentInfo = recent_chooser.get_current_item()
         app.open_in_window(item.get_uri(), window=self)
 
-    def open(self, uri):
+    def open(self, uri: str) -> None:
         self.set_title('Loading')
         self.header_bar.set_title('Loading ...')
         self.header_bar.set_subtitle(uri)
@@ -78,7 +78,7 @@ class MainWindow(Gtk.ApplicationWindow):
         # Give GTK some break to show the Loading message
         GLib.timeout_add(50, self._open, uri)
 
-    def _open(self, uri):
+    def _open(self, uri: str) -> None:
         # noinspection PyTypeChecker
         self.document = Document.load(uri, emitter=self.emit)
         self.page_list.set_document(self.document)
@@ -98,7 +98,7 @@ class MainWindow(Gtk.ApplicationWindow):
     def view_registry(self) -> ViewRegistry:
         return cast(MainWindow, self.get_application()).view_registry
 
-    def add_view(self, view_class):
+    def add_view(self, view_class: type) -> None:
         name = 'view_{}'.format(len(self.views))
         view: View = view_class(name, self)
         view.build()
@@ -108,31 +108,31 @@ class MainWindow(Gtk.ApplicationWindow):
         self.page_list.connect('pages_selected', view.pages_selected)
         self.view_container.pack_start(view.container, True, True, 3)
 
-    def on_page_activated(self, _, page_id):
+    def on_page_activated(self, _sender: Gtk.Widget, page_id: str) -> None:
         if self.current_page_id != page_id:
             self.current_page_id = page_id
             self.emit('page_activated', page_id)
 
     @GObject.Signal(arg_types=[str])
-    def page_activated(self, page_id):
+    def page_activated(self, page_id: str) -> None:
         index = self.document.page_ids.index(page_id)
         self.current_page_label.set_text('{}/{}'.format(index + 1, len(self.document.page_ids)))
         self.update_ui()
         pass
 
     @GObject.Signal(arg_types=[str, object])
-    def document_changed(self, subtype: str, page_ids: List[str]):
+    def document_changed(self, subtype: str, page_ids: List[str]) -> None:
         self.page_list.document_changed(subtype, page_ids)
 
     @GObject.Signal(arg_types=[object])
-    def document_saved(self, saved: Document):
+    def document_saved(self, saved: Document) -> None:
         print('saved', saved.baseurl_mets)
 
     @GObject.Signal()
-    def document_saving(self, progress: float):
+    def document_saving(self, progress: float) -> None:
         print('saving', progress)
 
-    def update_ui(self):
+    def update_ui(self) -> None:
         can_go_back = False
         can_go_forward = False
         if self.current_page_id and len(self.document.page_ids) > 0:
@@ -146,28 +146,27 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions['go_forward'].set_enabled(can_go_forward)
         self.actions['goto_last'].set_enabled(can_go_forward)
 
-    def on_close(self, _a: Gio.SimpleAction, _p):
+    def on_close(self, _a: Gio.SimpleAction, _p: None) -> None:
         self.destroy()
 
-    def on_goto_first(self, _a: Gio.SimpleAction, _p):
+    def on_goto_first(self, _a: Gio.SimpleAction, _p: None) -> None:
         self.page_list.goto_index(0)
 
-    def on_go_forward(self, _a: Gio.SimpleAction, _p):
+    def on_go_forward(self, _a: Gio.SimpleAction, _p: None) -> None:
         self.page_list.skip(1)
 
-    def on_go_back(self, _a: Gio.SimpleAction, _p):
+    def on_go_back(self, _a: Gio.SimpleAction, _p: None) -> None:
         self.page_list.skip(-1)
 
-    def on_goto_last(self, _a: Gio.SimpleAction, _p):
+    def on_goto_last(self, _a: Gio.SimpleAction, _p: None) -> None:
         self.page_list.goto_index(-1)
-        return 1
 
-    def on_create_view(self, _a, selected_view_id: GLib.Variant):
+    def on_create_view(self, _a: Gio.SimpleAction, selected_view_id: GLib.Variant) -> None:
         view_class = self.view_registry.get_view(selected_view_id.get_string())
         if view_class:
             self.add_view(view_class)
 
-    def on_close_view(self, _action: Gio.SimpleAction, view_name: GLib.Variant):
+    def on_close_view(self, _action: Gio.SimpleAction, view_name: GLib.Variant) -> None:
         closing_view = None
         for view in self.views:
             if view.name == view_name.get_string():
@@ -180,7 +179,7 @@ class MainWindow(Gtk.ApplicationWindow):
             self.views.remove(closing_view)
             del closing_view
 
-    def on_save_as(self, _a, _p):
+    def on_save_as(self, _a: Gio.SimpleAction, _p: None) -> None:
         save_dialog = SaveDialog(application=self.get_application(), transient_for=self, modal=True)
         if self.document.empty:
             save_dialog.set_current_name('mets.xml')

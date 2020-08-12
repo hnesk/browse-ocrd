@@ -1,4 +1,5 @@
 from gi.repository import Gtk, GdkPixbuf
+from typing import Any
 from pkg_resources import resource_filename
 from ocrd_browser import __version__
 
@@ -7,7 +8,7 @@ from ocrd_browser import __version__
 class AboutDialog(Gtk.AboutDialog):
     __gtype_name__ = "AboutDialog"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         Gtk.AboutDialog.__init__(self, **kwargs)
         # noinspection PyCallByClass,PyArgumentList
         self.set_logo(GdkPixbuf.Pixbuf.new_from_resource('/org/readmachine/ocrd-browser/icons/logo.png'))
@@ -18,7 +19,7 @@ class AboutDialog(Gtk.AboutDialog):
 class OpenDialog(Gtk.FileChooserDialog):
     __gtype_name__ = "OpenDialog"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         # noinspection PyCallByClass
         Gtk.FileChooserDialog.__init__(self, **kwargs)
 
@@ -37,7 +38,7 @@ class OpenDialog(Gtk.FileChooserDialog):
 class SaveDialog(Gtk.FileChooserDialog):
     __gtype_name__ = "SaveDialog"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         # noinspection PyCallByClass
         Gtk.FileChooserDialog.__init__(self, **kwargs)
 

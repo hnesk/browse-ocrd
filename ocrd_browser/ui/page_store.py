@@ -1,6 +1,6 @@
 from gi.repository import Gtk, GLib, GdkPixbuf
 
-from typing import Tuple, Optional, Dict, List, Union
+from typing import Tuple, Optional, Dict, List, Union, NewType, Callable, Any
 from itertools import count
 from pathlib import Path
 
@@ -12,6 +12,8 @@ import cv2
 import os
 
 RowResult = Tuple[Optional[int], Optional[Gtk.TreeModelRow]]
+ChangeList = Union[List[str], Dict[str, str]]
+Column = NewType('Column', int)
 
 
 class PageListStore(LazyLoadingListStore):
@@ -21,12 +23,12 @@ class PageListStore(LazyLoadingListStore):
     It utilizes LazyLoadingListStore for lazy thumbnail generation and
     contains the domain specific logic for handling Document events
     """
-    COLUMN_PAGE_ID = 0
-    COLUMN_TOOLTIP = 1
-    COLUMN_FILENAME = 2
-    COLUMN_THUMB = 3
-    COLUMN_ORDER = 4
-    COLUMN_HASH = 5
+    COLUMN_PAGE_ID = Column(0)
+    COLUMN_TOOLTIP = Column(1)
+    COLUMN_FILENAME = Column(2)
+    COLUMN_THUMB = Column(3)
+    COLUMN_ORDER = Column(4)
+    COLUMN_HASH = Column(5)
 
     def __init__(self, document: Document):
         """
@@ -64,7 +66,7 @@ class PageListStore(LazyLoadingListStore):
         """
         return self.get_row_by_column_value(self.COLUMN_PAGE_ID, page_id)
 
-    def get_row_by_column_value(self, column, value) -> RowResult:
+    def get_row_by_column_value(self, column: int, value: str) -> RowResult:
         """
         Find index and row by column value
         """
@@ -87,34 +89,34 @@ class PageListStore(LazyLoadingListStore):
         n, row = self.get_row_by_page_id(page_id)
         return Gtk.TreePath(n) if n is not None else None
 
-    def document_changed(self, subtype: str, page_ids: Union[List[str], Dict[str, str]]):
+    def document_changed(self, subtype: str, changes: ChangeList) -> None:
         """
         Event callback to sync Document modifications with the ListStore
 
         @param subtype: str one of  'page_added', 'page_deleted', 'page_changed', 'reordered'
-        @param page_ids: List[str] affected page_ids
+        @param changes: List[str] affected page_ids
         """
 
-        def _page_added(page_ids_: List[str]):
-            for page_id in page_ids_:
+        def _page_added(page_ids: List[str]) -> None:
+            for page_id in page_ids:
                 file = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)[0]
                 file_name = str(self.document.path(file.local_filename))
                 self.append((page_id, '', file_name, None, len(self)))
 
-        def _page_deleted(page_ids_: List[str]):
-            for delete_page_id in reversed(page_ids_):
+        def _page_deleted(page_ids: List[str]) -> None:
+            for delete_page_id in reversed(page_ids):
                 n, row = self.get_row_by_page_id(delete_page_id)
                 self.remove(self.get_iter(Gtk.TreePath(n)))
 
-        def _page_changed(page_ids_: List[str]):
-            for page_id in page_ids_:
+        def _page_changed(page_ids: List[str]) -> None:
+            for page_id in page_ids:
                 n, row = self.get_row_by_page_id(page_id)
                 files = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)
                 if files:
                     file_name = str(self.document.path(files[0]))
                     row[self.COLUMN_FILENAME] = file_name
 
-        def _reordered(old_to_new_ids: Dict[str, str]):
+        def _reordered(old_to_new_ids: Dict[str, str]) -> None:
             id_to_position: Dict[str, int] = {}
             for n, row in enumerate(self):
                 id_to_position[row[self.COLUMN_PAGE_ID]] = n
@@ -131,16 +133,16 @@ class PageListStore(LazyLoadingListStore):
                 n, row = self.get_row_by_page_id(page_id)
                 row[self.COLUMN_ORDER] = next(order)
 
-        handler = {
+        handler: Dict[str, Callable[[Any], None]] = {
             'page_added': _page_added,
             'page_deleted': _page_deleted,
             'page_changed': _page_changed,
             'reordered': _reordered,
         }
-        handler[subtype](page_ids)
+        handler[subtype](changes)
 
     @staticmethod
-    def _get_image_paths(document: Document, file_group='OCR-D-IMG') -> Dict[str, Path]:
+    def _get_image_paths(document: Document, file_group: str = 'OCR-D-IMG') -> Dict[str, Path]:
         """
         Builds a Dict ID->Path for all page_ids fast
         """
@@ -149,12 +151,12 @@ class PageListStore(LazyLoadingListStore):
         file_paths = [document.path(image.url) for image in images]
         return dict(zip(page_ids, file_paths))
 
-    def _init_row(self, row: Gtk.TreeModelRow):
-        row[1] = 'Loading {}'.format(row[2])
+    def _init_row(self, row: Gtk.TreeModelRow) -> None:
+        row[1] = 'Loading {}'.format(row[self.COLUMN_FILENAME])
         row[3] = self.loading_image_pixbuf
 
     @staticmethod
-    def _load_row(row):
+    def _load_row(row: Gtk.TreeModelRow) -> Gtk.TreeModelRow:
         filename = row[PageListStore.COLUMN_FILENAME]
         image = cv2.imread(filename)
         row[1] = '{} ({}x{})'.format(filename, image.shape[1], image.shape[0])
@@ -162,7 +164,7 @@ class PageListStore(LazyLoadingListStore):
         return row
 
     @staticmethod
-    def _hash_row(row: Gtk.TreeModelRow):
+    def _hash_row(row: Gtk.TreeModelRow) -> str:
         file = row[PageListStore.COLUMN_FILENAME]
         modified_time = os.path.getmtime(file)
         return '{}:{}'.format(file, modified_time)
