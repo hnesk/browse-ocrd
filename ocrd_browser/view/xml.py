@@ -1,4 +1,4 @@
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 from gi.repository import GObject, GtkSource
 
@@ -17,10 +17,12 @@ class ViewXml(View):
 
     label = 'PAGE-XML'
 
-    def __init__(self, name, window, **kwargs):
-        super().__init__(name, window, **kwargs)
+    def __init__(self, name, window):
+        super().__init__(name, window)
         self.file_group: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
+        # noinspection PyTypeChecker
         self.text_view: GtkSource.View = None
+        # noinspection PyTypeChecker
         self.buffer: GtkSource.Buffer = None
 
     def build(self):

@@ -127,6 +127,7 @@ class Document:
 
         @return: List[str]
         """
+        # noinspection PyTypeChecker
         return cast(List[str], self.workspace.mets.physical_pages)
 
     @property
@@ -136,9 +137,10 @@ class Document:
 
         @return: List[str]
         """
-
+        # noinspection PyTypeChecker
         return cast(List[str], self.workspace.mets.file_groups)
 
+    # noinspection PyProtectedMember
     @property
     def mime_types(self) -> Set[str]:
         """
@@ -157,6 +159,7 @@ class Document:
         @return: List[Tuple[str,str]]
         """
         distinct_groups: OrderedDict[Tuple[str, str], None] = OrderedDict()
+        # noinspection PyProtectedMember
         for el in self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]', NS):
             distinct_groups[(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
 
@@ -228,6 +231,7 @@ class Document:
                 set(self.page_ids).difference(set(ordered_page_ids))
             ))
 
+        # noinspection PyProtectedMember
         page_sequence: Element = self.workspace.mets._tree.getroot().xpath(
             '/mets:mets/mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]',
             namespaces=NS)[0]
@@ -248,13 +252,13 @@ class Document:
         old_to_new = dict(zip(old_page_ids, self.page_ids))
         self._emit('document_changed', 'reordered', old_to_new)
 
-    def delete_image(self, page_id: str, file_group: str = 'OCR-D-IMG') -> OcrdFile:
+    def delete_image(self, page_id: str, file_group: str = 'OCR-D-IMG') -> Optional[OcrdFile]:
         image_files = self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group, local_only=True,
                                                      mimetype='//image/.+')
-        # TODO rename to delete_images and cope with it, e.g. for file groups with segementation images
+        # TODO rename to delete_images and cope with it, e.g. for file groups with segmentation images
         if len(image_files) != 1:
             print('oh oh', image_files)
-            return
+            return None
         image_file = image_files[0]
         self.workspace.remove_file(image_file, force=False, keep_file=False, page_recursive=True, page_same_group=True)
         self._emit('document_changed', 'page_changed', [page_id])

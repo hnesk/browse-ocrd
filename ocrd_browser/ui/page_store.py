@@ -44,6 +44,7 @@ class PageListStore(LazyLoadingListStore):
         }
         super().__init__(*(columns.values()), init_row=self._init_row, load_row=self._load_row, hash_row=self._hash_row)
         self.document = document
+        # noinspection PyCallByClass,PyArgumentList
         self.loading_image_pixbuf = GdkPixbuf.Pixbuf.new_from_resource(
             '/org/readmachine/ocrd-browser/icons/loading.png')
 
@@ -124,10 +125,10 @@ class PageListStore(LazyLoadingListStore):
             self.reorder(positions)
 
             # Update the order in the ListStore data, not needed for now, but might help if we have sorting
-            positions = count(start=1)
+            order = count(start=1)
             for page_id in self.document.page_ids:
                 n, row = self.get_row_by_page_id(page_id)
-                row[self.COLUMN_ORDER] = next(positions)
+                row[self.COLUMN_ORDER] = next(order)
 
         handler = {
             'page_added': _page_added,

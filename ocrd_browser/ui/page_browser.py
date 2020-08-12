@@ -1,6 +1,6 @@
 from gi.repository import Gtk, Gdk, Pango, Gio, GObject
 from pkg_resources import resource_filename
-from typing import List, Callable
+from typing import List, Callable, Optional
 from ocrd_browser.model import Document
 from .page_store import PageListStore
 
@@ -11,13 +11,14 @@ class PagePreviewList(Gtk.IconView):
 
     def __init__(self, document: Document, **kwargs):
         super().__init__(**kwargs)
-        self.context_menu: Gtk.Menu = None
+        self.context_menu: Optional[Gtk.Menu] = None
         self.setup_ui()
         self.setup_context_menu()
         self.document: Document = document
         self.model: PageListStore = PageListStore(self.document)
         self.set_model(self.model)
-        self.current: Gtk.TreeIter = None
+        # noinspection PyTypeChecker
+        self.current: Optional[Gtk.TreeIter] = None
 
     def setup_context_menu(self):
         menu = Gio.Menu()

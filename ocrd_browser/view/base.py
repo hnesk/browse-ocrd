@@ -18,6 +18,7 @@ class Configurator(Gtk.Widget):
 
 
 class View:
+    # noinspection PyTypeChecker
     def __init__(self, name: str, window: Gtk.Window):
         self.name: str = name
         self.window: Gtk.Window = window
@@ -102,6 +103,7 @@ class PageQtySelector(Gtk.Box, Configurator):
 
         self.pages = Gtk.SpinButton(visible=True, max_length=2, width_chars=2, max_width_chars=2, numeric=True)
         self.pages.set_tooltip_text('How many pages should be displayed at once?')
+        # noinspection PyCallByClass,PyArgumentList
         self.pages.set_adjustment(Gtk.Adjustment.new(1, 1, 16, 1, 4, 3))
 
         self.pack_start(label, False, True, 0)
@@ -116,7 +118,7 @@ class PageQtySelector(Gtk.Box, Configurator):
     def value_changed(self, spin: Gtk.SpinButton):
         self.emit('changed', int(spin.get_value()))
 
-    @GObject.Signal(arg_types=(int,))
+    @GObject.Signal(arg_types=[int])
     def changed(self, page_qty: int):
         self.value = page_qty
 
@@ -231,6 +233,7 @@ class CloseButton(Gtk.Button):
         self.set_detailed_action_name('win.close_view("{}")'.format(view_name))
         self.set_relief(Gtk.ReliefStyle.NONE)
         self.set_always_show_image(True)
+        # noinspection PyArgumentList
         pixbuf = Gtk.IconTheme.get_default().load_icon('window-close', Gtk.IconSize.SMALL_TOOLBAR,
                                                        Gtk.IconLookupFlags.FORCE_SYMBOLIC)
         image = Gtk.Image(visible=True)

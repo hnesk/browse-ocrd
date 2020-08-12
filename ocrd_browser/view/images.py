@@ -12,8 +12,8 @@ class ViewImages(View):
 
     label = 'Image'
 
-    def __init__(self, name, window, **kwargs):
-        super().__init__(name, window, **kwargs)
+    def __init__(self, name, window):
+        super().__init__(name, window)
         self.file_group = ('OCR-D-IMG', None)
         self.page_qty = 1
         self.preview_height = 10

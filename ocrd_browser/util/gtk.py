@@ -13,10 +13,8 @@ class ActionRegistry:
     def create(self, name: str, callback: ActionCallback = None,
                param_type: GLib.Variant = None) -> Gio.SimpleAction:
         callback = callback if callback else getattr(self.for_widget, 'on_' + name)
-        if param_type is not None:
-            action = Gio.SimpleAction.new(name, param_type.get_type())
-        else:
-            action = Gio.SimpleAction.new(name)
+        parameter_type = param_type.get_type() if param_type is not None else None
+        action = Gio.SimpleAction(name = name, parameter_type = parameter_type)
         action.connect("activate", callback)
         self.for_widget.add_action(action)
         self.actions[name] = action

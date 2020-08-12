@@ -1,7 +1,6 @@
 from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
-from ocrd import Workspace
 
-from ocrd_browser.model import Document, DEFAULT_FILE_GROUP
+from ocrd_browser.model import Document
 from ocrd_browser.view import ViewRegistry, View, ViewImages
 from ocrd_browser.util.gtk import ActionRegistry
 from .dialogs import SaveDialog
@@ -23,12 +22,14 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def __init__(self, **kwargs):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
+        # noinspection PyCallByClass,PyArgumentList
         self.set_icon(GdkPixbuf.Pixbuf.new_from_resource("/org/readmachine/ocrd-browser/icons/icon.png"))
         self.views = []
         self.current_page_id = None
+        # noinspection PyTypeChecker
         self.document = Document.create(emitter=self.emit)
 
-        vstring = GLib.Variant("s", "")
+        string_type = GLib.Variant("s", "")
 
         self.actions = ActionRegistry(for_widget=self)
         self.actions.create('close')
@@ -38,8 +39,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions.create('goto_last')
         self.actions.create('page_remove')
         self.actions.create('page_properties')
-        self.actions.create('close_view', param_type=vstring)
-        self.actions.create('create_view', param_type=vstring)
+        self.actions.create('close_view', param_type=string_type)
+        self.actions.create('create_view', param_type=string_type)
         self.actions.create('save_as')
         #self.actions.create('save')
 
@@ -79,6 +80,7 @@ class MainWindow(Gtk.ApplicationWindow):
         GLib.timeout_add(50, self._open, uri)
 
     def _open(self, uri):
+        # noinspection PyTypeChecker
         self.document = Document.load(uri, emitter=self.emit)
         self.page_list.set_document(self.document)
 
@@ -112,18 +114,18 @@ class MainWindow(Gtk.ApplicationWindow):
             self.current_page_id = page_id
             self.emit('page_activated', page_id)
 
-    @GObject.Signal(arg_types=(str,))
+    @GObject.Signal(arg_types=[str])
     def page_activated(self, page_id):
         index = self.document.page_ids.index(page_id)
         self.current_page_label.set_text('{}/{}'.format(index + 1, len(self.document.page_ids)))
         self.update_ui()
         pass
 
-    @GObject.Signal(arg_types=(str, object,))
+    @GObject.Signal(arg_types=[str, object])
     def document_changed(self, subtype: str, page_ids: List[str]):
         self.page_list.document_changed(subtype, page_ids)
 
-    @GObject.Signal(arg_types=(object,))
+    @GObject.Signal(arg_types=[object])
     def document_saved(self, saved: Document):
         print('saved', saved.baseurl_mets)
 
@@ -167,13 +169,17 @@ class MainWindow(Gtk.ApplicationWindow):
             self.add_view(view_class)
 
     def on_close_view(self, _action: Gio.SimpleAction, view_name: GLib.Variant):
+        closing_view = None
         for view in self.views:
             if view.name == view_name.get_string():
-                view.container.destroy()
+                closing_view = view
                 break
-        self.disconnect_by_func(view.page_activated)
-        self.views.remove(view)
-        del view
+
+        if closing_view:
+            closing_view.container.destroy()
+            self.disconnect_by_func(closing_view.page_activated)
+            self.views.remove(closing_view)
+            del closing_view
 
     def on_save_as(self, _a, _p):
         save_dialog = SaveDialog(application=self.get_application(), transient_for=self, modal=True)

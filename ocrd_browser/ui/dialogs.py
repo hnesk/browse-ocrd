@@ -9,6 +9,7 @@ class AboutDialog(Gtk.AboutDialog):
 
     def __init__(self, **kwargs):
         Gtk.AboutDialog.__init__(self, **kwargs)
+        # noinspection PyCallByClass,PyArgumentList
         self.set_logo(GdkPixbuf.Pixbuf.new_from_resource('/org/readmachine/ocrd-browser/icons/logo.png'))
         self.set_version(__version__)
 
@@ -18,6 +19,7 @@ class OpenDialog(Gtk.FileChooserDialog):
     __gtype_name__ = "OpenDialog"
 
     def __init__(self, **kwargs):
+        # noinspection PyCallByClass
         Gtk.FileChooserDialog.__init__(self, **kwargs)
 
         filter_text = Gtk.FileFilter()
@@ -36,6 +38,7 @@ class SaveDialog(Gtk.FileChooserDialog):
     __gtype_name__ = "SaveDialog"
 
     def __init__(self, **kwargs):
+        # noinspection PyCallByClass
         Gtk.FileChooserDialog.__init__(self, **kwargs)
 
         filter_text = Gtk.FileFilter()
