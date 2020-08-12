@@ -1,6 +1,6 @@
-from typing import Optional, Tuple
+from gi.repository import GObject, GtkSource, Gtk
 
-from gi.repository import GObject, GtkSource
+from typing import Optional, Tuple, Any
 
 from ocrd_utils.constants import MIMETYPE_PAGE
 from ocrd_models.ocrd_page import to_xml
@@ -17,7 +17,7 @@ class ViewXml(View):
 
     label = 'PAGE-XML'
 
-    def __init__(self, name, window):
+    def __init__(self, name: str, window: Gtk.Window):
         super().__init__(name, window)
         self.file_group: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
         # noinspection PyTypeChecker
@@ -25,7 +25,7 @@ class ViewXml(View):
         # noinspection PyTypeChecker
         self.buffer: GtkSource.Buffer = None
 
-    def build(self):
+    def build(self) -> None:
         super().build()
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.PAGE))
 
@@ -35,17 +35,17 @@ class ViewXml(View):
         self.text_view = GtkSource.View(visible=True, vexpand=False, editable=False, monospace=True,
                                         show_line_numbers=True,
                                         width_request=400)
-        self.buffer: GtkSource.Buffer = self.text_view.get_buffer()
+        self.buffer = self.text_view.get_buffer()
         self.buffer.set_language(lang_manager.get_language('xml'))
         self.buffer.set_style_scheme(style_manager.get_scheme('tango'))
 
         self.viewport.add(self.text_view)
 
     @property
-    def use_file_group(self):
+    def use_file_group(self) -> str:
         return self.file_group[0]
 
-    def config_changed(self, name, value):
+    def config_changed(self, name: str, value: Any) -> None:
         super().config_changed(name, value)
         self.reload()
 

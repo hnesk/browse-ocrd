@@ -1,8 +1,8 @@
-from unittest import case
-
 from gi.repository import Gtk, Gdk, Pango, Gio, GObject
-from pkg_resources import resource_filename
+
 from typing import List, Callable, Optional, Any, cast
+
+from pkg_resources import resource_filename
 from ocrd_browser.model import Document
 from .page_store import PageListStore, ChangeList
 

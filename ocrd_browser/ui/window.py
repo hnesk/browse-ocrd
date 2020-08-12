@@ -108,7 +108,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.page_list.connect('pages_selected', view.pages_selected)
         self.view_container.pack_start(view.container, True, True, 3)
 
-    def on_page_activated(self, _sender: Gtk.Widget, page_id: str) -> None:
+    def on_page_activated(self, _sender: Optional[Gtk.Widget], page_id: str) -> None:
         if self.current_page_id != page_id:
             self.current_page_id = page_id
             self.emit('page_activated', page_id)

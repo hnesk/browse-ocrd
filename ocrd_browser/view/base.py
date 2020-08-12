@@ -1,19 +1,22 @@
 from gi.repository import Gtk, Pango, GObject, Gdk
+
+from typing import List, Tuple, Any, Optional
+
 from enum import Enum
-from typing import List, Tuple, Any
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
 from ocrd_browser.model import Document, Page
 
 
 class Configurator(Gtk.Widget):
-    def __init__(self):
-        self.document = None
-        self.value = None
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.document: Optional[Document] = None
+        self.value: Any = None
 
-    def set_document(self, document: Document):
+    def set_document(self, document: Document) -> None:
         self.document = document
 
-    def set_value(self, value):
+    def set_value(self, value: Any) -> None:
         raise NotImplementedError('You have to override set_value')
 
 
@@ -31,7 +34,7 @@ class View:
         self.action_bar: Gtk.ActionBar = None
         self.viewport: Gtk.Viewport = None
 
-    def build(self):
+    def build(self) -> None:
         self.container = Gtk.Box(visible=True, orientation="vertical")
         self.action_bar = Gtk.ActionBar(visible=True)
         self.action_bar.pack_end(CloseButton(self.name))
@@ -44,7 +47,7 @@ class View:
         self.container.pack_start(self.action_bar, False, True, 0)
         self.container.pack_start(scroller, True, True, 0)
 
-    def set_document(self, document: Document):
+    def set_document(self, document: Document) -> None:
         self.document = document
         for (_name, configurator) in self.configurators:
             configurator.set_document(document)
@@ -72,30 +75,30 @@ class View:
     def use_file_group(self) -> str:
         return 'OCR-D-IMG'
 
-    def page_activated(self, sender, page_id):
+    def page_activated(self, _sender: Gtk.Widget, page_id: str) -> None:
         self.page_id = page_id
         self.reload()
 
     def pages_selected(self, _sender: Gtk.Widget, page_ids: List[str]) -> None:
         pass
 
-    def reload(self):
+    def reload(self) -> None:
         self.current = self.document.page_for_id(self.page_id, self.use_file_group)
         self.redraw()
 
-    def redraw(self):
+    def redraw(self) -> None:
         pass
 
-    def on_viewport_size_allocate(self, _sender: Gtk.Widget, rect: Gdk.Rectangle):
+    def on_viewport_size_allocate(self, _sender: Gtk.Widget, rect: Gdk.Rectangle) -> None:
         self.on_size(rect.width, rect.height, rect.x, rect.y)
 
-    def on_size(self, w, h, x, y):
+    def on_size(self, w: int, h: int, x: int, y: int) -> None:
         pass
 
 
 class PageQtySelector(Gtk.Box, Configurator):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(visible=True, spacing=3)
         self.value = None
 
@@ -111,21 +114,21 @@ class PageQtySelector(Gtk.Box, Configurator):
 
         self.pages.connect('value-changed', self.value_changed)
 
-    def set_value(self, value):
+    def set_value(self, value: int) -> None:
         self.value = value
         self.pages.set_value(value)
 
-    def value_changed(self, spin: Gtk.SpinButton):
+    def value_changed(self, spin: Gtk.SpinButton) -> None:
         self.emit('changed', int(spin.get_value()))
 
     @GObject.Signal(arg_types=[int])
-    def changed(self, page_qty: int):
+    def changed(self, page_qty: int) -> None:
         self.value = page_qty
 
 
 class FileGroupSelector(Gtk.Box, Configurator):
 
-    def __init__(self, filter_=None, show_mime=False, show_ext=True):
+    def __init__(self, filter_: Optional['FileGroupFilter'] = None, show_mime: bool = False, show_ext: bool = True):
         super().__init__(visible=True, spacing=3)
         self.value = None
         label = Gtk.Label(label='Group:', visible=True)
@@ -137,7 +140,7 @@ class FileGroupSelector(Gtk.Box, Configurator):
 
         self.groups.connect('changed', self.combo_box_changed)
 
-    def set_value(self, value):
+    def set_value(self, value: Tuple[str, str]) -> None:
         self.value = value
         active_id = None
         for id_, group, mime, _ext in self.groups.get_model():
@@ -147,18 +150,18 @@ class FileGroupSelector(Gtk.Box, Configurator):
         if active_id:
             self.groups.set_active_id(active_id)
 
-    def set_document(self, document: Document):
+    def set_document(self, document: Document) -> None:
         self.groups.set_document(document)
         self.set_value(self.value)
 
-    def combo_box_changed(self, combo: Gtk.ComboBox):
+    def combo_box_changed(self, combo: Gtk.ComboBox) -> None:
         model = combo.get_model()
         if len(model) > 0:
             row = combo.get_model()[combo.get_active()][:]
             self.emit('changed', row[FileGroupComboBox.COLUMN_GROUP], row[FileGroupComboBox.COLUMN_MIME])
 
     @GObject.Signal()
-    def changed(self, file_group: str, mime_type: str):
+    def changed(self, file_group: str, mime_type: str) -> None:
         self.value = (file_group, mime_type)
 
 
@@ -168,7 +171,7 @@ class FileGroupComboBox(Gtk.ComboBox):
     COLUMN_MIME = 2
     COLUMN_EXT = 3
 
-    def __init__(self, filter_=None, show_mime=False, show_ext=True):
+    def __init__(self, filter_: Optional['FileGroupFilter'] = None, show_mime: bool = False, show_ext: bool = True):
         Gtk.ComboBox.__init__(self, visible=True)
         self.set_model(Gtk.ListStore(str, str, str, str))
         self.filter = filter_
@@ -180,11 +183,11 @@ class FileGroupComboBox(Gtk.ComboBox):
         if show_ext:
             self.add_renderer(self.COLUMN_EXT)
 
-    def set_document(self, document: Document):
+    def set_document(self, document: Document) -> None:
         self.set_model(FileGroupModel.build(document, self.filter))
         # self.set_active(0)
 
-    def add_renderer(self, column, width=None):
+    def add_renderer(self, column: int, width: int = None) -> Gtk.CellRendererText:
         renderer = Gtk.CellRendererText()
         renderer.props.ellipsize = Pango.EllipsizeMode.MIDDLE
         if width:
@@ -208,15 +211,16 @@ class FileGroupModel(Gtk.ListStore):
         return model
 
     @staticmethod
-    def image_filter(model, it, _data):
-        return model[it][FileGroupComboBox.COLUMN_MIME].startswith('image/')
+    def image_filter(model: Gtk.TreeModel, it: Gtk.TreeIter, _data: None) -> bool:
+        return str(model[it][FileGroupComboBox.COLUMN_MIME]).startswith('image/')
 
     @staticmethod
-    def page_filter(model, it, _data):
-        return model[it][FileGroupComboBox.COLUMN_MIME] == MIMETYPE_PAGE
+    def page_filter(model: Gtk.TreeModel, it: Gtk.TreeIter, _data: None) -> bool:
+        # str casts for mypy
+        return str(model[it][FileGroupComboBox.COLUMN_MIME]) == str(MIMETYPE_PAGE)
 
     @staticmethod
-    def all_filter(_model, _it, _data) -> bool:
+    def all_filter(_model: Gtk.TreeModel, _it: Gtk.TreeIter, _data: None) -> bool:
         return True
 
 
@@ -227,7 +231,7 @@ class FileGroupFilter(Enum):
 
 
 class CloseButton(Gtk.Button):
-    def __init__(self, view_name):
+    def __init__(self, view_name: str):
         Gtk.Button.__init__(self, visible=True)
         self.set_name('close_{}'.format(view_name))
         self.set_detailed_action_name('win.close_view("{}")'.format(view_name))
