@@ -64,24 +64,24 @@ class Document:
         doc.empty = False
         return doc
 
-    def save(self, mets_url:Union[Path,str]) -> None:
+    def save(self, mets_url: Union[Path, str]) -> None:
         mets_path = Path(self._strip_local(mets_url, disallow_remote=True))
         workspace_directory = mets_path.parent
         mets_basename = mets_path.name
         makedirs(workspace_directory, exist_ok=True)
 
-        self._emit('document_saving',0)
+        self._emit('document_saving', 0)
         self.workspace.save_mets()
 
-        saved_space = Resolver().workspace_from_url(mets_url=self.workspace.mets_target, mets_basename=mets_basename, download=False, dst_dir=workspace_directory)
+        saved_space = Resolver().workspace_from_url(mets_url=self.workspace.mets_target, mets_basename=mets_basename,
+                                                    download=False, dst_dir=workspace_directory)
         saved_files = saved_space.mets.find_files()
-        for n,f in enumerate(saved_files):
+        for n, f in enumerate(saved_files):
             saved_space.download_file(f)
-            self._emit('document_saving', n/len(saved_files))
+            self._emit('document_saving', n / len(saved_files))
 
         self._emit('document_saving', 1)
         self._emit('document_saved', Document(saved_space, self.emitter))
-
 
     @property
     def directory(self) -> Path:
@@ -96,7 +96,6 @@ class Document:
         Gets the mets file name (e.g. "mets.xml")
         """
         return Path(self.workspace.mets_target).name
-
 
     @property
     def baseurl_mets(self) -> str:
@@ -207,7 +206,8 @@ class Document:
         image, info, exif = self.workspace.image_from_page(page, page_id)
         return Page(page_id, page_file, pcgts, image, exif)
 
-    def file_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP, mimetype: str = None) -> Optional[OcrdFile]:
+    def file_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP, mimetype: str = None) \
+            -> Optional[OcrdFile]:
         with pushd_popd(self.workspace.directory):
             files = self.workspace.mets.find_files(fileGrp=file_group, pageId=page_id, mimetype=mimetype)
             if not files:
@@ -286,10 +286,10 @@ class Document:
 
     def _emit(self, event: str, *args: Any) -> None:
         if self.emitter is not None:
-            self.emitter(event,  *args)
+            self.emitter(event, *args)
 
     @staticmethod
-    def _strip_local(mets_url: Union[Path, str], disallow_remote:bool = True) -> str:
+    def _strip_local(mets_url: Union[Path, str], disallow_remote: bool = True) -> str:
         result = urlparse(str(mets_url))
         if result.scheme == 'file' or result.scheme == '':
             mets_url = result.path

@@ -2,6 +2,7 @@ from gi.repository import GObject, Gtk, GLib
 
 import concurrent.futures
 
+
 class LazyLoadingListStore(Gtk.ListStore):
     init_row = GObject.Property()
     load_row = GObject.Property()

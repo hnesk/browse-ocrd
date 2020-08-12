@@ -73,27 +73,28 @@ class PageListStore(LazyLoadingListStore):
                 return n, row
         return None, None
 
-    def iter_for_id(self, page_id:str) -> Optional[Gtk.TreeIter]:
+    def iter_for_id(self, page_id: str) -> Optional[Gtk.TreeIter]:
         """
         Get a Gtk.TreeIter for the page_id
         """
         path = self.path_for_id(page_id)
         return self.get_iter(path) if path else None
 
-    def path_for_id(self, page_id:str) -> Optional[Gtk.TreePath]:
+    def path_for_id(self, page_id: str) -> Optional[Gtk.TreePath]:
         """
         Get a Gtk.TreePath for the page_id
         """
         n, row = self.get_row_by_page_id(page_id)
         return Gtk.TreePath(n) if n is not None else None
 
-    def document_changed(self, subtype: str, page_ids: Union[List[str],Dict[str,str]]):
+    def document_changed(self, subtype: str, page_ids: Union[List[str], Dict[str, str]]):
         """
         Event callback to sync Document modifications with the ListStore
 
         @param subtype: str one of  'page_added', 'page_deleted', 'page_changed', 'reordered'
         @param page_ids: List[str] affected page_ids
         """
+
         def _page_added(page_ids_: List[str]):
             for page_id in page_ids_:
                 file = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)[0]
@@ -113,12 +114,12 @@ class PageListStore(LazyLoadingListStore):
                     file_name = str(self.document.path(files[0]))
                     row[self.COLUMN_FILENAME] = file_name
 
-        def _reordered(old_to_new_ids: Dict[str,str]):
+        def _reordered(old_to_new_ids: Dict[str, str]):
             id_to_position: Dict[str, int] = {}
             for n, row in enumerate(self):
                 id_to_position[row[self.COLUMN_PAGE_ID]] = n
 
-            positions: List[int] = list(range(0,len(old_to_new_ids)))
+            positions: List[int] = list(range(0, len(old_to_new_ids)))
             for old, new in old_to_new_ids.items():
                 positions[id_to_position[old]] = id_to_position[new]
 

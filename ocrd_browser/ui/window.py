@@ -42,8 +42,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions.create('close_view', param_type=string_type)
         self.actions.create('create_view', param_type=string_type)
         self.actions.create('save_as')
-        #self.actions.create('save')
-
+        # self.actions.create('save')
 
         self.page_list = PagePreviewList(self.document)
         self.page_list_scroller.add(self.page_list)
@@ -191,4 +190,3 @@ class MainWindow(Gtk.ApplicationWindow):
         if response == Gtk.ResponseType.OK:
             self.document.save(save_dialog.get_uri())
         save_dialog.destroy()
-
