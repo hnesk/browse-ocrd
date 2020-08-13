@@ -46,3 +46,4 @@ dmypy.json
 
 # Autosaved glade files
 *.ui#
+/.coverage
