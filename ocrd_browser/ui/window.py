@@ -81,13 +81,13 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def _open(self, uri: str) -> None:
         # noinspection PyTypeChecker
-        self.document = Document.load(uri, emitter=self.emit)
+        self.document = Document.clone(uri, emitter=self.emit)
         self.page_list.set_document(self.document)
 
         title = self.document.workspace.mets.unique_identifier if self.document.workspace.mets.unique_identifier else '<unnamed>'
         self.set_title(title)
         self.header_bar.set_title(title)
-        self.header_bar.set_subtitle(self.document.workspace.directory)
+        self.header_bar.set_subtitle(self.document.baseurl_mets)
 
         for view in self.views:
             view.set_document(self.document)

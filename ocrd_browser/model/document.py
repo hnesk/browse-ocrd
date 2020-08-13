@@ -1,3 +1,5 @@
+import shutil
+
 from ocrd import Workspace, Resolver
 from ocrd_browser.model import Page
 from ocrd_browser.util.image import add_dpi_to_png_buffer
@@ -12,8 +14,8 @@ from . import DEFAULT_FILE_GROUP
 from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any
 from collections import OrderedDict
 from pathlib import Path
-from os import makedirs
 from tempfile import mkdtemp
+from datetime import date, datetime
 from urllib.parse import urlparse
 from lxml.etree import ElementBase as Element
 from numpy import array as ndarray
@@ -45,6 +47,11 @@ class Document:
 
     @classmethod
     def load(cls, mets_url: Union[Path, str] = None, emitter: EventCallBack = None) -> 'Document':
+        """
+        Load a project from an url, WARNING! edits the project in place
+
+        Any modifications (page/image deletion) will be done in place, maybe you want to use Document.clone() instead
+        """
         if not mets_url:
             return cls.create(None, emitter=emitter)
         mets_url = cls._strip_local(mets_url)
@@ -56,6 +63,9 @@ class Document:
 
     @classmethod
     def clone(cls, mets_url: Union[Path, str], emitter: EventCallBack = None) -> 'Document':
+        """
+        Clones a project (mets.xml and all used files) to a temporary directory for editing
+        """
         mets_url = cls._strip_local(mets_url, disallow_remote=False)
         temporary_workspace = mkdtemp(prefix='browse-ocrd-clone-')
         # TODO download = False and lazy loading would be nice for responsiveness
@@ -64,17 +74,24 @@ class Document:
         doc.empty = False
         return doc
 
-    def save(self, mets_url: Union[Path, str]) -> None:
+    def save(self, mets_url: Union[Path, str], backup_directory:Union[bool,Path,str] = True) -> None:
+        self.workspace.save_mets()
         mets_path = Path(self._strip_local(mets_url, disallow_remote=True))
         workspace_directory = mets_path.parent
-        mets_basename = mets_path.name
-        makedirs(workspace_directory, exist_ok=True)
+        if workspace_directory.exists():
+            if backup_directory:
+                if isinstance(backup_directory, bool):
+                    backup_directory = self._derive_backup_directory(workspace_directory)
+                shutil.move(workspace_directory, backup_directory)
+            else:
+                shutil.rmtree(workspace_directory)
 
+        mets_basename = mets_path.name
+        workspace_directory.mkdir(parents=True, exist_ok=True)
         self._emit('document_saving', 0)
-        self.workspace.save_mets()
 
         saved_space = Resolver().workspace_from_url(mets_url=self.workspace.mets_target, mets_basename=mets_basename,
-                                                    download=False, dst_dir=workspace_directory)
+                                                    download=False, clobber_mets=True, dst_dir=workspace_directory)
         saved_files = saved_space.mets.find_files()
         for n, f in enumerate(saved_files):
             saved_space.download_file(f)
@@ -201,8 +218,8 @@ class Document:
         """
         Find the Page object for page_id and filegroup
 
-        If not PAGE-XML is found finds a single image file in the group, PAGE-XML will be populated automatically by page_from_image
-        This happens analog to https://github.com/OCR-D/core/pull/556/
+        If no PAGE-XML is found finds a single image file in the group, PAGE-XML will be populated automatically by page_from_image
+        This is modelled after Processor.input_files https://github.com/OCR-D/core/pull/556/
         """
         page_files = self.files_for_page_id(page_id, file_group, MIMETYPE_PAGE)
         if not page_files:
@@ -261,6 +278,7 @@ class Document:
             page_sequence.append(div)
 
         old_to_new = dict(zip(old_page_ids, self.page_ids))
+        self.workspace.save_mets()
         self._emit('document_changed', 'reordered', old_to_new)
 
     def delete_images(self, page_id: str, file_group: str = 'OCR-D-IMG') -> List[OcrdFile]:
@@ -268,6 +286,7 @@ class Document:
 
         for image_file in image_files:
             self.workspace.remove_file(image_file, force=True, keep_file=False, page_recursive=True, page_same_group=True)
+        self.workspace.save_mets()
         self._emit('document_changed', 'page_changed', [page_id])
         return image_files
 
@@ -276,6 +295,7 @@ class Document:
         for file in files:
             self.workspace.remove_file(file, force=False, keep_file=False)
         self.workspace.mets.remove_physical_page(page_id)
+        self.workspace.save_mets()
         self._emit('document_changed', 'page_deleted', [page_id])
 
     def add_image(self, image: ndarray, page_id: str, file_id: str, file_group: str = 'OCR-D-IMG', dpi: int = 300,
@@ -289,6 +309,7 @@ class Document:
                                                content=image_bytes, url=str(url),
                                                local_filename=str(local_filename), pageId=page_id)
         self.empty = False
+        self.workspace.save_mets()
         self._emit('document_changed', 'page_added', [page_id])
         return current_file
 
@@ -304,3 +325,8 @@ class Document:
         elif disallow_remote:
             raise ValueError('invalid url {}'.format(mets_url))
         return str(mets_url)
+
+    @staticmethod
+    def _derive_backup_directory(workspace_directory:Path, now: datetime = None) -> Path:
+        now = now or datetime.now()
+        return workspace_directory.parent / ('.bak.' + workspace_directory.name + '.' + now.strftime('%Y%m%d-%H%M%S'))

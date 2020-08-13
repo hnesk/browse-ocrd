@@ -3,34 +3,39 @@ from tempfile import TemporaryDirectory
 
 from tests import TestCase, ASSETS_PATH
 from ocrd_browser.model import Document
-
+from datetime import datetime
 
 class DocumentTestCase(TestCase):
 
     def setUp(self):
         self.path = ASSETS_PATH / 'kant_aufklaerung_1784/data/mets.xml'
-        self.doc = Document.load(self.path)
 
     def test_get_page_ids(self):
-        self.assertEqual(['PHYS_0017','PHYS_0020'], self.doc.page_ids)
+        doc = Document.load(self.path)
+        self.assertEqual(['PHYS_0017','PHYS_0020'], doc.page_ids)
 
     def test_path_string(self):
-        self.assertEqual(ASSETS_PATH / 'kant_aufklaerung_1784/data/lala.xml',self.doc.path('lala.xml'))
+        doc = Document.load(self.path)
+        self.assertEqual(ASSETS_PATH / 'kant_aufklaerung_1784/data/lala.xml',doc.path('lala.xml'))
 
     def test_path_path(self):
-        self.assertEqual(ASSETS_PATH / 'kant_aufklaerung_1784/data/OCR-D-DIR/lala.xml',self.doc.path(Path('OCR-D-DIR/lala.xml')))
+        doc = Document.load(self.path)
+        self.assertEqual(ASSETS_PATH / 'kant_aufklaerung_1784/data/OCR-D-DIR/lala.xml',doc.path(Path('OCR-D-DIR/lala.xml')))
 
     def test_path_ocrd_file(self):
-        image_file = self.doc.workspace.mets.find_files(pageId='PHYS_0017', fileGrp='OCR-D-IMG')[0]
-        self.assertEqual(ASSETS_PATH / 'kant_aufklaerung_1784/data/OCR-D-IMG/INPUT_0017.tif',self.doc.path(image_file))
+        doc = Document.load(self.path)
+        image_file = doc.workspace.mets.find_files(pageId='PHYS_0017', fileGrp='OCR-D-IMG')[0]
+        self.assertEqual(ASSETS_PATH / 'kant_aufklaerung_1784/data/OCR-D-IMG/INPUT_0017.tif',doc.path(image_file))
 
     def test_reorder(self):
-        self.doc.reorder(['PHYS_0020','PHYS_0017'])
-        self.assertEqual(['PHYS_0020','PHYS_0017'], self.doc.page_ids)
+        doc = Document.clone(self.path)
+        doc.reorder(['PHYS_0020','PHYS_0017'])
+        self.assertEqual(['PHYS_0020','PHYS_0017'], doc.page_ids)
 
     def test_reorder_with_wrong_ids_raises_value_error(self):
+        doc = Document.clone(self.path)
         with self.assertRaises(ValueError) as context:
-            self.doc.reorder(['PHYS_0021','PHYS_0017'])
+            doc.reorder(['PHYS_0021','PHYS_0017'])
 
         self.assertIn('page_ids do not match', str(context.exception))
 
@@ -59,4 +64,10 @@ class DocumentTestCase(TestCase):
                     original_file = doc.files_for_page_id(page_id, file_group, mime)[0]
                     saved_file = saved.files_for_page_id(page_id, file_group, mime)[0]
                     self.assertEqual(original_file, saved_file)
+
+    def test_derive_backup_directory(self):
+        self.assertEqual(
+            Path('/home/jk/.bak.important_project.20200813-184321'),
+            Document._derive_backup_directory(Path('/home/jk/important_project'), datetime(2020, 8,13, 18, 43, 21))
+        )
 
