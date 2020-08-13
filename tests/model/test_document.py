@@ -14,6 +14,16 @@ class DocumentTestCase(TestCase):
     def test_get_page_ids(self):
         self.assertEqual(['PHYS_0017','PHYS_0020'], self.doc.page_ids)
 
+    def test_path_string(self):
+        self.assertEqual(ASSETS_PATH / 'kant_aufklaerung_1784/data/lala.xml',self.doc.path('lala.xml'))
+
+    def test_path_path(self):
+        self.assertEqual(ASSETS_PATH / 'kant_aufklaerung_1784/data/OCR-D-DIR/lala.xml',self.doc.path(Path('OCR-D-DIR/lala.xml')))
+
+    def test_path_ocrd_file(self):
+        image_file = self.doc.workspace.mets.find_files(pageId='PHYS_0017', fileGrp='OCR-D-IMG')[0]
+        self.assertEqual(ASSETS_PATH / 'kant_aufklaerung_1784/data/OCR-D-IMG/INPUT_0017.tif',self.doc.path(image_file))
+
     def test_reorder(self):
         self.doc.reorder(['PHYS_0020','PHYS_0017'])
         self.assertEqual(['PHYS_0020','PHYS_0017'], self.doc.page_ids)
@@ -46,7 +56,7 @@ class DocumentTestCase(TestCase):
 
             for page_id in doc.page_ids:
                 for file_group, mime in doc.file_groups_and_mimetypes:
-                    original_file = doc.file_for_page_id(page_id, file_group, mime)
-                    saved_file = saved.file_for_page_id(page_id, file_group, mime)
+                    original_file = doc.files_for_page_id(page_id, file_group, mime)[0]
+                    saved_file = saved.files_for_page_id(page_id, file_group, mime)[0]
                     self.assertEqual(original_file, saved_file)
 

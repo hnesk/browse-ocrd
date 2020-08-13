@@ -6,7 +6,7 @@ from ocrd_models import OcrdFile
 from ocrd_models.ocrd_page_generateds import PcGtsType
 from ocrd_models.constants import NAMESPACES as NS
 from ocrd_utils import pushd_popd
-from ocrd_utils.constants import MIME_TO_EXT
+from ocrd_utils.constants import MIME_TO_EXT, MIMETYPE_PAGE
 from . import DEFAULT_FILE_GROUP
 
 from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any
@@ -198,21 +198,32 @@ class Document:
         return self.page_ids[index:index + page_qty]
 
     def page_for_id(self, page_id: str, file_group: str = None) -> Optional['Page']:
-        page_file = self.file_for_page_id(page_id, file_group)
-        if not page_file:
-            return None
-        pcgts = self.page_for_file(page_file)
+        """
+        Find the Page object for page_id and filegroup
+
+        If not PAGE-XML is found finds a single image file in the group, PAGE-XML will be populated automatically by page_from_image
+        This happens analog to https://github.com/OCR-D/core/pull/556/
+        """
+        page_files = self.files_for_page_id(page_id, file_group, MIMETYPE_PAGE)
+        if not page_files:
+
+            page_files = self.files_for_page_id(page_id, file_group, mimetype="//image/.*")
+            if len(page_files) > 1:
+                raise ValueError("No PAGE-XML %s in fileGrp '%s' but multiple images." % (
+                    "for page '%s'" % page_id, file_group
+                ))
+
+        pcgts = self.page_for_file(page_files[0])
         page = pcgts.get_Page()
         image, info, exif = self.workspace.image_from_page(page, page_id)
-        return Page(page_id, page_file, pcgts, image, exif)
+        return Page(page_id, page_files[0], pcgts, image, exif)
 
-    def file_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP, mimetype: str = None) \
-            -> Optional[OcrdFile]:
+    def files_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP, mimetype: str = None) \
+            -> List[OcrdFile]:
         with pushd_popd(self.workspace.directory):
-            files = self.workspace.mets.find_files(fileGrp=file_group, pageId=page_id, mimetype=mimetype)
-            if not files:
-                return None
-            return self.workspace.download_file(files[0])
+            files: List[OcrdFile] = self.workspace.mets.find_files(fileGrp=file_group, pageId=page_id, mimetype=mimetype)
+            files = [self.workspace.download_file(file) for file in files]
+            return files
 
     def page_for_file(self, page_file: OcrdFile) -> PcGtsType:
         with pushd_popd(self.workspace.directory):
@@ -252,22 +263,19 @@ class Document:
         old_to_new = dict(zip(old_page_ids, self.page_ids))
         self._emit('document_changed', 'reordered', old_to_new)
 
-    def delete_image(self, page_id: str, file_group: str = 'OCR-D-IMG') -> Optional[OcrdFile]:
-        image_files = self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group, local_only=True,
-                                                     mimetype='//image/.+')
-        # TODO rename to delete_images and cope with it, e.g. for file groups with segmentation images
-        if len(image_files) != 1:
-            print('oh oh', image_files)
-            return None
-        image_file = image_files[0]
-        self.workspace.remove_file(image_file, force=False, keep_file=False, page_recursive=True, page_same_group=True)
+    def delete_images(self, page_id: str, file_group: str = 'OCR-D-IMG') -> List[OcrdFile]:
+        image_files: List[OcrdFile] = self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group, local_only=True, mimetype='//image/.+')
+
+        for image_file in image_files:
+            self.workspace.remove_file(image_file, force=True, keep_file=False, page_recursive=True, page_same_group=True)
         self._emit('document_changed', 'page_changed', [page_id])
-        return image_file
+        return image_files
 
     def delete_page(self, page_id: str) -> None:
         files = self.workspace.mets.find_files(pageId=page_id, local_only=True)
         for file in files:
             self.workspace.remove_file(file, force=False, keep_file=False)
+        self.workspace.mets.remove_physical_page(page_id)
         self._emit('document_changed', 'page_deleted', [page_id])
 
     def add_image(self, image: ndarray, page_id: str, file_id: str, file_group: str = 'OCR-D-IMG', dpi: int = 300,
