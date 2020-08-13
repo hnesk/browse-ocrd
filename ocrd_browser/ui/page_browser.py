@@ -58,7 +58,7 @@ class PagePreviewList(Gtk.IconView):
             path, renderer = self.get_item_at_pos(*event.get_coords())
             self.emit('on_context_menu', event, path, renderer)
 
-    @GObject.Signal(arg_types=[object, object, object, object])
+    @GObject.Signal(arg_types=[object, object, object])
     def on_context_menu(self, event: Gdk.EventButton, path: Gtk.TreePath, _renderer: Gtk.CellRenderer) -> None:
         if len(self.get_selected_items()) <= 1:
             self.set_cursor(path, None, False)
