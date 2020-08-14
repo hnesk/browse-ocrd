@@ -9,6 +9,11 @@ from ocrd_browser.view.base import FileGroupSelector, FileGroupFilter
 
 GObject.type_register(GtkSource.View)
 
+SPLIT = """
+... I'm sorry Dave, I'm afraid I can't do that ...
+... With bigger XML files there are frequent crashes ...                                                   
+"""
+
 
 class ViewXml(View):
     """
@@ -58,10 +63,7 @@ class ViewXml(View):
                 line_break_start = text.find("\n", 45000)
                 line_break_end = text.find("\n", len(text) - 5000)
 
-                text = text[:line_break_start] + "\n\n\n" + \
-                       "... I'm sorry Dave, I'm afraid I can't do that ...\n" + \
-                       "... With bigger XML files there are frequent crashes ...\n\n" + \
-                       text[line_break_end:]
+                text = text[:line_break_start] + SPLIT + text[line_break_end:]
 
             else:
                 self.buffer.set_highlight_syntax(True)

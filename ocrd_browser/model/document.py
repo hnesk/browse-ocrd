@@ -15,7 +15,7 @@ from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any
 from collections import OrderedDict
 from pathlib import Path
 from tempfile import mkdtemp
-from datetime import date, datetime
+from datetime import datetime
 from urllib.parse import urlparse
 from lxml.etree import ElementBase as Element
 from numpy import array as ndarray
@@ -74,7 +74,7 @@ class Document:
         doc.empty = False
         return doc
 
-    def save(self, mets_url: Union[Path, str], backup_directory:Union[bool,Path,str] = True) -> None:
+    def save(self, mets_url: Union[Path, str], backup_directory: Union[bool, Path, str] = True) -> None:
         self.workspace.save_mets()
         mets_path = Path(self._strip_local(mets_url, disallow_remote=True))
         workspace_directory = mets_path.parent
@@ -327,6 +327,6 @@ class Document:
         return str(mets_url)
 
     @staticmethod
-    def _derive_backup_directory(workspace_directory:Path, now: datetime = None) -> Path:
+    def _derive_backup_directory(workspace_directory: Path, now: datetime = None) -> Path:
         now = now or datetime.now()
         return workspace_directory.parent / ('.bak.' + workspace_directory.name + '.' + now.strftime('%Y%m%d-%H%M%S'))
