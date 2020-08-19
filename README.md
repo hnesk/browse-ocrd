@@ -1,6 +1,6 @@
 # OCRD Browser
 
-An extensible viewer for [OCRD](https://ocr-d.de/) mets.xml files 
+An extensible viewer for [OCR-D](https://ocr-d.de/) mets.xml files 
 
 ## Screenshot
 
