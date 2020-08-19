@@ -7,7 +7,7 @@ from ocrd_modelfactory import page_from_file
 from ocrd_models import OcrdFile
 from ocrd_models.ocrd_page_generateds import PcGtsType
 from ocrd_models.constants import NAMESPACES as NS
-from ocrd_utils import pushd_popd
+from ocrd_utils import pushd_popd, getLogger
 from ocrd_utils.constants import MIME_TO_EXT, MIMETYPE_PAGE
 from . import DEFAULT_FILE_GROUP
 
@@ -21,6 +21,8 @@ from lxml.etree import ElementBase as Element
 from numpy import array as ndarray
 
 import cv2
+
+log = getLogger(__name__)
 
 EventCallBack = Optional[Callable[[str, Any], None]]
 
@@ -226,9 +228,9 @@ class Document:
 
             page_files = self.files_for_page_id(page_id, file_group, mimetype="//image/.*")
             if len(page_files) > 1:
-                raise ValueError("No PAGE-XML %s in fileGrp '%s' but multiple images." % (
-                    "for page '%s'" % page_id, file_group
-                ))
+                msg = "No PAGE-XML for page '{}' in fileGrp '{}' but multiple images.".format(page_id, file_group)
+                log.warning(msg)
+                #raise ValueError(msg)
 
         pcgts = self.page_for_file(page_files[0])
         page = pcgts.get_Page()
