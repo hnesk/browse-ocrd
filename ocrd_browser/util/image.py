@@ -5,28 +5,50 @@ import zlib
 
 from typing import Tuple, Union
 from PIL.Image import Image
-from numpy import array as ndarray
-from gi.repository import GdkPixbuf
+from numpy import ndarray, array as np_array, bool as np_bool, stack as np_stack
+from gi.repository import GdkPixbuf, GLib
 
 __all__ = ['cv_scale', 'cv_to_pixbuf', 'pil_to_pixbuf', 'pil_scale', 'add_dpi_to_png_buffer']
 
 
-def cv_to_pixbuf(cv_image: ndarray) -> GdkPixbuf:
-    ret, byte_array = cv2.imencode('.jpg', cv_image)
-    return bytes_to_pixbuf(byte_array.tobytes())
-
-
-def pil_to_pixbuf(im: Image) -> GdkPixbuf:
-    bytes_io = io.BytesIO()
-    im.save(bytes_io, "PNG" if im.mode in ("LA", "RGBA") else "JPEG")
-    return bytes_to_pixbuf(bytes_io.getvalue())
-
-
-def bytes_to_pixbuf(bytes_: bytes) -> GdkPixbuf:
+def _bytes_to_pixbuf(bytes_: bytes) -> GdkPixbuf.Pixbuf:
     loader = GdkPixbuf.PixbufLoader()
     loader.write(bytes_)
     loader.close()
     return loader.get_pixbuf()
+
+
+def _cv_to_pixbuf_via_cv(z:ndarray) -> GdkPixbuf.Pixbuf:
+    if z.dtype == np_bool:
+        z = (z*255).astype('uint8')
+    assert z.ndim == 2 or z.ndim == 3
+    if z.ndim == 2:
+        z = np_stack((z, z, z), axis=2)
+    else:
+        z = cv2.cvtColor(z, cv2.COLOR_BGR2RGB)
+    assert z.ndim == 3
+    h, w, c = z.shape
+    assert c == 3 or c == 4
+    args = {'colorspace': GdkPixbuf.Colorspace.RGB, 'has_alpha': c == 4, 'bits_per_sample':8, 'width': w, 'height': h}
+    rowstride = w*c
+    pb = GdkPixbuf.Pixbuf.new_from_bytes(data=GLib.Bytes(z.tobytes()), rowstride = rowstride, **args)
+    return pb
+
+def _cv_to_pixbuf_via_pixbuf_loader(cv_image: ndarray) -> GdkPixbuf:
+    ret, byte_array = cv2.imencode('.jpg', cv_image)
+    return _bytes_to_pixbuf(byte_array.tobytes())
+
+
+def _pil_to_pixbuf_via_cv(im: Image) -> GdkPixbuf.Pixbuf:
+    return _cv_to_pixbuf_via_cv(np_array(im))
+
+def _pil_to_pixbuf_via_pixbuf_loader(im: Image) -> GdkPixbuf.Pixbuf:
+    bytes_io = io.BytesIO()
+    im.save(bytes_io, "PNG" if im.mode in ("LA", "RGBA") else "JPEG")
+    return _bytes_to_pixbuf(bytes_io.getvalue())
+
+pil_to_pixbuf = _pil_to_pixbuf_via_cv
+cv_to_pixbuf = _cv_to_pixbuf_via_cv
 
 
 def cv_scale(orig: ndarray, w: int = None, h: int = None) -> ndarray:
@@ -42,7 +64,7 @@ def cv_scale(orig: ndarray, w: int = None, h: int = None) -> ndarray:
     return cv2.resize(orig, (new_width, new_height))
 
 
-def pil_scale(orig: Image, w: int = None, h: int = None) -> ndarray:
+def pil_scale(orig: Image, w: int = None, h: int = None) -> Image:
     """
     Scale a Pillow image
     :param orig: ndarray Original cv2 image
