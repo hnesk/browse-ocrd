@@ -71,6 +71,7 @@ class Document:
         mets_url = cls._strip_local(mets_url, disallow_remote=False)
         temporary_workspace = mkdtemp(prefix='browse-ocrd-clone-')
         # TODO download = False and lazy loading would be nice for responsiveness
+        log.info("Cloning '%s' to '%s'", mets_url, temporary_workspace)
         workspace = Resolver().workspace_from_url(mets_url=mets_url, dst_dir=temporary_workspace, download=True)
         doc = cls(workspace, emitter=emitter)
         doc.empty = False
@@ -90,16 +91,16 @@ class Document:
 
         mets_basename = mets_path.name
         workspace_directory.mkdir(parents=True, exist_ok=True)
-        self._emit('document_saving', 0)
+        self._emit('document_saving', 0, None)
 
         saved_space = Resolver().workspace_from_url(mets_url=self.workspace.mets_target, mets_basename=mets_basename,
                                                     download=False, clobber_mets=True, dst_dir=workspace_directory)
         saved_files = saved_space.mets.find_files()
         for n, f in enumerate(saved_files):
-            saved_space.download_file(f)
-            self._emit('document_saving', n / len(saved_files))
+            f = saved_space.download_file(f)
+            self._emit('document_saving', n / len(saved_files), f)
 
-        self._emit('document_saving', 1)
+        self._emit('document_saving', 1, None)
         self._emit('document_saved', Document(saved_space, self.emitter))
 
     @property
@@ -225,12 +226,13 @@ class Document:
         """
         page_files = self.files_for_page_id(page_id, file_group, MIMETYPE_PAGE)
         if not page_files:
-
             page_files = self.files_for_page_id(page_id, file_group, mimetype="//image/.*")
-            if len(page_files) > 1:
-                msg = "No PAGE-XML for page '{}' in fileGrp '{}' but multiple images.".format(page_id, file_group)
-                log.warning(msg)
-                #raise ValueError(msg)
+            if not page_files:
+                log.warning("No PAGE-XML and no image for page '{}' in fileGrp '{}'".format(page_id, file_group))
+                return None
+            elif len(page_files) > 1:
+                log.warning("No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(page_files), page_id, file_group))
+                # but keep going and show the first one for now
 
         pcgts = self.page_for_file(page_files[0])
         page = pcgts.get_Page()
@@ -240,7 +242,8 @@ class Document:
     def files_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP, mimetype: str = None) \
             -> List[OcrdFile]:
         with pushd_popd(self.workspace.directory):
-            files: List[OcrdFile] = self.workspace.mets.find_files(fileGrp=file_group, pageId=page_id, mimetype=mimetype)
+            files: List[OcrdFile] = self.workspace.mets.find_files(fileGrp=file_group, pageId=page_id,
+                                                                   mimetype=mimetype)
             files = [self.workspace.download_file(file) for file in files]
             return files
 
@@ -284,10 +287,12 @@ class Document:
         self._emit('document_changed', 'reordered', old_to_new)
 
     def delete_images(self, page_id: str, file_group: str = 'OCR-D-IMG') -> List[OcrdFile]:
-        image_files: List[OcrdFile] = self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group, local_only=True, mimetype='//image/.+')
+        image_files: List[OcrdFile] = self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group,
+                                                                     local_only=True, mimetype='//image/.+')
 
         for image_file in image_files:
-            self.workspace.remove_file(image_file, force=True, keep_file=False, page_recursive=True, page_same_group=True)
+            self.workspace.remove_file(image_file, force=True, keep_file=False, page_recursive=True,
+                                       page_same_group=True)
         self.workspace.save_mets()
         self._emit('document_changed', 'page_changed', [page_id])
         return image_files
