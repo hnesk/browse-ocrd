@@ -1,4 +1,5 @@
 from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
+from ocrd_models import OcrdFile
 
 from ocrd_browser.model import Document
 from ocrd_browser.view import ViewRegistry, View, ViewImages
@@ -129,8 +130,8 @@ class MainWindow(Gtk.ApplicationWindow):
     def document_saved(self, saved: Document) -> None:
         pass
 
-    @GObject.Signal()
-    def document_saving(self, progress: float) -> None:
+    @GObject.Signal(arg_types=[float,object])
+    def document_saving(self, progress: float, file: Optional[OcrdFile]) -> None:
         pass
 
     def update_ui(self) -> None:
