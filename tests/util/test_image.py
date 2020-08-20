@@ -8,6 +8,7 @@ from timeit import timeit
 class ImageUtilTestCase(TestCase):
 
     def test_pil_to_pixbuf_is_faster_via_opencv(self):
+        self.skipTest('Slow test')
         files = [
             ASSETS_PATH / 'kant_aufklaerung_1784-binarized/data/OCR-D-IMG/OCR-D-IMG_0017.tif',
             ASSETS_PATH / 'kant_aufklaerung_1784-binarized/data/OCR-D-IMG-1BIT/OCR-D-IMG-1BIT_0017.png',
@@ -19,7 +20,7 @@ class ImageUtilTestCase(TestCase):
             self.assertLess(via_cv_time, via_pil_time, 'via_cv took longer for {}'.format(file))
 
     @staticmethod
-    def _test_pil_to_pixbuf_performance_on_file(file, number: int = 5):
+    def _test_pil_to_pixbuf_performance_on_file(file, number: int = 10):
         image: Image.Image = Image.open(file)
         image.load()
 

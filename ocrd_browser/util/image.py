@@ -47,10 +47,6 @@ def _pil_to_pixbuf_via_pixbuf_loader(im: Image) -> GdkPixbuf.Pixbuf:
     im.save(bytes_io, "PNG" if im.mode in ("LA", "RGBA") else "JPEG")
     return _bytes_to_pixbuf(bytes_io.getvalue())
 
-pil_to_pixbuf = _pil_to_pixbuf_via_cv
-cv_to_pixbuf = _cv_to_pixbuf_via_cv
-
-
 def cv_scale(orig: ndarray, w: int = None, h: int = None) -> ndarray:
     """
     Scale a cv2 image
@@ -119,3 +115,9 @@ def _calculate_scale(old_width: int, old_height: int, new_width: int = None, new
         image_scale = 1
 
     return int(old_width * image_scale), int(old_height * image_scale)
+
+pil_to_pixbuf = _pil_to_pixbuf_via_cv
+cv_to_pixbuf = _cv_to_pixbuf_via_cv
+
+#pil_to_pixbuf = _pil_to_pixbuf_via_pixbuf_loader
+#cv_to_pixbuf = _cv_to_pixbuf_via_pixbuf_loader
