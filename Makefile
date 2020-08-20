@@ -7,7 +7,7 @@ LOG_LEVEL = INFO
 PYTHONIOENCODING=utf8
 
 deps-ubuntu:
-	apt install -y libgtksourceview-3.0-dev
+	apt install -y libcairo2-dev libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev pkg-config cmake
 
 deps:
 	$(PIP) install -r requirements.txt
