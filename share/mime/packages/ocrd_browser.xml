@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <!-- https://www.iana.org/assignments/media-types/application/mets+xml -->
+  <mime-type type="application/mets+xml">
+    <comment>METS XML document</comment>
+    <comment xml:lang="de">METS-XML-Dokument</comment>
+    <acronym>METS</acronym>
+    <expanded-acronym>Metadata Encoding and Transmission Standard</expanded-acronym>
+    <sub-class-of type="application/xml"/>
+    <glob pattern="mets.xml"/>
+    <!-- The same as the default xml entry, so magic/match decides -->
+    <glob weight="40" pattern="*.xml"/>
+    <magic priority="70">
+      <match type="string" value="http://www.loc.gov/METS/" offset="0:1000"/>
+    </magic>
+    <!-- This seems to make no difference -->
+    <root-XML namespaceURI="http://www.loc.gov/METS/" localName="mets"/>
+  </mime-type>
+  <mime-type type="application/vnd.prima.page+xml">
+    <!-- https://github.com/PRImA-Research-Lab/PAGE-XML -->
+    <comment>PAGE XML document</comment>
+    <comment xml:lang="de">PAGE-XML-Dokument</comment>
+    <acronym>PAGE</acronym>
+    <expanded-acronym>Page Analysis and Ground-truth Elements</expanded-acronym>
+    <sub-class-of type="application/xml"/>
+    <magic priority="70">
+      <match type="string" value="http://schema.primaresearch.org/PAGE/gts/pagecontent/" offset="0:1000"/>
+    </magic>
+    <!-- These seem to make no difference -->
+    <root-XML namespaceURI="http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15" localName="PcGts"/>
+    <root-XML namespaceURI="http://schema.primaresearch.org/PAGE/gts/pagecontent/2018-07-15" localName="PcGts"/>
+    <root-XML namespaceURI="http://schema.primaresearch.org/PAGE/gts/pagecontent/2017-07-15" localName="PcGts"/>
+    <root-XML namespaceURI="http://schema.primaresearch.org/PAGE/gts/pagecontent/2016-07-15" localName="PcGts"/>
+    <root-XML namespaceURI="http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15" localName="PcGts"/>
+    <root-XML namespaceURI="http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-03-19" localName="PcGts"/>
+    <root-XML namespaceURI="http://schema.primaresearch.org/PAGE/gts/pagecontent/2010-01-12" localName="PcGts"/>
+    <root-XML namespaceURI="http://schema.primaresearch.org/PAGE/gts/pagecontent/2009-03-16" localName="PcGts"/>
+  </mime-type>
+</mime-info>

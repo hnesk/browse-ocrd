@@ -23,10 +23,10 @@ class OpenDialog(Gtk.FileChooserDialog):
         # noinspection PyCallByClass
         Gtk.FileChooserDialog.__init__(self, **kwargs)
 
-        filter_text = Gtk.FileFilter()
-        filter_text.set_name("METS files")
-        filter_text.add_mime_type("text/xml")
-        self.add_filter(filter_text)
+        filter_mets = Gtk.FileFilter()
+        filter_mets.set_name("METS files")
+        filter_mets.add_mime_type("application/mets+xml")
+        self.add_filter(filter_mets)
 
         filter_any = Gtk.FileFilter()
         filter_any.set_name("Any files")
