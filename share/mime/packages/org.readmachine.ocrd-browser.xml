@@ -23,6 +23,8 @@
     <acronym>PAGE</acronym>
     <expanded-acronym>Page Analysis and Ground-truth Elements</expanded-acronym>
     <sub-class-of type="application/xml"/>
+    <!-- The same as the default xml entry, so magic/match decides -->
+    <glob weight="40" pattern="*.xml"/>
     <magic priority="70">
       <match type="string" value="http://schema.primaresearch.org/PAGE/gts/pagecontent/" offset="0:1000"/>
     </magic>

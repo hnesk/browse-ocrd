@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=OCR-D Browser
+GenericName=View OCR-D METS files
+Exec=/home/jk/.local/bin/browse-ocrd %U
+Terminal=false
+MimeType=application/mets+xml
+Icon=scanner
+Categories=Development;Graphics;

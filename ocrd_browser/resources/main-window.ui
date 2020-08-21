@@ -31,7 +31,7 @@ THE SOFTWARE.
   <!-- interface-description A Viewer for OCR-D mets files -->
   <object class="GtkRecentFilter" id="recent_filter">
     <mime-types>
-      <mime-type>text/xml</mime-type>
+      <mime-type>application/mets+xml</mime-type>
     </mime-types>
     <applications>
       <application>browse-ocrd</application>

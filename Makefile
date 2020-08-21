@@ -5,7 +5,7 @@ PYTHON = python3
 PIP = pip3
 LOG_LEVEL = INFO
 PYTHONIOENCODING=utf8
-MIME_DIR=~/.local/share/mime
+SHARE_DIR=~/.local/share
 
 deps-ubuntu:
 	apt install -y libcairo2-dev libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev pkg-config cmake
@@ -16,10 +16,22 @@ deps:
 install:
 	$(PIP) install .
 
-install-xdg-mime: share/mime/packages/ocrd_browser.xml
-	mkdir -p $(MIME_DIR)/packages
-	cp $< $(MIME_DIR)/packages
-	update-mime-database $(MIME_DIR)
+install-xdg-mime: share/mime/packages/org.readmachine.ocrd-browser.xml
+	mkdir -p $(SHARE_DIR)/mime/packages
+	cp $< $(SHARE_DIR)/mime/packages
+	update-mime-database $(SHARE_DIR)/mime
+	# Maybe better: xdg-mime install --mode user share/mime/packages/org.readmachine.ocrd-browser.xml
+
+
+install-xdg-applications: share/applications/org.readmachine.ocrd-browser.desktop
+	@mkdir -p $(SHARE_DIR)/applications
+	@cp $< $(SHARE_DIR)/applications/org.readmachine.ocrd-browser.desktop
+	@chmod +x $(SHARE_DIR)/applications/org.readmachine.ocrd-browser.desktop
+	@update-desktop-database $(SHARE_DIR)/applications
+	# Maybe better: xdg-desktop-menu install --mode user share/applications/org.readmachine.ocrd-browser.desktop
+	$(info ### Done! You have to restart nautilus with)
+	$(info ###     nautilus -q && nautilus &)
+	$(info ### for the changes to have effect)
 
 clean-build: pyclean
 	rm -Rf build dist *.egg-info

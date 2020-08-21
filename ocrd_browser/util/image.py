@@ -116,8 +116,8 @@ def _calculate_scale(old_width: int, old_height: int, new_width: int = None, new
 
     return int(old_width * image_scale), int(old_height * image_scale)
 
-pil_to_pixbuf = _pil_to_pixbuf_via_cv
-cv_to_pixbuf = _cv_to_pixbuf_via_cv
+#pil_to_pixbuf = _pil_to_pixbuf_via_cv
+#cv_to_pixbuf = _cv_to_pixbuf_via_cv
 
-#pil_to_pixbuf = _pil_to_pixbuf_via_pixbuf_loader
-#cv_to_pixbuf = _cv_to_pixbuf_via_pixbuf_loader
+pil_to_pixbuf = _pil_to_pixbuf_via_pixbuf_loader
+cv_to_pixbuf = _cv_to_pixbuf_via_pixbuf_loader
