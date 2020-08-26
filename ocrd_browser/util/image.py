@@ -5,7 +5,7 @@ import zlib
 
 from typing import Tuple, Union
 from PIL.Image import Image
-from numpy import ndarray, array as np_array, bool as np_bool, stack as np_stack
+from numpy import ndarray, array as np_array, uint8 as np_uint8, bool as np_bool, stack as np_stack
 from gi.repository import GdkPixbuf, GLib
 
 __all__ = ['cv_scale', 'cv_to_pixbuf', 'pil_to_pixbuf', 'pil_scale', 'add_dpi_to_png_buffer']
@@ -18,17 +18,18 @@ def _bytes_to_pixbuf(bytes_: bytes) -> GdkPixbuf.Pixbuf:
     return loader.get_pixbuf()
 
 
-def _cv_to_pixbuf_via_cv(z:ndarray) -> GdkPixbuf.Pixbuf:
+def _cv_to_pixbuf_via_cv(z: ndarray) -> GdkPixbuf.Pixbuf:
     if z.dtype == np_bool:
-        z = (z*255).astype('uint8')
-    assert z.ndim == 2 or z.ndim == 3
+        z = (z*255).astype(np_uint8)
     if z.ndim == 2:
         z = np_stack((z, z, z), axis=2)
-    else:
-        z = cv2.cvtColor(z, cv2.COLOR_BGR2RGB)
     assert z.ndim == 3
     h, w, c = z.shape
     assert c == 3 or c == 4
+    if c == 3:
+        z = cv2.cvtColor(z, cv2.COLOR_BGR2RGB)
+    else:
+        z = cv2.cvtColor(z, cv2.COLOR_BGRA2RGBA)
     args = {'colorspace': GdkPixbuf.Colorspace.RGB, 'has_alpha': c == 4, 'bits_per_sample':8, 'width': w, 'height': h}
     rowstride = w*c
     pb = GdkPixbuf.Pixbuf.new_from_bytes(data=GLib.Bytes(z.tobytes()), rowstride = rowstride, **args)
@@ -40,7 +41,17 @@ def _cv_to_pixbuf_via_pixbuf_loader(cv_image: ndarray) -> GdkPixbuf:
 
 
 def _pil_to_pixbuf_via_cv(im: Image) -> GdkPixbuf.Pixbuf:
-    return _cv_to_pixbuf_via_cv(np_array(im))
+    if im.mode == 'LA':
+        bgra = cv2.cvtColor(np_array(im.convert('L'), dtype=np_uint8), cv2.COLOR_GRAY2BGRA)
+        bgra[:, :, 3] = np_array(im.getchannel('A'), dtype=np_uint8)
+        im = bgra
+    elif im.mode == 'RGBA':
+        bgra = cv2.cvtColor(np_array(im.convert('RGB'), dtype=np_uint8), cv2.COLOR_RGB2BGRA)
+        bgra[:, :, 3] = np_array(im.getchannel('A'), dtype=np_uint8)
+        im = bgra
+    else:
+        im = cv2.cvtColor(np_array(im.convert('RGB'), dtype=np_uint8), cv2.COLOR_RGB2BGR)
+    return _cv_to_pixbuf_via_cv(im)
 
 def _pil_to_pixbuf_via_pixbuf_loader(im: Image) -> GdkPixbuf.Pixbuf:
     bytes_io = io.BytesIO()
