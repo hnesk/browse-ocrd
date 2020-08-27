@@ -1,9 +1,24 @@
 import unittest
-from PIL import Image
+from PIL import Image, ImageDraw
+from gi.repository import GdkPixbuf
+
 from tests import TestCase, ASSETS_PATH
 from ocrd_browser.util.image import pil_to_pixbuf, _pil_to_pixbuf_via_cv, _pil_to_pixbuf_via_pixbuf_loader
 from timeit import timeit
 
+# @see http://melp.nl/2011/02/phpunit-style-dataprovider-in-python-unit-test/
+def data_provider(fn_data_provider):
+    """Data provider decorator, allows another callable to provide the data for the test"""
+    def test_decorator(fn):
+        def repl(self, *args):
+            for i in fn_data_provider():
+                try:
+                    fn(self, *i)
+                except AssertionError:
+                    print("Assertion error caught with data set ", i)
+                    raise
+        return repl
+    return test_decorator
 
 class ImageUtilTestCase(TestCase):
 
@@ -18,6 +33,57 @@ class ImageUtilTestCase(TestCase):
             via_cv_time, via_pil_time = self._test_pil_to_pixbuf_performance_on_file(file)
             print('OpenCV({}s) vs. PIL({}s): {} for {}'.format(via_cv_time, via_pil_time, via_cv_time/via_pil_time, file))
             self.assertLess(via_cv_time, via_pil_time, 'via_cv took longer for {}'.format(file))
+
+    _image_modes = lambda: (
+        ('RGB',
+            (0, 0, 0),      (127, 127, 127),    (255, 255, 255),
+            (0, 0, 0),  (127, 127, 127), (255, 255, 255)
+        ),
+        ('RGBA',
+            (0, 0, 0, 128), (255, 0, 255, 255), (255, 255, 255, 255),
+            (0, 0, 0, 128), (255, 0, 255, 255), (255, 255, 255, 255)
+        ),
+        ('1',
+            (0,), (1,), (1,),
+            (0,0,0), (255,255,255), (255,255,255)
+         ),
+        ('LA',
+         (0,127), (255,255), (0,127),
+         (0, 0, 0, 127), (255, 255, 255, 255), (0,0,0,127)
+         ),
+
+    )
+
+    @data_provider(_image_modes)
+    def test_image_modes(self, mode, bg, fg1, fg2, bg_test, fg1_test, fg2_test):
+        pil = self._generate_test_image(mode, bg, fg1, fg2)
+        pb = _pil_to_pixbuf_via_cv(pil)
+        self.assertSequenceEqual(bg_test, self._get_pixbuf_pixel(pb, 0,10))
+        self.assertSequenceEqual(fg1_test, self._get_pixbuf_pixel(pb, 0,0))
+        self.assertSequenceEqual(fg2_test, self._get_pixbuf_pixel(pb, pil.size[0]-1, 1))
+
+    @staticmethod
+    def _get_pixbuf_pixel(pb: GdkPixbuf.Pixbuf, x, y):
+        bytes = pb.get_pixels()
+        n_channels = pb.get_n_channels()
+        rowstride = pb.get_rowstride()
+        bps = pb.get_bits_per_sample()
+
+        bytes_per_pixel = int(n_channels * bps / 8)
+        offset = y * rowstride + x * bytes_per_pixel
+
+        return list(bytes[offset:offset+bytes_per_pixel])
+
+    @staticmethod
+    def _generate_test_image(mode, bg, fg1, fg2):
+        im = Image.new(mode, (50, 30), bg)
+        draw = ImageDraw.Draw(im)
+        w, h = im.size
+        draw.line((0, 0, w, h), fill=fg1)
+        draw.line((0, h, w, 0), fill=fg2)
+        return im
+
+
 
     @staticmethod
     def _test_pil_to_pixbuf_performance_on_file(file, number: int = 10):
