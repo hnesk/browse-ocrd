@@ -69,3 +69,6 @@ class ViewXml(View):
                 self.buffer.set_highlight_syntax(True)
 
             self.buffer.set_text(text)
+        else:
+            self.buffer.set_text('')
+
