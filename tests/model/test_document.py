@@ -28,7 +28,7 @@ class DocumentTestCase(TestCase):
 
     def test_path_ocrd_file(self):
         doc = Document.load(self.path)
-        image_file = doc.workspace.mets.find_files(pageId='PHYS_0017', fileGrp='OCR-D-IMG')[0]
+        image_file = list(doc.workspace.mets.find_files(pageId='PHYS_0017', fileGrp='OCR-D-IMG'))[0]
         self.assertEqual(ASSETS_PATH / 'kant_aufklaerung_1784/data/OCR-D-IMG/INPUT_0017.tif', doc.path(image_file))
 
     def test_reorder(self):
