@@ -1,5 +1,6 @@
 from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
 from ocrd_models import OcrdFile
+from ocrd_utils import initLogging
 
 from ocrd_browser.model import Document
 from ocrd_browser.view import ViewRegistry, View, ViewImages
@@ -23,6 +24,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def __init__(self, **kwargs: Any):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
+        initLogging()
         # noinspection PyCallByClass,PyArgumentList
         self.set_icon(GdkPixbuf.Pixbuf.new_from_resource("/org/readmachine/ocrd-browser/icons/icon.png"))
         self.views: List[View] = []
