@@ -144,7 +144,7 @@ class PageListStore(LazyLoadingListStore):
         """
         Builds a Dict ID->Path for all page_ids fast
         """
-        images = document.workspace.mets.find_files(fileGrp=file_group)
+        images = list(document.workspace.mets.find_files(fileGrp=file_group))
         page_ids = document.workspace.mets.get_physical_pages(for_fileIds=[image.ID for image in images])
         file_paths = [document.path(image.url) for image in images]
         return dict(zip(page_ids, file_paths))

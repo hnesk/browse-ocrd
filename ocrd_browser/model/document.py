@@ -288,8 +288,8 @@ class Document:
         self._emit('document_changed', 'reordered', old_to_new)
 
     def delete_images(self, page_id: str, file_group: str = 'OCR-D-IMG') -> List[OcrdFile]:
-        image_files: List[OcrdFile] = self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group,
-                                                                     local_only=True, mimetype='//image/.+')
+        image_files: List[OcrdFile] = list(self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group,
+                                                                          local_only=True, mimetype='//image/.+'))
 
         for image_file in image_files:
             self.workspace.remove_file(image_file, force=True, keep_file=False, page_recursive=True,
