@@ -177,11 +177,23 @@ class FileGroupComboBox(Gtk.ComboBox):
         self.filter = filter_
         self.set_id_column(self.COLUMN_ID)
 
-        self.add_renderer(self.COLUMN_GROUP, 120 if show_mime else 200)
+        self.add_renderer(self.COLUMN_GROUP)
         if show_mime:
             self.add_renderer(self.COLUMN_MIME, 80)
         if show_ext:
             self.add_renderer(self.COLUMN_EXT)
+
+        self.props.has_tooltip = True
+        self.connect('query-tooltip', self.set_tooltip)
+
+    def set_tooltip(self, _widget: Gtk.Widget, _x: int, _y: int, _keyboard_mode: bool, tooltip: Gtk.Tooltip) -> bool:
+        model = self.get_model()
+        if len(model) > 0:
+            row = self.get_model()[self.get_active()][:]
+            phs = {'fileGrp': row[self.COLUMN_GROUP], 'ext': row[self.COLUMN_EXT], 'mime': row[self.COLUMN_MIME]}
+            tooltip.set_text('{fileGrp} (Mime-Type: {mime})'.format(**phs))
+            return True
+        return False
 
     def set_document(self, document: Document) -> None:
         self.set_model(FileGroupModel.build(document, self.filter))
