@@ -2,6 +2,7 @@ from gi.repository import Gio, Gtk, GLib
 
 import pkg_resources
 from typing import List
+from ocrd_utils import initLogging
 from ocrd_browser.util.gtk import ActionRegistry
 from ocrd_browser.ui import MainWindow, AboutDialog, OpenDialog
 from ocrd_browser.view import ViewRegistry
@@ -13,6 +14,7 @@ class OcrdBrowserApplication(Gtk.Application):
                                  flags=Gio.ApplicationFlags.HANDLES_OPEN)
         self.actions = ActionRegistry(for_widget=self)
         self.view_registry = ViewRegistry.create_from_entry_points()
+        initLogging()
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
