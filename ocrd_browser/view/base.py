@@ -184,6 +184,7 @@ class FileGroupComboBox(Gtk.ComboBox):
             self.add_renderer(self.COLUMN_EXT)
 
         self.props.has_tooltip = True
+        self.props.popup_fixed_width = False
         self.connect('query-tooltip', self.set_tooltip)
 
     def set_tooltip(self, _widget: Gtk.Widget, _x: int, _y: int, _keyboard_mode: bool, tooltip: Gtk.Tooltip) -> bool:
