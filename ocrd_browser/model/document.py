@@ -12,13 +12,14 @@ from ocrd_utils.constants import MIME_TO_EXT, MIMETYPE_PAGE
 from . import DEFAULT_FILE_GROUP
 
 from logging import getLogger
-from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any
+from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any, Dict
 from collections import OrderedDict
 from pathlib import Path
 from tempfile import mkdtemp
 from datetime import datetime
 from urllib.parse import urlparse
-from lxml.etree import ElementBase as Element
+from lxml.etree import ElementBase as Element, _ElementTree as ElementTree
+
 from numpy import array as ndarray
 
 import cv2
@@ -139,6 +140,14 @@ class Document:
             raise ValueError('Unsupported other of type {}'.format(type(other)))
 
     @property
+    def _tree(self) -> ElementTree:
+        # noinspection PyProtectedMember
+        return self.workspace.mets._tree
+
+    def xpath(self, xpath) -> Any:
+        return self._tree.getroot().xpath(xpath, namespaces=NS)
+
+    @property
     def page_ids(self) -> List[str]:
         """
         List of page_ids in this workspace
@@ -169,7 +178,7 @@ class Document:
         @return: Set[str]
         """
         return {el.get('MIMETYPE') for el in
-                self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp/mets:file[@MIMETYPE]', NS)}
+                self.xpath('mets:fileSec/mets:fileGrp/mets:file[@MIMETYPE]')}
 
     @property
     def file_groups_and_mimetypes(self) -> List[Tuple[str, str]]:
@@ -180,10 +189,31 @@ class Document:
         """
         distinct_groups: OrderedDict[Tuple[str, str], None] = OrderedDict()
         # noinspection PyProtectedMember
-        for el in self.workspace.mets._tree.findall('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]', NS):
+        for el in self.xpath('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]'):
             distinct_groups[(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
 
         return list(distinct_groups.keys())
+
+    def get_file_index(self) -> Dict[str, OcrdFile]:
+        """
+        Return all OcrdFiles by file id and additionally augments the OcrdFile with static_page_id for fast(er) lookup
+
+        Example:
+        page17 = [file for file in file_index.values() if file.static_page_id == 'PHYS_0017']
+
+        """
+        file_index = {file.ID: file for file in self.workspace.mets.find_files()}
+        file_pointers = self.xpath('mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]/mets:div[@TYPE="page"]/mets:fptr')
+        for file_pointer in file_pointers:
+            file_pointer: Element
+            file_id = file_pointer.get('FILEID')
+            page_id = file_pointer.getparent().get('ID')
+            if file_id in file_index:
+                file_index[file_id].static_page_id = page_id
+            else:
+                log.warning("FILEID '%s' for PAGE '%s' not in mets:fileSec", file_id, page_id)
+
+        return file_index
 
     def get_unused_page_id(self, template_page_id: str = 'PAGE_{page_nr}') -> Tuple[str, int]:
         """
@@ -265,10 +295,7 @@ class Document:
                 set(self.page_ids).difference(set(ordered_page_ids))
             ))
 
-        # noinspection PyProtectedMember
-        page_sequence: Element = self.workspace.mets._tree.getroot().xpath(
-            '/mets:mets/mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]',
-            namespaces=NS)[0]
+        page_sequence: Element = self.xpath('mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]')[0]
 
         ordered_divs = []
         for page_id in ordered_page_ids:

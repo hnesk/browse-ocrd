@@ -17,6 +17,27 @@ class DocumentTestCase(TestCase):
         doc = Document.load(self.path)
         self.assertEqual(['PHYS_0017', 'PHYS_0020'], doc.page_ids)
 
+    def test_get_mime_types(self):
+        doc = Document.load(self.path)
+        self.assertEqual({'application/vnd.prima.page+xml', 'image/tiff', 'application/alto+xml'} , doc.mime_types)
+
+    def test_get_file_groups_and_mimetypes(self):
+        doc = Document.load(self.path)
+        expected = [
+            ('OCR-D-IMG','image/tiff'),
+            ('OCR-D-GT-PAGE','application/vnd.prima.page+xml'),
+            ('OCR-D-GT-ALTO','application/alto+xml')
+        ]
+        self.assertEqual(expected , doc.file_groups_and_mimetypes)
+
+    def test_get_page_index(self):
+        doc = Document.load(self.path)
+        file_index = doc.get_file_index()
+        page17 = [file for file in file_index.values() if file.static_page_id == 'PHYS_0017']
+        alto = [file for file in file_index.values() if file.mimetype == 'application/alto+xml']
+        self.assertEqual(3, len(page17))
+        self.assertEqual(2, len(alto))
+
     def test_path_string(self):
         doc = Document.load(self.path)
         self.assertEqual(ASSETS_PATH / 'kant_aufklaerung_1784/data/lala.xml', doc.path('lala.xml'))
