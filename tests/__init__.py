@@ -12,6 +12,8 @@ in your Gtk using test file in the first line
 from unittest import TestCase
 import gi
 from pathlib import Path
+from ocrd_utils import initLogging
+
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkPixbuf', '2.0')
 try:
@@ -19,8 +21,9 @@ try:
 except ValueError:
     gi.require_version('GtkSource', '3.0')
 
+initLogging()
+
 ASSETS_PATH = (Path(__file__).parent/ 'assets').absolute()
 if not ASSETS_PATH.exists():
     raise RuntimeError('Assset path {} not found, please run: make tests/assets first')
-
 
