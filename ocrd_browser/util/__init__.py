@@ -1,1 +1,1 @@
-__all__ = ['image', 'gtk']
+__all__ = ['image', 'gtk', 'config']

@@ -9,9 +9,11 @@ from ocrd_utils import getLogger
 from ocrd_browser.util.image import cv_to_pixbuf, cv_scale
 from ocrd_browser.model import Document, DEFAULT_FILE_GROUP
 from .icon_store import LazyLoadingListStore
+from ..util.config import SETTINGS
 
 import cv2
 import os
+
 
 RowResult = Tuple[Optional[int], Optional[Gtk.TreeModelRow]]
 ChangeList = Union[List[str], Dict[str, str]]
@@ -54,8 +56,8 @@ class PageListStore(LazyLoadingListStore):
             ) for icon_name in ['page-loading', 'page-missing']
         }
 
-        # TODO: do not hardcode DEFAULT_FILE_GROUP = 'OCR-D-IMG', see https://github.com/hnesk/browse-ocrd/issues/7#issuecomment-707851109
-        file_group = DEFAULT_FILE_GROUP
+        # TODO: do not hardcode SETTINGS.preferredGroups[0], see https://github.com/hnesk/browse-ocrd/issues/7#issuecomment-707851109
+        file_group = SETTINGS.preferredGroups[0]
         file_lookup = document.get_image_paths(file_group)
         order = count(start=1)
         for page_id in self.document.page_ids:
