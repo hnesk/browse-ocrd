@@ -24,7 +24,6 @@ from numpy import array as ndarray
 
 import cv2
 
-log = getLogger(__name__)
 
 EventCallBack = Optional[Callable[[str, Any], None]]
 
@@ -70,6 +69,7 @@ class Document:
         """
         Clones a project (mets.xml and all used files) to a temporary directory for editing
         """
+        log = getLogger('ocrd_browser.model.document.Document.clone')
         mets_url = cls._strip_local(mets_url, disallow_remote=False)
         temporary_workspace = mkdtemp(prefix='browse-ocrd-clone-')
         # TODO download = False and lazy loading would be nice for responsiveness
@@ -144,7 +144,7 @@ class Document:
         # noinspection PyProtectedMember
         return self.workspace.mets._tree
 
-    def xpath(self, xpath) -> Any:
+    def xpath(self, xpath: str) -> Any:
         return self._tree.getroot().xpath(xpath, namespaces=NS)
 
     @property
@@ -202,10 +202,14 @@ class Document:
         page17 = [file for file in file_index.values() if file.static_page_id == 'PHYS_0017']
 
         """
-        file_index = {file.ID: file for file in self.workspace.mets.find_files()}
-        file_pointers = self.xpath('mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]/mets:div[@TYPE="page"]/mets:fptr')
+        log = getLogger('ocrd_browser.model.document.Document.get_file_index')
+        file_index = {}
+        for file in self.workspace.mets.find_files():
+            file.static_page_id = None
+            file_index[file.ID] = file
+
+        file_pointers: List[Element] = self.xpath('mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]/mets:div[@TYPE="page"]/mets:fptr')
         for file_pointer in file_pointers:
-            file_pointer: Element
             file_id = file_pointer.get('FILEID')
             page_id = file_pointer.getparent().get('ID')
             if file_id in file_index:
@@ -214,6 +218,25 @@ class Document:
                 log.warning("FILEID '%s' for PAGE '%s' not in mets:fileSec", file_id, page_id)
 
         return file_index
+
+    def get_image_paths(self, file_group: str) -> Dict[str, Path]:
+        """
+        Builds a Dict ID->Path for all page_ids fast
+
+        More precisely:  fast = Faster than iterating over page_ids and using mets.get_physical_page_for_file for each entry
+        """
+        log = getLogger('ocrd_browser.model.document.Document.get_image_paths')
+
+        image_paths = {}
+        file_index = self.get_file_index()
+        for page_id in self.page_ids:
+            images = [image for image in file_index.values() if image.static_page_id == page_id and image.fileGrp == file_group]
+            if len(images) == 1:
+                image_paths[page_id] = self.path(images[0])
+            else:
+                log.warning('Found %d images for PAGE %s and fileGrp %s, expected 1', len(images), page_id, file_group)
+                image_paths[page_id] = None
+        return image_paths
 
     def get_unused_page_id(self, template_page_id: str = 'PAGE_{page_nr}') -> Tuple[str, int]:
         """
@@ -250,11 +273,12 @@ class Document:
 
     def page_for_id(self, page_id: str, file_group: str = None) -> Optional['Page']:
         """
-        Find the Page object for page_id and filegroup
+        Find the Page object for page_id and file_group
 
         If no PAGE-XML is found finds a single image file in the group, PAGE-XML will be populated automatically by page_from_image
         This is modelled after Processor.input_files https://github.com/OCR-D/core/pull/556/
         """
+        log = getLogger('ocrd_browser.model.document.Document.page_for_id')
         page_files = self.files_for_page_id(page_id, file_group, MIMETYPE_PAGE)
         if not page_files:
             page_files = self.files_for_page_id(page_id, file_group, mimetype="//image/.*")

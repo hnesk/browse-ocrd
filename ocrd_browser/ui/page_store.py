@@ -4,6 +4,8 @@ from typing import Tuple, Optional, Dict, List, Union, NewType, Callable, Any
 from itertools import count
 from pathlib import Path
 
+from ocrd_utils import getLogger
+
 from ocrd_browser.util.image import cv_to_pixbuf, cv_scale
 from ocrd_browser.model import Document, DEFAULT_FILE_GROUP
 from .icon_store import LazyLoadingListStore
@@ -14,7 +16,6 @@ import os
 RowResult = Tuple[Optional[int], Optional[Gtk.TreeModelRow]]
 ChangeList = Union[List[str], Dict[str, str]]
 Column = NewType('Column', int)
-
 
 class PageListStore(LazyLoadingListStore):
     """
@@ -50,11 +51,13 @@ class PageListStore(LazyLoadingListStore):
         self.loading_image_pixbuf = GdkPixbuf.Pixbuf.new_from_resource(
             '/org/readmachine/ocrd-browser/icons/loading.png')
 
-        file_lookup = self._get_image_paths(self.document)
+        # TODO: do not hardcode DEFAULT_FILE_GROUP = 'OCR-D-IMG', see https://github.com/hnesk/browse-ocrd/issues/7#issuecomment-707851109
+        file_group = DEFAULT_FILE_GROUP
+        file_lookup = document.get_image_paths(file_group)
         order = count(start=1)
         for page_id in self.document.page_ids:
-            file = str(file_lookup[page_id])
-            self.append((page_id, '', file, None, next(order)))
+            file = file_lookup[page_id]
+            self.append((page_id, '', str(file) if file else None, None, next(order)))
 
         GLib.timeout_add(10, self.start_loading)
 
@@ -139,16 +142,6 @@ class PageListStore(LazyLoadingListStore):
         }
         handler[subtype](changes)
 
-    @staticmethod
-    def _get_image_paths(document: Document, file_group: str = 'OCR-D-IMG') -> Dict[str, Path]:
-        """
-        Builds a Dict ID->Path for all page_ids fast
-        """
-        images = list(document.workspace.mets.find_files(fileGrp=file_group))
-        page_ids = document.workspace.mets.get_physical_pages(for_fileIds=[image.ID for image in images])
-        file_paths = [document.path(image.url) for image in images]
-        return dict(zip(page_ids, file_paths))
-
     def _init_row(self, row: Gtk.TreeModelRow) -> None:
         row[1] = 'Loading {}'.format(row[self.COLUMN_FILENAME])
         row[3] = self.loading_image_pixbuf
@@ -164,5 +157,8 @@ class PageListStore(LazyLoadingListStore):
     @staticmethod
     def _hash_row(row: Gtk.TreeModelRow) -> str:
         file = row[PageListStore.COLUMN_FILENAME]
-        modified_time = os.path.getmtime(file)
-        return '{}:{}'.format(file, modified_time)
+        if file is not None:
+            modified_time = os.path.getmtime(file)
+            return '{}:{}'.format(file, modified_time)
+        else:
+            return ''
