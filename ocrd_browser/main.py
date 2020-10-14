@@ -35,7 +35,9 @@ def install_excepthook() -> None:
 
 
 def main() -> None:
+    from ocrd_utils import initLogging
     from ocrd_browser.application import OcrdBrowserApplication
+    initLogging()
     install_excepthook()
     app = OcrdBrowserApplication()
     app.run(sys.argv)
