@@ -47,9 +47,12 @@ class PageListStore(LazyLoadingListStore):
         }
         super().__init__(*(columns.values()), init_row=self._init_row, load_row=self._load_row, hash_row=self._hash_row)
         self.document = document
-        # noinspection PyCallByClass,PyArgumentList
-        self.loading_image_pixbuf = GdkPixbuf.Pixbuf.new_from_resource(
-            '/org/readmachine/ocrd-browser/icons/loading.png')
+
+        self.pixbufs: Dict[str, GdkPixbuf.Pixbuf] = {
+            icon_name: GdkPixbuf.Pixbuf.new_from_resource(
+                '/org/readmachine/ocrd-browser/icons/{}.png'.format(icon_name)
+            ) for icon_name in ['page-loading', 'page-missing']
+        }
 
         # TODO: do not hardcode DEFAULT_FILE_GROUP = 'OCR-D-IMG', see https://github.com/hnesk/browse-ocrd/issues/7#issuecomment-707851109
         file_group = DEFAULT_FILE_GROUP
@@ -143,15 +146,21 @@ class PageListStore(LazyLoadingListStore):
         handler[subtype](changes)
 
     def _init_row(self, row: Gtk.TreeModelRow) -> None:
-        row[1] = 'Loading {}'.format(row[self.COLUMN_FILENAME])
-        row[3] = self.loading_image_pixbuf
+        if row[self.COLUMN_FILENAME] is not None:
+            row[1] = 'Loading {}'.format(row[self.COLUMN_FILENAME])
+            row[3] = self.pixbufs['page-loading']
+        else:
+            row[1] = 'No image for {}'.format(row[self.COLUMN_PAGE_ID])
+            row[3] = self.pixbufs['page-missing']
+
 
     @staticmethod
     def _load_row(row: Gtk.TreeModelRow) -> Gtk.TreeModelRow:
         filename = row[PageListStore.COLUMN_FILENAME]
-        image = cv2.imread(filename)
-        row[1] = '{} ({}x{})'.format(filename, image.shape[1], image.shape[0])
-        row[3] = cv_to_pixbuf(cv_scale(image, 100, None))
+        if filename is not None:
+            image = cv2.imread(filename)
+            row[1] = '{} ({}x{})'.format(filename, image.shape[1], image.shape[0])
+            row[3] = cv_to_pixbuf(cv_scale(image, 100, None))
         return row
 
     @staticmethod
