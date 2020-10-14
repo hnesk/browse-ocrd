@@ -1,3 +1,4 @@
+import re
 import shutil
 
 from ocrd import Workspace, Resolver
@@ -226,7 +227,6 @@ class Document:
         More precisely:  fast = Faster than iterating over page_ids and using mets.get_physical_page_for_file for each entry
         """
         log = getLogger('ocrd_browser.model.document.Document.get_image_paths')
-
         image_paths = {}
         file_index = self.get_file_index()
         for page_id in self.page_ids:
@@ -237,6 +237,31 @@ class Document:
                 log.warning('Found %d images for PAGE %s and fileGrp %s, expected 1', len(images), page_id, file_group)
                 image_paths[page_id] = None
         return image_paths
+
+    def get_default_image_group(self, preferred_image_file_groups:Optional[List] = None) -> Optional[str]:
+        image_file_groups = []
+        for file_group, mimetype in self.file_groups_and_mimetypes:
+            weight = 0.0
+            if mimetype.split('/')[0] == 'image':
+                # prefer images
+                weight += 0.5
+            if preferred_image_file_groups:
+                for i, preferred_image_file_group in enumerate(preferred_image_file_groups):
+                    if re.fullmatch(preferred_image_file_group, file_group):
+                        # prefer matches earlier in the list
+                        weight += (len(preferred_image_file_groups) - i)
+                        break
+            # prefer shorter `file_group`s
+            weight -= len(file_group)*0.00001
+            image_file_groups.append((file_group,weight))
+        # Sort by weight
+        image_file_groups = sorted(image_file_groups, key=lambda e:e[1], reverse=True)
+
+        if len(image_file_groups) > 0:
+            return image_file_groups[0][0]
+        else:
+            return None
+
 
     def get_unused_page_id(self, template_page_id: str = 'PAGE_{page_nr}') -> Tuple[str, int]:
         """

@@ -38,6 +38,28 @@ class DocumentTestCase(TestCase):
         self.assertEqual(3, len(page17))
         self.assertEqual(2, len(alto))
 
+    def test_get_image_paths(self):
+        doc = Document.load(self.path)
+        image_paths = doc.get_image_paths('OCR-D-IMG')
+        self.assertEqual(2, len(image_paths))
+        self.assertEqual('INPUT_0017.tif', image_paths['PHYS_0017'].name)
+        self.assertEqual('INPUT_0020.tif', image_paths['PHYS_0020'].name)
+
+    def test_get_default_image_group(self):
+        doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-complex/data/mets.xml')
+        file_group = doc.get_default_image_group(['OCR-D-IMG-BIN', 'OCR-D-IMG.*'])
+        self.assertEqual('OCR-D-IMG-BIN', file_group)
+
+    def test_get_default_image_group_no_preference(self):
+        doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-complex/data/mets.xml')
+        file_group = doc.get_default_image_group()
+        self.assertEqual('OCR-D-IMG', file_group)
+
+    def test_get_default_image_group_with_missing_ocr_d_img(self):
+        doc = Document.load(ASSETS_PATH / '../example/workspaces/no_ocrd_d_img_group/mets.xml')
+        file_group = doc.get_default_image_group()
+        self.assertEqual('OCR-D-IMG-PNG', file_group)
+
     def test_path_string(self):
         doc = Document.load(self.path)
         self.assertEqual(ASSETS_PATH / 'kant_aufklaerung_1784/data/lala.xml', doc.path('lala.xml'))
@@ -116,7 +138,7 @@ class DocumentTestCase(TestCase):
 
         https://github.com/hnesk/browse-ocrd/issues/4
         """
-        doc = Document.load(ASSETS_PATH / '../bad/workspaces/kant_aufklaerung_1784_missing_xml/mets.xml')
+        doc = Document.load(ASSETS_PATH / '../example/workspaces/kant_aufklaerung_1784_missing_xml/mets.xml')
         with self.assertLogs('ocrd_browser.model.document', level='WARNING') as log_watch:
             page = doc.page_for_id('PHYS_0020', 'OCR-D-GT-PAGE')
         self.assertIsNone(page)
