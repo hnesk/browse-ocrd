@@ -23,7 +23,8 @@ except ValueError:
 
 initLogging()
 
-ASSETS_PATH = (Path(__file__).parent/ 'assets').absolute()
+TEST_BASE_PATH = (Path(__file__).parent).absolute()
+ASSETS_PATH = (TEST_BASE_PATH / 'assets').absolute()
 if not ASSETS_PATH.exists():
     raise RuntimeError('Assset path {} not found, please run: make tests/assets first')
 
