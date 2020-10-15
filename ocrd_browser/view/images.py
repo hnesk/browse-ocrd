@@ -81,5 +81,6 @@ class ViewImages(View):
                 if page:
                     thumbnail = pil_scale(page.image, None, self.preview_height - 10)
                     image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
+                    image.set_tooltip_text(page.id)
                 else:
                     image.set_from_stock('missing-image', Gtk.IconSize.DIALOG)

@@ -51,6 +51,7 @@ class ViewXml(View):
 
     def redraw(self) -> None:
         if self.current:
+            self.text_view.set_tooltip_text(self.page_id)
             text = to_xml(self.current.pc_gts)
             # TODO: Crashes with big XML, as a workaround disable highlighting
             self.buffer.set_highlight_syntax(len(text) <= 50000)
