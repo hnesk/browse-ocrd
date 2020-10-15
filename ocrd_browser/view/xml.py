@@ -9,11 +9,6 @@ from ocrd_browser.view.base import FileGroupSelector, FileGroupFilter
 
 GObject.type_register(GtkSource.View)
 
-SPLIT = """
-... I'm sorry Dave, I'm afraid I can't do that ...
-... With bigger XML files there are frequent crashes ...                                                   
-"""
-
 
 class ViewXml(View):
     """
@@ -57,17 +52,8 @@ class ViewXml(View):
     def redraw(self) -> None:
         if self.current:
             text = to_xml(self.current.pc_gts)
-            # TODO: Crashes with big XML, as a workaround shorten the file
-            if len(text) > 50000:
-                self.buffer.set_highlight_syntax(False)
-                line_break_start = text.find("\n", 45000)
-                line_break_end = text.find("\n", len(text) - 5000)
-
-                text = text[:line_break_start] + SPLIT + text[line_break_end:]
-
-            else:
-                self.buffer.set_highlight_syntax(True)
-
+            # TODO: Crashes with big XML, as a workaround disable highlighting
+            self.buffer.set_highlight_syntax(len(text) <= 50000)
             self.buffer.set_text(text)
         else:
             self.buffer.set_text('')
