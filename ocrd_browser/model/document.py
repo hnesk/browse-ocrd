@@ -98,7 +98,7 @@ class Document:
 
         saved_space = Resolver().workspace_from_url(mets_url=self.workspace.mets_target, mets_basename=mets_basename,
                                                     download=False, clobber_mets=True, dst_dir=workspace_directory)
-        saved_files = list(saved_space.mets.find_files())
+        saved_files = saved_space.mets.find_files()
         for n, f in enumerate(saved_files):
             f = saved_space.download_file(f)
             self._emit('document_saving', n / len(saved_files), f)

@@ -104,9 +104,12 @@ class PageListStore(LazyLoadingListStore):
 
         def _page_added(page_ids: List[str]) -> None:
             for page_id in page_ids:
-                file = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)[0]
-                file_name = str(self.document.path(file.local_filename))
-                self.append((page_id, '', file_name, None, len(self)))
+                try:
+                    file = next(iter(self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)))
+                    file_name = str(self.document.path(file.local_filename))
+                    self.append((page_id, '', file_name, None, len(self)))
+                except StopIteration as e:
+                    raise ValueError('Page {} / Group {}  not in workspace'.format(page_id, DEFAULT_FILE_GROUP)) from e
 
         def _page_deleted(page_ids: List[str]) -> None:
             for delete_page_id in reversed(page_ids):
@@ -116,10 +119,12 @@ class PageListStore(LazyLoadingListStore):
         def _page_changed(page_ids: List[str]) -> None:
             for page_id in page_ids:
                 n, row = self.get_row_by_page_id(page_id)
-                files = self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)
-                if files:
-                    file_name = str(self.document.path(files[0]))
+                try:
+                    file = next(iter(self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)))
+                    file_name = str(self.document.path(file))
                     row[self.COLUMN_FILENAME] = file_name
+                except StopIteration:
+                    pass
 
         def _reordered(old_to_new_ids: Dict[str, str]) -> None:
             id_to_position: Dict[str, int] = {}
