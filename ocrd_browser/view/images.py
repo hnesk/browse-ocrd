@@ -99,17 +99,21 @@ class ViewImages(View):
                         thumbnail = pil_scale(img, None, self.preview_height - 10)
                         image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
                         img_file = page.image_files[i]
+                        tooltip = None
                         if img_file == page.file:
-                            image.set_tooltip_text(page.id)
+                            tooltip = page.id
                         else:
-                            # get segment ID for AlternativeImage as tooltip
-                            img_id = page.pc_gts.gds_elementtree_node_.xpath(
-                                '//page:AlternativeImage[@filename="{}"]/../@id'.format(img_file.local_filename),
-                                namespaces=NS)
-                            if img_id:
-                                image.set_tooltip_text(page.id + ':' + img_id[0])
-                            else:
-                                image.set_tooltip_text(img_file.local_filename)
+                            if page.pc_gts.gds_elementtree_node_:
+                                # get segment ID for AlternativeImage as tooltip
+                                img_id = page.pc_gts.gds_elementtree_node_.xpath(
+                                    '//page:AlternativeImage[@filename="{}"]/../@id'.format(img_file.local_filename),
+                                    namespaces=NS)
+                                if img_id:
+                                    tooltip = page.id + ':' + img_id[0]
+                        if tooltip is None:
+                            tooltip = img_file.local_filename
+                        image.set_tooltip_text(tooltip)
+
                     else:
                         image.set_from_stock('missing-image', Gtk.IconSize.DIALOG)
                 for child in existing_images.values():
