@@ -30,7 +30,7 @@ class ViewImages(View):
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.IMAGE))
         self.add_configurator('page_qty', PageQtySelector())
 
-        self.image_box = Gtk.HBox(visible=True, homogeneous=True)
+        self.image_box = Gtk.Box(visible=True, orientation=Gtk.Orientation.HORIZONTAL, homogeneous=True)
         self.viewport.add(self.image_box)
         self.rebuild_pages()
 
@@ -51,7 +51,7 @@ class ViewImages(View):
         for i in range(0, self.page_qty):
             name = 'page_{}'.format(i)
             if not existing_pages.pop(name, None):
-                page = Gtk.VBox(visible=True, homogeneous=False, spacing=0)
+                page = Gtk.Box(visible=True, orientation = Gtk.Orientation.VERTICAL, homogeneous=False, spacing=0)
                 self.image_box.add(page)
 
         for child in existing_pages.values():
