@@ -22,6 +22,7 @@ from urllib.parse import urlparse
 from lxml.etree import ElementBase as Element, _ElementTree as ElementTree
 
 from numpy import array as ndarray
+from PIL import Image
 
 import cv2
 
@@ -234,7 +235,7 @@ class Document:
             if len(images) == 1:
                 image_paths[page_id] = self.path(images[0])
             else:
-                log.warning('Found %d images for PAGE %s and fileGrp %s, expected 1', len(images), page_id, file_group)
+                # log.warning('Found %d images for page %s and fileGrp %s, expected 1', len(images), page_id, file_group)
                 image_paths[page_id] = None
         return image_paths
 
@@ -298,26 +299,33 @@ class Document:
 
     def page_for_id(self, page_id: str, file_group: str = None) -> Optional['Page']:
         """
-        Find the Page object for page_id and file_group
+        Find the Page object for page_id and file_group, including any PAGE-XML file and image files.
 
-        If no PAGE-XML is found finds a single image file in the group, PAGE-XML will be populated automatically by page_from_image
+        If no images can be found, extract the image for the page from the PAGE-XML by page_from_file.
+
+        If no PAGE-XML can be found, get all single image files and construct a PAGE-XML by page_from_image.
+
+        If neither PAGE-XML nor images can be found, give up.
+
         This is modelled after Processor.input_files https://github.com/OCR-D/core/pull/556/
         """
         log = getLogger('ocrd_browser.model.document.Document.page_for_id')
         page_files = self.files_for_page_id(page_id, file_group, MIMETYPE_PAGE)
-        if not page_files:
-            page_files = self.files_for_page_id(page_id, file_group, mimetype="//image/.*")
-            if not page_files:
-                log.warning("No PAGE-XML and no image for page '{}' in fileGrp '{}'".format(page_id, file_group))
-                return None
-            elif len(page_files) > 1:
-                log.warning("No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(page_files), page_id, file_group))
-                # but keep going and show the first one for now
+        image_files = self.files_for_page_id(page_id, file_group, mimetype="//image/.*")
+        images = [self.resolve_image(f) for f in image_files]
+        if not page_files and not image_files:
+            log.warning("No PAGE-XML and no image for page '{}' in fileGrp '{}'".format(page_id, file_group))
+            return None
+        file = next(iter(page_files + image_files))
+        pcgts = self.page_for_file(file)
+        if not image_files:
+            image, _, _ = self.workspace.image_from_page(pcgts.get_Page(), page_id)
+            image_files = [file]
+            images = [image]
+        elif not page_files and len(image_files) > 1:
+            log.warning("No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(page_files), page_id, file_group))
 
-        pcgts = self.page_for_file(page_files[0])
-        page = pcgts.get_Page()
-        image, info, exif = self.workspace.image_from_page(page, page_id)
-        return Page(page_id, page_files[0], pcgts, image, exif)
+        return Page(page_id, file, pcgts, image_files, images, None)
 
     def files_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP, mimetype: str = None) \
             -> List[OcrdFile]:
@@ -330,6 +338,12 @@ class Document:
     def page_for_file(self, page_file: OcrdFile) -> PcGtsType:
         with pushd_popd(self.workspace.directory):
             return page_from_file(page_file)
+
+    def resolve_image(self, image_file: OcrdFile) -> Image:
+        with pushd_popd(self.workspace.directory):
+            pil_image = Image.open(self.workspace.download_file(image_file).local_filename)
+            pil_image.load()
+            return pil_image
 
     def reorder(self, ordered_page_ids: List[str]) -> None:
         """
