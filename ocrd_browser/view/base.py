@@ -102,7 +102,7 @@ class PageQtySelector(Gtk.Box, Configurator):
         super().__init__(visible=True, spacing=3)
         self.value = None
 
-        label = Gtk.Label(label='# Pages:', visible=True)
+        label = Gtk.Label(label='#Pages:', visible=True)
 
         self.pages = Gtk.SpinButton(visible=True, max_length=2, width_chars=2, max_width_chars=2, numeric=True)
         self.pages.set_tooltip_text('How many pages should be displayed at once?')
@@ -125,6 +125,34 @@ class PageQtySelector(Gtk.Box, Configurator):
     def changed(self, page_qty: int) -> None:
         self.value = page_qty
 
+class ImageZoomSelector(Gtk.Box, Configurator):
+
+    def __init__(self) -> None:
+        super().__init__(visible=True, spacing=3)
+        self.value = None
+
+        label = Gtk.Label(label='Zoom:', visible=True)
+
+        self.scale = Gtk.SpinButton(visible=True, max_length=3, width_chars=3, max_width_chars=3, numeric=True)
+        self.scale.set_tooltip_text('log scale factor for viewing images')
+        # noinspection PyCallByClass,PyArgumentList
+        self.scale.set_adjustment(Gtk.Adjustment.new(0, -20, 20, 1, 4, 3))
+        self.scale.set_snap_to_ticks(False)
+        self.scale.connect('value-changed', self.value_changed)
+
+        self.pack_start(label, False, True, 0)
+        self.pack_start(self.scale, False, True, 0)
+
+    def set_value(self, value: int) -> None:
+        self.value = value
+        self.scale.set_value(value)
+
+    def value_changed(self, spin: Gtk.SpinButton) -> None:
+        self.emit('changed', 1.2**(spin.get_value()))
+    
+    @GObject.Signal(arg_types=[float])
+    def changed(self, scale: float) -> None:
+        self.value = scale
 
 class FileGroupSelector(Gtk.Box, Configurator):
 
