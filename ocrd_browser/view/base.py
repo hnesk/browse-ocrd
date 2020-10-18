@@ -89,6 +89,9 @@ class View:
     def redraw(self) -> None:
         pass
 
+    def update_ui(self) -> None:
+        pass
+
     def on_viewport_size_allocate(self, _sender: Gtk.Widget, rect: Gdk.Rectangle) -> None:
         self.on_size(rect.width, rect.height, rect.x, rect.y)
 

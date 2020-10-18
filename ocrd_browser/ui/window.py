@@ -4,7 +4,7 @@ from ocrd_models import OcrdFile
 from ocrd_browser.model import Document
 from ocrd_browser.view import ViewRegistry, View, ViewImages
 from ocrd_browser.util.gtk import ActionRegistry
-from .dialogs import SaveDialog
+from .dialogs import SaveDialog, SaveChangesDialog
 from .page_browser import PagePreviewList
 from pkg_resources import resource_filename
 from typing import List, cast, Any, Optional
@@ -20,6 +20,7 @@ class MainWindow(Gtk.ApplicationWindow):
     current_page_label: Gtk.Label = Gtk.Template.Child()
     view_container: Gtk.Box = Gtk.Template.Child()
     view_menu_box: Gtk.Box = Gtk.Template.Child()
+    save_button: Gtk.Button = Gtk.Template.Child()
 
     def __init__(self, **kwargs: Any):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
@@ -30,8 +31,6 @@ class MainWindow(Gtk.ApplicationWindow):
         # noinspection PyTypeChecker
         self.document = Document.create(emitter=self.emit)
 
-        string_type = GLib.Variant("s", "")
-
         self.actions = ActionRegistry(for_widget=self)
         self.actions.create('close')
         self.actions.create('goto_first')
@@ -40,10 +39,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions.create('goto_last')
         self.actions.create('page_remove')
         self.actions.create('page_properties')
-        self.actions.create('close_view', param_type=string_type)
-        self.actions.create('create_view', param_type=string_type)
-        self.actions.create('save_as')
-        # self.actions.create('save')
+        self.actions.create('close_view', param_type=GLib.VariantType("s"))
+        self.actions.create('create_view', param_type=GLib.VariantType("s"))
+        self.actions.create('toggle_edit_mode', state=GLib.Variant('b', False))
+        self.actions.create('save')
+
+        self.connect('delete-event', self.on_delete_event)
 
         self.page_list = PagePreviewList(self.document)
         self.page_list_scroller.add(self.page_list)
@@ -82,14 +83,10 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def _open(self, uri: str) -> None:
         # noinspection PyTypeChecker
-        self.document = Document.clone(uri, emitter=self.emit)
+        self.document = Document.load(uri, emitter=self.emit)
         self.page_list.set_document(self.document)
 
-        title = self.document.workspace.mets.unique_identifier if self.document.workspace.mets.unique_identifier else '<unnamed>'
-        self.set_title(title)
-        self.header_bar.set_title(title)
-        self.header_bar.set_subtitle(self.document.baseurl_mets)
-
+        self.update_ui()
         for view in self.views:
             view.set_document(self.document)
 
@@ -125,19 +122,25 @@ class MainWindow(Gtk.ApplicationWindow):
     @GObject.Signal(arg_types=[str, object])
     def document_changed(self, subtype: str, page_ids: List[str]) -> None:
         self.page_list.document_changed(subtype, page_ids)
+        self.update_ui()
 
     @GObject.Signal(arg_types=[object])
     def document_saved(self, saved: Document) -> None:
-        pass
+        self.update_ui()
 
     @GObject.Signal(arg_types=[float,object])
     def document_saving(self, progress: float, file: Optional[OcrdFile]) -> None:
         pass
 
     def update_ui(self) -> None:
+        title = self.document.workspace.mets.unique_identifier if self.document.workspace.mets.unique_identifier else '<unnamed>'
+        self.set_title(title)
+        self.header_bar.set_title(title)
+        self.header_bar.set_subtitle(self.document.original_url)
+
         can_go_back = False
         can_go_forward = False
-        if self.current_page_id and len(self.document.page_ids) > 0:
+        if self.current_page_id and self.current_page_id in self.document.page_ids:
             index = self.document.page_ids.index(self.current_page_id)
             last_page = len(self.document.page_ids) - 1
             can_go_back = index > 0
@@ -147,20 +150,47 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions['go_back'].set_enabled(can_go_back)
         self.actions['go_forward'].set_enabled(can_go_forward)
         self.actions['goto_last'].set_enabled(can_go_forward)
+        self.actions['page_remove'].set_enabled(self.document.editable)
+        self.actions['toggle_edit_mode'].set_state(GLib.Variant.new_boolean(self.document.editable))
+        self.actions['save'].set_enabled(self.document.modified)
+        self.save_button.set_label('Save' if self.document.original_url else 'Save as ...')
+        for view in self.views:
+            view.update_ui()
 
-    def on_close(self, _a: Gio.SimpleAction, _p: None) -> None:
-        self.destroy()
+    def close_confirm(self):
+        if self.document.modified:
+            # Do you wanna save the changes?
+            d = SaveChangesDialog(document=self.document, transient_for=self, modal=True)
+            save_changes = d.run()
+            d.destroy()
 
-    def on_goto_first(self, _a: Gio.SimpleAction, _p: None) -> None:
+            if save_changes == Gtk.ResponseType.NO:
+                return True
+            elif save_changes == Gtk.ResponseType.CANCEL:
+                return False
+            elif save_changes == Gtk.ResponseType.YES:
+                return self.on_save()
+            return False
+        else:
+            return True
+
+    def on_close(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
+        if self.close_confirm():
+            self.destroy()
+
+    def on_delete_event(self, *args, **kwargs):
+        return not self.close_confirm()
+
+    def on_goto_first(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
         self.page_list.goto_index(0)
 
-    def on_go_forward(self, _a: Gio.SimpleAction, _p: None) -> None:
+    def on_go_forward(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
         self.page_list.skip(1)
 
-    def on_go_back(self, _a: Gio.SimpleAction, _p: None) -> None:
+    def on_go_back(self,  _a: Gio.SimpleAction = None, _p: None = None) -> None:
         self.page_list.skip(-1)
 
-    def on_goto_last(self, _a: Gio.SimpleAction, _p: None) -> None:
+    def on_goto_last(self,  _a: Gio.SimpleAction = None, _p: None = None) -> None:
         self.page_list.goto_index(-1)
 
     def on_create_view(self, _a: Gio.SimpleAction, selected_view_id: GLib.Variant) -> None:
@@ -181,13 +211,31 @@ class MainWindow(Gtk.ApplicationWindow):
             self.views.remove(closing_view)
             del closing_view
 
-    def on_save_as(self, _a: Gio.SimpleAction, _p: None) -> None:
-        save_dialog = SaveDialog(application=self.get_application(), transient_for=self, modal=True)
-        if self.document.empty:
-            save_dialog.set_current_name('mets.xml')
+    def on_save(self, _a: Gio.SimpleAction = None, _p: None = None):
+        if self.document.original_url:
+            self.save(None)
         else:
-            save_dialog.set_filename(self.document.baseurl_mets)
+            self.save_as(None)
+
+    def save(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
+        self.document.save()
+        self.update_ui()
+
+    def save_as(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
+        save_dialog = SaveDialog(application=self.get_application(), transient_for=self, modal=True)
+        if self.document.original_url:
+            save_dialog.set_filename(self.document.original_url)
+        else:
+            #save_dialog.set_current_folder()
+            save_dialog.set_current_name('mets.xml')
         response = save_dialog.run()
         if response == Gtk.ResponseType.OK:
-            self.document.save(save_dialog.get_uri())
+            self.document.save_as(save_dialog.get_uri())
         save_dialog.destroy()
+        self.update_ui()
+        return response == Gtk.ResponseType.OK
+
+
+    def on_toggle_edit_mode(self, _a: Gio.SimpleAction = None, _p: None = None):
+        self.document.editable = not self.document.editable
+        self.update_ui()
