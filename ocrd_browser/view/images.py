@@ -1,11 +1,17 @@
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 
 from typing import Any, List, Optional, Tuple
 
 from itertools import zip_longest
 from ocrd_browser.util.image import pil_to_pixbuf, pil_scale
 from ocrd_models.constants import NAMESPACES as NS
-from .base import View, FileGroupSelector, FileGroupFilter, PageQtySelector
+from .base import (
+    View,
+    FileGroupSelector,
+    FileGroupFilter,
+    PageQtySelector,
+    ImageZoomSelector
+)
 from ..model import Page
 
 
@@ -21,6 +27,7 @@ class ViewImages(View):
         self.file_group: Tuple[Optional[str], Optional[str]] = ('OCR-D-IMG', None)
         self.page_qty: int = 1
         self.preview_height: int = 10
+        self.scale: float = 1.0
         self.image_box: Optional[Gtk.Box] = None
         self.pages: List[Page] = []
 
@@ -29,15 +36,21 @@ class ViewImages(View):
 
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.IMAGE))
         self.add_configurator('page_qty', PageQtySelector())
+        self.add_configurator('scale', ImageZoomSelector())
 
         self.image_box = Gtk.Box(visible=True, orientation=Gtk.Orientation.HORIZONTAL, homogeneous=True)
         self.viewport.add(self.image_box)
         self.rebuild_pages()
+        self.window.connect('scroll-event', self.on_scroll)
+        self.window.add_events(Gdk.EventMask.SCROLL_MASK |\
+                               Gdk.EventMask.SMOOTH_SCROLL_MASK)
 
     def config_changed(self, name: str, value: Any) -> None:
         super(ViewImages, self).config_changed(name, value)
         if name == 'page_qty':
             self.rebuild_pages()
+        if name == 'scale':
+            self.rescale()
         self.reload()
 
     def rebuild_pages(self) -> None:
@@ -78,7 +91,7 @@ class ViewImages(View):
     def on_size(self, _w: int, h: int, _x: int, _y: int) -> None:
         if abs(self.preview_height - h) > 4:
             self.preview_height = h
-            self.redraw()
+            self.rescale()
 
     def redraw(self) -> None:
         if self.pages:
@@ -96,25 +109,52 @@ class ViewImages(View):
                                           icon_size=Gtk.IconSize.DIALOG)
                         box.add(image)
                     if img:
-                        thumbnail = pil_scale(img, None, self.preview_height - 10)
-                        image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
-                        img_file = page.image_files[i]
-                        tooltip = None
-                        if img_file == page.file:
-                            tooltip = page.id
+                        if page.image_files[0] == page.file:
+                            # PAGE-XML was created from the (first) image file directly
+                            image.set_tooltip_text(page.id)
                         else:
-                            if page.pc_gts.gds_elementtree_node_:
-                                # get segment ID for AlternativeImage as tooltip
-                                img_id = page.pc_gts.gds_elementtree_node_.xpath(
-                                    '//page:AlternativeImage[@filename="{}"]/../@id'.format(img_file.local_filename),
-                                    namespaces=NS)
-                                if img_id:
-                                    tooltip = page.id + ':' + img_id[0]
-                        if tooltip is None:
-                            tooltip = img_file.local_filename
-                        image.set_tooltip_text(tooltip)
-
+                            img_file = page.image_files[i]
+                            # get segment ID for AlternativeImage as tooltip
+                            img_id = page.pc_gts.gds_elementtree_node_.xpath(
+                                '//page:AlternativeImage[@filename="{}"]/../@id'.format(img_file.local_filename),
+                                namespaces=NS)
+                            if img_id:
+                                image.set_tooltip_text(page.id + ':' + img_id[0])
+                            else:
+                                image.set_tooltip_text(img_file.local_filename)
                     else:
                         image.set_from_stock('missing-image', Gtk.IconSize.DIALOG)
                 for child in existing_images.values():
                     child.destroy()
+            self.rescale()
+
+    def rescale(self) -> None:
+        if self.pages:
+            box: Gtk.Box
+            for box, page in zip_longest(self.image_box.get_children(), self.pages):
+                images = {child.get_name():
+                          child for child in box.get_children()}
+                for i, img in enumerate(page.images if page else [None]):
+                    name = 'image_{}'.format(i)
+                    image: Gtk.Image
+                    image = images[name]
+                    if img:
+                        thumbnail = pil_scale(img, None, int(self.scale * self.preview_height) - 10)
+                        image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
+
+    def on_scroll(self, widget: Gtk.Widget, event: Gdk.EventButton):
+        # Handles zoom in / zoom out on Ctrl+mouse wheel
+        accel_mask = Gtk.accelerator_get_default_mod_mask()
+        if event.state & accel_mask == Gdk.ModifierType.CONTROL_MASK:
+            release, direction = event.get_scroll_direction()
+            if not release:
+                return False
+            if direction == Gdk.ScrollDirection.DOWN:
+                self.scale = max(0.01, self.scale * 0.8)
+            else:
+                self.scale = min(40.0, self.scale / 0.8)
+            self.rescale()
+            return False
+        else:
+            # delegate to normal scroll handler (vertical/horizontal navigation)
+            return True
