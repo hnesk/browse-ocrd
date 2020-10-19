@@ -35,7 +35,7 @@ class OcrdBrowserApplication(Gtk.Application):
         about_dialog.present()
 
     def on_quit(self, _action: Gio.SimpleAction, _param: str = None) -> None:
-        open_windows:int = 0
+        open_windows: int = 0
         window: MainWindow
         for window in self.get_windows():
             if isinstance(window, MainWindow) and window.close_confirm():

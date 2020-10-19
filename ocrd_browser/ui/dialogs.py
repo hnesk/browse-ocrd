@@ -61,11 +61,19 @@ class SaveChangesDialog(Gtk.MessageDialog):
         Gtk.MessageDialog.__init__(self, **kwargs)
         name = document.workspace.mets.unique_identifier if document.workspace.mets.unique_identifier else '<unnamed>'
         self.props.text = 'Save changes to document "{}" before closing?'.format(name)
-        self.props.secondary_text = 'If you don’t save, changes to {} will be permanently lost.'.format(document.original_url if document.original_url else 'this file')
+        self.props.secondary_text = 'If you don’t save, changes to {} will be permanently lost.'.format(
+            document.original_url if document.original_url else 'this file')
         self.props.message_type = Gtk.MessageType.QUESTION
+
+        # Close Button
         close_button: Gtk.Button = self.add_button('Close without saving', Gtk.ResponseType.NO)
         close_button.get_style_context().add_class('destructive-action')
-        cancel_button: Gtk.Button = self.add_button('_Cancel', Gtk.ResponseType.CANCEL)
+
+        # Cancel Button
+        self.add_button('_Cancel', Gtk.ResponseType.CANCEL)
+
+        # Save Button
         save_text = '_Save' if document.original_url else '_Save as ...'
         save_button: Gtk.Button = self.add_button(save_text, Gtk.ResponseType.YES)
+
         self.set_default(save_button)

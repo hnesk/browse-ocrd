@@ -1,4 +1,4 @@
-from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib
+from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib, Gdk
 from ocrd_models import OcrdFile
 
 from ocrd_browser.model import Document
@@ -20,7 +20,6 @@ class MainWindow(Gtk.ApplicationWindow):
     current_page_label: Gtk.Label = Gtk.Template.Child()
     view_container: Gtk.Box = Gtk.Template.Child()
     view_menu_box: Gtk.Box = Gtk.Template.Child()
-    save_button: Gtk.Button = Gtk.Template.Child()
 
     def __init__(self, **kwargs: Any):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
@@ -43,6 +42,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions.create('create_view', param_type=GLib.VariantType("s"))
         self.actions.create('toggle_edit_mode', state=GLib.Variant('b', False))
         self.actions.create('save')
+        self.actions.create('save_as')
 
         self.connect('delete-event', self.on_delete_event)
 
@@ -125,15 +125,17 @@ class MainWindow(Gtk.ApplicationWindow):
         self.update_ui()
 
     @GObject.Signal(arg_types=[object])
-    def document_saved(self, saved: Document) -> None:
+    def document_saved(self, _saved: Document) -> None:
         self.update_ui()
 
-    @GObject.Signal(arg_types=[float,object])
+    @GObject.Signal(arg_types=[float, object])
     def document_saving(self, progress: float, file: Optional[OcrdFile]) -> None:
         pass
 
     def update_ui(self) -> None:
         title = self.document.workspace.mets.unique_identifier if self.document.workspace.mets.unique_identifier else '<unnamed>'
+        if self.document.modified:
+            title = title + ' *'
         self.set_title(title)
         self.header_bar.set_title(title)
         self.header_bar.set_subtitle(self.document.original_url)
@@ -153,7 +155,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions['page_remove'].set_enabled(self.document.editable)
         self.actions['toggle_edit_mode'].set_state(GLib.Variant.new_boolean(self.document.editable))
         self.actions['save'].set_enabled(self.document.modified)
-        self.save_button.set_label('Save' if self.document.original_url else 'Save as ...')
+        # self.actions['save_as'].set_enabled(self.document.modified)
         for view in self.views:
             view.update_ui()
 
@@ -178,7 +180,7 @@ class MainWindow(Gtk.ApplicationWindow):
         if self.close_confirm():
             self.destroy()
 
-    def on_delete_event(self, *args, **kwargs):
+    def on_delete_event(self, _window: 'MainWindow', _event: Gdk.Event):
         return not self.close_confirm()
 
     def on_goto_first(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
@@ -187,10 +189,10 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_go_forward(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
         self.page_list.skip(1)
 
-    def on_go_back(self,  _a: Gio.SimpleAction = None, _p: None = None) -> None:
+    def on_go_back(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
         self.page_list.skip(-1)
 
-    def on_goto_last(self,  _a: Gio.SimpleAction = None, _p: None = None) -> None:
+    def on_goto_last(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
         self.page_list.goto_index(-1)
 
     def on_create_view(self, _a: Gio.SimpleAction, selected_view_id: GLib.Variant) -> None:
@@ -213,28 +215,31 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_save(self, _a: Gio.SimpleAction = None, _p: None = None):
         if self.document.original_url:
-            self.save(None)
+            return self.save()
         else:
-            self.save_as(None)
+            return self.save_as()
 
-    def save(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
+    def on_save_as(self, _a: Gio.SimpleAction = None, _p: None = None):
+        self.save_as()
+
+    def save(self) -> bool:
         self.document.save()
         self.update_ui()
+        return True
 
-    def save_as(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
+    def save_as(self) -> bool:
         save_dialog = SaveDialog(application=self.get_application(), transient_for=self, modal=True)
         if self.document.original_url:
             save_dialog.set_filename(self.document.original_url)
         else:
-            #save_dialog.set_current_folder()
             save_dialog.set_current_name('mets.xml')
         response = save_dialog.run()
-        if response == Gtk.ResponseType.OK:
+        should_save = response == Gtk.ResponseType.OK
+        if should_save:
             self.document.save_as(save_dialog.get_uri())
         save_dialog.destroy()
         self.update_ui()
-        return response == Gtk.ResponseType.OK
-
+        return should_save
 
     def on_toggle_edit_mode(self, _a: Gio.SimpleAction = None, _p: None = None):
         self.document.editable = not self.document.editable
