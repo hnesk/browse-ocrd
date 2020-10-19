@@ -28,25 +28,25 @@ from numpy import array as ndarray
 
 import cv2
 
-
 EventCallBack = Optional[Callable[[str, Any], None]]
 
 
 def check_editable(func: Callable):
     @wraps(func)
     def guard(self, *args, **kwargs):
-        if self._editable != True:
+        if not self._editable:
             raise PermissionError('Document is not editable, can not call  {}'.format(func.__qualname__))
         return_value = func(self, *args, **kwargs)
         return return_value
+
     return guard
 
 
 class Document:
-
     temporary_workspaces = []
 
-    def __init__(self, workspace: Workspace, emitter: EventCallBack = None, editable: bool = False, original_url: str = None):
+    def __init__(self, workspace: Workspace, emitter: EventCallBack = None, editable: bool = False,
+                 original_url: str = None):
         self.workspace: Workspace = workspace
         self.emitter: EventCallBack = emitter
         self._original_url = original_url
@@ -84,7 +84,7 @@ class Document:
         return doc
 
     @classmethod
-    def clone(cls, mets_url: Union[Path, str], emitter: EventCallBack = None, editable = True) -> 'Document':
+    def clone(cls, mets_url: Union[Path, str], emitter: EventCallBack = None, editable=True) -> 'Document':
         """
         Clones a project (mets.xml and all used files) to a temporary directory for editing
         """
@@ -111,10 +111,11 @@ class Document:
         if not self._original_url:
             raise ValueError('Need an _original_url to save')
         self.save_as(self._original_url, backup_directory=backup_directory)
-        self._modified = False
 
     def save_as(self, mets_url: Union[Path, str], backup_directory: Union[bool, Path, str] = True) -> None:
+        log = getLogger('ocrd_browser.model.document.Document.save_as')
         mets_path = Path(self._strip_local(mets_url, disallow_remote=True))
+
         workspace_directory = mets_path.parent
         if workspace_directory.exists():
             if backup_directory:
@@ -138,6 +139,8 @@ class Document:
         self._emit('document_saving', 1, None)
         self._emit('document_saved', Document(saved_space, self.emitter))
         self._original_url = str(mets_path)
+        self._modified = False
+        log.info('Saved to %s', self._original_url)
 
     @property
     def directory(self) -> Path:
@@ -242,7 +245,8 @@ class Document:
             file.static_page_id = None
             file_index[file.ID] = file
 
-        file_pointers: List[Element] = self.xpath('mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]/mets:div[@TYPE="page"]/mets:fptr')
+        file_pointers: List[Element] = self.xpath(
+            'mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]/mets:div[@TYPE="page"]/mets:fptr')
         for file_pointer in file_pointers:
             file_id = file_pointer.get('FILEID')
             page_id = file_pointer.getparent().get('ID')
@@ -263,7 +267,8 @@ class Document:
         image_paths = {}
         file_index = self.get_file_index()
         for page_id in self.page_ids:
-            images = [image for image in file_index.values() if image.static_page_id == page_id and image.fileGrp == file_group]
+            images = [image for image in file_index.values() if
+                      image.static_page_id == page_id and image.fileGrp == file_group]
             if len(images) == 1:
                 image_paths[page_id] = self.path(images[0])
             else:
@@ -271,7 +276,7 @@ class Document:
                 image_paths[page_id] = None
         return image_paths
 
-    def get_default_image_group(self, preferred_image_file_groups:Optional[List] = None) -> Optional[str]:
+    def get_default_image_group(self, preferred_image_file_groups: Optional[List] = None) -> Optional[str]:
         image_file_groups = []
         for file_group, mimetype in self.file_groups_and_mimetypes:
             weight = 0.0
@@ -285,16 +290,15 @@ class Document:
                         weight += (len(preferred_image_file_groups) - i)
                         break
             # prefer shorter `file_group`s
-            weight -= len(file_group)*0.00001
-            image_file_groups.append((file_group,weight))
+            weight -= len(file_group) * 0.00001
+            image_file_groups.append((file_group, weight))
         # Sort by weight
-        image_file_groups = sorted(image_file_groups, key=lambda e:e[1], reverse=True)
+        image_file_groups = sorted(image_file_groups, key=lambda e: e[1], reverse=True)
 
         if len(image_file_groups) > 0:
             return image_file_groups[0][0]
         else:
             return None
-
 
     def get_unused_page_id(self, template_page_id: str = 'PAGE_{page_nr}') -> Tuple[str, int]:
         """
@@ -344,7 +348,8 @@ class Document:
                 log.warning("No PAGE-XML and no image for page '{}' in fileGrp '{}'".format(page_id, file_group))
                 return None
             elif len(page_files) > 1:
-                log.warning("No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(page_files), page_id, file_group))
+                log.warning("No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(page_files), page_id,
+                                                                                             file_group))
                 # but keep going and show the first one for now
 
         pcgts = self.page_for_file(page_files[0])
@@ -432,9 +437,8 @@ class Document:
         retval, image_array = cv2.imencode(extension, image)
         image_bytes = add_dpi_to_png_buffer(image_array.tostring(), dpi)
         local_filename = Path(file_group, '%s%s' % (file_id, extension))
-        url = (Path(self.workspace.directory) / local_filename)
         current_file = self.workspace.add_file(file_group, ID=file_id, mimetype=mimetype, force=True,
-                                               content=image_bytes, url=str(url),
+                                               content=image_bytes,
                                                local_filename=str(local_filename), pageId=page_id)
         self._empty = False
         self.save_mets()
@@ -453,7 +457,6 @@ class Document:
     def original_url(self):
         return self._original_url
 
-
     @property
     def editable(self):
         return self._editable
@@ -466,9 +469,8 @@ class Document:
             else:
                 self.workspace = Resolver().workspace_from_url(self.baseurl_mets)
         self._editable = editable
-        #self._empty = False
-        #self._modified = False
-
+        # self._empty = False
+        # self._modified = False
 
     def _emit(self, event: str, *args: Any) -> None:
         if self.emitter is not None:
