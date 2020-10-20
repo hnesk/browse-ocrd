@@ -27,7 +27,7 @@ class ViewImages(View):
         self.file_group: Tuple[Optional[str], Optional[str]] = ('OCR-D-IMG', None)
         self.page_qty: int = 1
         self.preview_height: int = 10
-        self.scale: float = 1.0
+        self.scale: float = -1.0
         self.image_box: Optional[Gtk.Box] = None
         self.pages: List[Page] = []
 
@@ -36,7 +36,7 @@ class ViewImages(View):
 
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.IMAGE))
         self.add_configurator('page_qty', PageQtySelector())
-        self.add_configurator('scale', ImageZoomSelector())
+        self.add_configurator('scale', ImageZoomSelector(2.0, 0.05, -3.0, 2.0))
 
         self.image_box = Gtk.Box(visible=True, orientation=Gtk.Orientation.HORIZONTAL, homogeneous=True)
         self.viewport.add(self.image_box)
@@ -131,6 +131,7 @@ class ViewImages(View):
     def rescale(self) -> None:
         if self.pages:
             box: Gtk.Box
+            scale_config: ImageZoomSelector = self.configurators['scale']
             for box, page in zip_longest(self.image_box.get_children(), self.pages):
                 images = {child.get_name():
                           child for child in box.get_children()}
@@ -139,7 +140,7 @@ class ViewImages(View):
                     image: Gtk.Image
                     image = images[name]
                     if img:
-                        thumbnail = pil_scale(img, None, int(self.scale * self.preview_height) - 10)
+                        thumbnail = pil_scale(img, None, int(scale_config.get_exp() * img.height))
                         image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
 
     def on_scroll(self, widget: Gtk.Widget, event: Gdk.EventButton):
@@ -149,10 +150,13 @@ class ViewImages(View):
             release, direction = event.get_scroll_direction()
             if not release:
                 return False
+            scale_config: ImageZoomSelector = self.configurators['scale']
+            adj: Gtk.Adjustment = scale_config.scale.get_adjustment()
+            #print(self.scale , adj.get_step_increment())
             if direction == Gdk.ScrollDirection.DOWN:
-                self.scale = max(0.01, self.scale * 0.8)
+                scale_config.set_value(self.scale - adj.get_step_increment())
             else:
-                self.scale = min(40.0, self.scale / 0.8)
+                scale_config.set_value(self.scale + adj.get_step_increment())
             self.rescale()
             return False
         else:
