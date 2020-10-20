@@ -1,6 +1,6 @@
 from gi.repository import Gtk, Pango, GObject, Gdk
 
-from typing import List, Tuple, Any, Optional
+from typing import List, Tuple, Any, Optional, Dict
 
 from enum import Enum
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
@@ -29,7 +29,7 @@ class View:
         self.current: Page = None
         self.page_id: str = None
 
-        self.configurators: List[Tuple[str, Configurator]] = []
+        self.configurators: Dict[str, Configurator] = {}
         self.container: Gtk.Box = None
         self.action_bar: Gtk.ActionBar = None
         self.viewport: Gtk.Viewport = None
@@ -49,7 +49,7 @@ class View:
 
     def set_document(self, document: Document) -> None:
         self.document = document
-        for (_name, configurator) in self.configurators:
+        for configurator in self.configurators.values():
             configurator.set_document(document)
 
     def add_configurator(self, name: str, configurator: Configurator) -> None:
@@ -62,7 +62,7 @@ class View:
         if not hasattr(self, name):
             raise AttributeError(f'{self.__class__.__name__} has no attribute {name}.')
         configurator.set_value(getattr(self, name))
-        self.configurators.append((name, configurator))
+        self.configurators[name] = configurator
         configurator.connect('changed', lambda _source, *value: self.config_changed(name, value))
         self.action_bar.pack_start(configurator)
 
@@ -102,12 +102,12 @@ class PageQtySelector(Gtk.Box, Configurator):
         super().__init__(visible=True, spacing=3)
         self.value = None
 
-        label = Gtk.Label(label='# Pages:', visible=True)
+        label = Gtk.Label(label='#Pages:', visible=True)
 
         self.pages = Gtk.SpinButton(visible=True, max_length=2, width_chars=2, max_width_chars=2, numeric=True)
         self.pages.set_tooltip_text('How many pages should be displayed at once?')
         # noinspection PyCallByClass,PyArgumentList
-        self.pages.set_adjustment(Gtk.Adjustment.new(1, 1, 16, 1, 4, 3))
+        self.pages.set_adjustment(Gtk.Adjustment.new(1, 1, 16, 1, 0, 0))
 
         self.pack_start(label, False, True, 0)
         self.pack_start(self.pages, False, True, 0)
@@ -124,6 +124,41 @@ class PageQtySelector(Gtk.Box, Configurator):
     @GObject.Signal(arg_types=[int])
     def changed(self, page_qty: int) -> None:
         self.value = page_qty
+
+class ImageZoomSelector(Gtk.Box, Configurator):
+
+    def __init__(self, base:float = 2, step = 0.1, min_=-4.0, max_ = 4.0) -> None:
+        super().__init__(visible=True, spacing=3)
+        self.value = None
+
+        label = Gtk.Label(label='Zoom:', visible=True)
+
+        self.base = base
+        self.scale = Gtk.SpinButton(visible=True, max_length=5, width_chars=5, max_width_chars=5, numeric=True, digits = 2)
+        self.scale.set_tooltip_text('log{:+.2f} scale factor for viewing images'.format(base))
+        # noinspection PyCallByClass,PyArgumentList
+        self.scale.set_adjustment(Gtk.Adjustment.new(0.0, min_, max_, step, 0, 0))
+        self.scale.set_snap_to_ticks(False)
+        self.scale.connect('value-changed', self.value_changed)
+
+        self.pack_start(label, False, True, 0)
+        self.pack_start(self.scale, False, True, 0)
+
+    def get_exp(self):
+        return self.base ** self.value
+
+    def set_value(self, value: float) -> None:
+        adj: Gtk.Adjustment = self.scale.get_adjustment()
+        value = min(adj.get_upper(), max(adj.get_lower(), value))
+        self.scale.set_value(value)
+
+    def value_changed(self, spin: Gtk.SpinButton) -> None:
+        self.emit('changed', spin.get_value())
+    
+    @GObject.Signal(arg_types=[float])
+    def changed(self, scale: float) -> None:
+        self.value = scale
+        self.scale.set_tooltip_text('{:.2%} / log{:.2f} scale factor for viewing images'.format(self.get_exp(), self.base))
 
 
 class FileGroupSelector(Gtk.Box, Configurator):

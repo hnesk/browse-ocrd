@@ -75,7 +75,7 @@ THE SOFTWARE.
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="tooltip_text" translatable="yes">Open a project</property>
+                <property name="tooltip_text" translatable="yes">Open a workspace</property>
                 <property name="action_name">app.open</property>
                 <property name="use_underline">True</property>
               </object>

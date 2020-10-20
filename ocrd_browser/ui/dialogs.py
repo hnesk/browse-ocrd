@@ -26,6 +26,7 @@ class OpenDialog(Gtk.FileChooserDialog):
         filter_mets = Gtk.FileFilter()
         filter_mets.set_name("METS files")
         filter_mets.add_mime_type("application/mets+xml")
+        filter_mets.add_pattern("*.xml")
         self.add_filter(filter_mets)
 
         filter_any = Gtk.FileFilter()

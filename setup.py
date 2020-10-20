@@ -23,7 +23,7 @@ setup(
     version=__version__,
     author='Johannes Künsebeck',
     author_email='kuensebeck@googlemail.com',
-    description='An extensible viewer for OCR-D mets.xml files',
+    description='An extensible viewer for OCR-D workspaces',
     license='MIT License',
     long_description=codecs.open('README.md', encoding='utf-8').read(),
     long_description_content_type='text/markdown',

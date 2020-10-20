@@ -46,6 +46,7 @@ class ViewText(View):
 
     def redraw(self) -> None:
         if self.current:
+            self.text_view.set_tooltip_text(self.page_id)
             regions = self.current.pc_gts.get_Page().get_AllRegions(classes=['Text'], order='reading-order')
             text = ''
             for i, region in enumerate(regions):

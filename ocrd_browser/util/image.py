@@ -80,8 +80,10 @@ def pil_scale(orig: Image, w: int = None, h: int = None) -> Image:
     :return: ndarray
     """
     new_width, new_height = _calculate_scale(orig.width, orig.height, w, h)
-    thumb = orig.copy()
-    thumb.thumbnail((new_width, new_height))
+    # thumb = orig.copy()
+    # thumb.thumbnail((new_width, new_height))
+    # also allows enlarging:
+    thumb = orig.resize((new_width, new_height))
     return thumb
 
 
