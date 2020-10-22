@@ -11,11 +11,13 @@ class ActionRegistry:
         self.actions: Dict[str, Gio.SimpleAction] = {}
 
     def create(self, name: str, callback: ActionCallback = None,
-               param_type: GLib.Variant = None) -> Gio.SimpleAction:
+               param_type: GLib.VariantType = None, state: GLib.Variant = None) -> Gio.SimpleAction:
         callback = callback if callback else getattr(self.for_widget, 'on_' + name)
-        parameter_type = param_type.get_type() if param_type is not None else None
-        action = Gio.SimpleAction(name=name, parameter_type=parameter_type)
-        action.connect("activate", callback)
+        action = Gio.SimpleAction(name=name, parameter_type=param_type, state = state)
+        if state:
+            action.connect("change-state", callback)
+        else:
+            action.connect("activate", callback)
         self.for_widget.add_action(action)
         self.actions[name] = action
         return action

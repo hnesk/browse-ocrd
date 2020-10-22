@@ -1,5 +1,8 @@
+import atexit
+import errno
 import re
 import shutil
+from functools import wraps
 
 from ocrd import Workspace, Resolver
 from ocrd_browser.model import Page
@@ -30,60 +33,81 @@ import cv2
 EventCallBack = Optional[Callable[[str, Any], None]]
 
 
+def check_editable(func: Callable):
+    @wraps(func)
+    def guard(self, *args, **kwargs):
+        if self._editable != True:
+            raise PermissionError('Document is not editable, can not call  {}'.format(func.__qualname__))
+        return_value = func(self, *args, **kwargs)
+        return return_value
+    return guard
+
+
 class Document:
 
-    def __init__(self, workspace: Workspace, emitter: EventCallBack = None):
-        self.emitter: EventCallBack = emitter
+    temporary_workspaces = []
+
+    def __init__(self, workspace: Workspace, emitter: EventCallBack = None, editable: bool = False, original_url: str = None):
         self.workspace: Workspace = workspace
-        self.empty = True
+        self.emitter: EventCallBack = emitter
+        self._original_url = original_url
+        self._editable = editable
+        self._empty = True
+        self._modified = False
 
     @classmethod
-    def create(cls, mets_url: Union[Path, str] = None, emitter: EventCallBack = None) -> 'Document':
-        if mets_url:
-            mets_path = Path(cls._strip_local(mets_url, disallow_remote=True))
-            workspace_directory = mets_path.parent
-            mets_basename = mets_path.name
-        else:
-            workspace_directory = None
-            mets_basename = 'mets.xml'
-
-        workspace = Resolver().workspace_from_nothing(directory=workspace_directory, mets_basename=mets_basename)
-        return cls(workspace, emitter=emitter)
+    def create(cls, emitter: EventCallBack = None) -> 'Document':
+        return cls(None, emitter=emitter)
 
     @classmethod
     def load(cls, mets_url: Union[Path, str] = None, emitter: EventCallBack = None) -> 'Document':
         """
-        Load a project from an url, WARNING! edits the project in place
+        Load a project from an url as a readonly view
 
-        Any modifications (page/image deletion) will be done in place, maybe you want to use Document.clone() instead
+        If you want to modify the Workspace, use Document.clone instead
         """
         if not mets_url:
-            return cls.create(None, emitter=emitter)
+            return cls.create(emitter=emitter)
         mets_url = cls._strip_local(mets_url)
 
         workspace = Resolver().workspace_from_url(mets_url, download=True)
-        doc = cls(workspace, emitter=emitter)
-        doc.empty = False
+        doc = cls(workspace, emitter=emitter, original_url=mets_url)
+        doc._empty = False
         return doc
 
     @classmethod
-    def clone(cls, mets_url: Union[Path, str], emitter: EventCallBack = None) -> 'Document':
+    def clone(cls, mets_url: Union[Path, str], emitter: EventCallBack = None, editable = True) -> 'Document':
         """
         Clones a project (mets.xml and all used files) to a temporary directory for editing
         """
-        log = getLogger('ocrd_browser.model.document.Document.clone')
+        doc = cls(cls._clone_workspace(mets_url), emitter=emitter, editable=editable, original_url=mets_url)
+        doc._empty = False
+        return doc
+
+    @classmethod
+    def _clone_workspace(cls, mets_url):
+        """
+        Clones a workspace (mets.xml and all used files) to a temporary directory for editing
+        """
+        log = getLogger('ocrd_browser.model.document.Document._clone_workspace')
         mets_url = cls._strip_local(mets_url, disallow_remote=False)
         temporary_workspace = mkdtemp(prefix='browse-ocrd-clone-')
+        cls.temporary_workspaces.append(temporary_workspace)
         # TODO download = False and lazy loading would be nice for responsiveness
         log.info("Cloning '%s' to '%s'", mets_url, temporary_workspace)
         workspace = Resolver().workspace_from_url(mets_url=mets_url, dst_dir=temporary_workspace, download=True)
-        doc = cls(workspace, emitter=emitter)
-        doc.empty = False
-        return doc
+        return workspace
 
-    def save(self, mets_url: Union[Path, str], backup_directory: Union[bool, Path, str] = True) -> None:
-        self.workspace.save_mets()
+    @check_editable
+    def save(self, backup_directory: Union[bool, Path, str] = True):
+        if not self._original_url:
+            raise ValueError('Need an _original_url to save')
+        self.save_as(self._original_url, backup_directory=backup_directory)
+
+    def save_as(self, mets_url: Union[Path, str], backup_directory: Union[bool, Path, str] = True) -> None:
+        log = getLogger('ocrd_browser.model.document.Document.save_as')
         mets_path = Path(self._strip_local(mets_url, disallow_remote=True))
+
         workspace_directory = mets_path.parent
         if workspace_directory.exists():
             if backup_directory:
@@ -106,32 +130,37 @@ class Document:
 
         self._emit('document_saving', 1, None)
         self._emit('document_saved', Document(saved_space, self.emitter))
+        self._original_url = str(mets_path)
+        self._modified = False
+        log.info('Saved to %s', self._original_url)
 
     @property
     def directory(self) -> Path:
         """
         Get workspace directory as a Path object
         """
-        return Path(self.workspace.directory)
+        return Path(self.workspace.directory) if self.workspace else None
 
     @property
     def mets_filename(self) -> str:
         """
         Gets the mets file name (e.g. "mets.xml")
         """
-        return Path(self.workspace.mets_target).name
+        return Path(self.workspace.mets_target).name if self.workspace else 'mets.xml'
 
     @property
     def baseurl_mets(self) -> str:
         """
         Gets the uri of the original mets file name
         """
-        return str(self.workspace.baseurl) + '/' + self.mets_filename
+        return str(self.workspace.baseurl) + '/' + self.mets_filename if self.workspace else None
 
     def path(self, other: Union[OcrdFile, Path, str]) -> Path:
         """
         Resolves other relative to current workspace
         """
+        if not self.directory:
+            return None
         if isinstance(other, OcrdFile):
             return self.directory.joinpath(other.local_filename)
         elif isinstance(other, Path):
@@ -142,12 +171,12 @@ class Document:
             raise ValueError('Unsupported other of type {}'.format(type(other)))
 
     @property
-    def _tree(self) -> ElementTree:
+    def _tree(self) -> Optional[ElementTree]:
         # noinspection PyProtectedMember
-        return self.workspace.mets._tree
+        return self.workspace.mets._tree if self.workspace else None
 
     def xpath(self, xpath: str) -> Any:
-        return self._tree.getroot().xpath(xpath, namespaces=NS)
+        return self._tree.getroot().xpath(xpath, namespaces=NS) if self.workspace else []
 
     @property
     def page_ids(self) -> List[str]:
@@ -159,7 +188,7 @@ class Document:
         @return: List[str]
         """
         # noinspection PyTypeChecker
-        return cast(List[str], self.workspace.mets.physical_pages)
+        return cast(List[str], self.workspace.mets.physical_pages if self.workspace else [])
 
     @property
     def file_groups(self) -> List[str]:
@@ -169,7 +198,7 @@ class Document:
         @return: List[str]
         """
         # noinspection PyTypeChecker
-        return cast(List[str], self.workspace.mets.file_groups)
+        return cast(List[str], self.workspace.mets.file_groups) if self.workspace else []
 
     # noinspection PyProtectedMember
     @property
@@ -190,11 +219,14 @@ class Document:
         @return: List[Tuple[str,str]]
         """
         distinct_groups: OrderedDict[Tuple[str, str], None] = OrderedDict()
-        # noinspection PyProtectedMember
         for el in self.xpath('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]'):
             distinct_groups[(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
 
         return list(distinct_groups.keys())
+
+    @property
+    def title(self):
+        return self.workspace.mets.unique_identifier if self.workspace and self.workspace.mets.unique_identifier else '<unnamed>'
 
     def get_file_index(self) -> Dict[str, OcrdFile]:
         """
@@ -206,11 +238,13 @@ class Document:
         """
         log = getLogger('ocrd_browser.model.document.Document.get_file_index')
         file_index = {}
-        for file in self.workspace.mets.find_files():
-            file.static_page_id = None
-            file_index[file.ID] = file
+        if self.workspace:
+            for file in self.workspace.mets.find_files():
+                file.static_page_id = None
+                file_index[file.ID] = file
 
-        file_pointers: List[Element] = self.xpath('mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]/mets:div[@TYPE="page"]/mets:fptr')
+        file_pointers: List[Element] = self.xpath(
+            'mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]/mets:div[@TYPE="page"]/mets:fptr')
         for file_pointer in file_pointers:
             file_id = file_pointer.get('FILEID')
             page_id = file_pointer.getparent().get('ID')
@@ -231,15 +265,16 @@ class Document:
         image_paths = {}
         file_index = self.get_file_index()
         for page_id in self.page_ids:
-            images = [image for image in file_index.values() if image.static_page_id == page_id and image.fileGrp == file_group]
+            images = [image for image in file_index.values() if
+                      image.static_page_id == page_id and image.fileGrp == file_group]
             if len(images) == 1:
                 image_paths[page_id] = self.path(images[0])
             else:
-                # log.warning('Found %d images for page %s and fileGrp %s, expected 1', len(images), page_id, file_group)
+                log.warning('Found %d images for PAGE %s and fileGrp %s, expected 1', len(images), page_id, file_group)
                 image_paths[page_id] = None
         return image_paths
 
-    def get_default_image_group(self, preferred_image_file_groups:Optional[List] = None) -> Optional[str]:
+    def get_default_image_group(self, preferred_image_file_groups: Optional[List] = None) -> Optional[str]:
         image_file_groups = []
         for file_group, mimetype in self.file_groups_and_mimetypes:
             weight = 0.0
@@ -253,16 +288,15 @@ class Document:
                         weight += (len(preferred_image_file_groups) - i)
                         break
             # prefer shorter `file_group`s
-            weight -= len(file_group)*0.00001
-            image_file_groups.append((file_group,weight))
+            weight -= len(file_group) * 0.00001
+            image_file_groups.append((file_group, weight))
         # Sort by weight
-        image_file_groups = sorted(image_file_groups, key=lambda e:e[1], reverse=True)
+        image_file_groups = sorted(image_file_groups, key=lambda e: e[1], reverse=True)
 
         if len(image_file_groups) > 0:
             return image_file_groups[0][0]
         else:
             return None
-
 
     def get_unused_page_id(self, template_page_id: str = 'PAGE_{page_nr}') -> Tuple[str, int]:
         """
@@ -323,7 +357,7 @@ class Document:
             image_files = [file]
             images = [image]
         elif not page_files and len(image_files) > 1:
-            log.warning("No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(page_files), page_id, file_group))
+            log.warning("No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(image_files), page_id, file_group))
 
         return Page(page_id, file, pcgts, image_files, images, None)
 
@@ -345,11 +379,13 @@ class Document:
             pil_image.load()
             return pil_image
 
+    @check_editable
     def reorder(self, ordered_page_ids: List[str]) -> None:
         """
         Orders the pages in physSequence according to ordered_page_ids
 
         """
+        log = getLogger('ocrd_browser.model.document.Document.reorder')
         old_page_ids = self.page_ids
 
         if set(old_page_ids) != set(ordered_page_ids):
@@ -357,7 +393,7 @@ class Document:
                 set(ordered_page_ids).difference(set(old_page_ids)),
                 set(self.page_ids).difference(set(ordered_page_ids))
             ))
-
+        log.info('Reordering %s to %s', old_page_ids, ordered_page_ids)
         page_sequence: Element = self.xpath('mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]')[0]
 
         ordered_divs = []
@@ -374,9 +410,10 @@ class Document:
             page_sequence.append(div)
 
         old_to_new = dict(zip(old_page_ids, self.page_ids))
-        self.workspace.save_mets()
+        self.save_mets()
         self._emit('document_changed', 'reordered', old_to_new)
 
+    @check_editable
     def delete_images(self, page_id: str, file_group: str = 'OCR-D-IMG') -> List[OcrdFile]:
         image_files: List[OcrdFile] = list(self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group,
                                                                           local_only=True, mimetype='//image/.+'))
@@ -384,32 +421,69 @@ class Document:
         for image_file in image_files:
             self.workspace.remove_file(image_file, force=True, keep_file=False, page_recursive=True,
                                        page_same_group=True)
-        self.workspace.save_mets()
+        self.save_mets()
         self._emit('document_changed', 'page_changed', [page_id])
         return image_files
 
+    def save_mets(self):
+        if not self._editable:
+            raise PermissionError('Can not modify Document with _editable == False')
+        self.workspace.save_mets()
+        self._modified = True
+
+    @check_editable
     def delete_page(self, page_id: str) -> None:
         files = self.workspace.mets.find_files(pageId=page_id, local_only=True)
         for file in files:
             self.workspace.remove_file(file, force=False, keep_file=False)
         self.workspace.mets.remove_physical_page(page_id)
-        self.workspace.save_mets()
+        self.save_mets()
         self._emit('document_changed', 'page_deleted', [page_id])
 
+    @check_editable
     def add_image(self, image: ndarray, page_id: str, file_id: str, file_group: str = 'OCR-D-IMG', dpi: int = 300,
                   mimetype: str = 'image/png') -> 'OcrdFile':
         extension = MIME_TO_EXT[mimetype]
         retval, image_array = cv2.imencode(extension, image)
         image_bytes = add_dpi_to_png_buffer(image_array.tostring(), dpi)
         local_filename = Path(file_group, '%s%s' % (file_id, extension))
-        url = (Path(self.workspace.directory) / local_filename)
         current_file = self.workspace.add_file(file_group, ID=file_id, mimetype=mimetype, force=True,
-                                               content=image_bytes, url=str(url),
+                                               content=image_bytes,
                                                local_filename=str(local_filename), pageId=page_id)
-        self.empty = False
-        self.workspace.save_mets()
+        self._empty = False
+        self.save_mets()
         self._emit('document_changed', 'page_added', [page_id])
         return current_file
+
+    @property
+    def modified(self):
+        return self._modified
+
+    @property
+    def empty(self):
+        return self._empty
+
+    @property
+    def original_url(self):
+        return self._original_url
+
+    @property
+    def editable(self):
+        return self._editable
+
+    @editable.setter
+    def editable(self, editable):
+        if editable:
+            if self._original_url:
+                self.workspace = self._clone_workspace(self._original_url)
+            else:
+                self.workspace = Resolver().workspace_from_nothing(directory=None, mets_basename='mets.xml')
+        else:
+            self.workspace = Resolver().workspace_from_url(self.baseurl_mets)
+        self._editable = editable
+        # self._empty = False
+        # self._modified = False
+
 
     def _emit(self, event: str, *args: Any) -> None:
         if self.emitter is not None:
@@ -428,3 +502,15 @@ class Document:
     def _derive_backup_directory(workspace_directory: Path, now: datetime = None) -> Path:
         now = now or datetime.now()
         return workspace_directory.parent / ('.bak.' + workspace_directory.name + '.' + now.strftime('%Y%m%d-%H%M%S'))
+
+    @classmethod
+    def delete_temporary_workspaces(cls):
+        for temporary_workspace in cls.temporary_workspaces:
+            try:
+                shutil.rmtree(temporary_workspace)
+            except OSError as e:
+                if e.errno != errno.ENOENT:
+                    raise
+
+
+atexit.register(Document.delete_temporary_workspaces)
