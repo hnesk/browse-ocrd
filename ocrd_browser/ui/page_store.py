@@ -106,7 +106,7 @@ class PageListStore(LazyLoadingListStore):
             for page_id in page_ids:
                 try:
                     file = next(iter(self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)))
-                    file_name = str(self.document.path(file.local_filename))
+                    file_name = str(self.document.path(file))
                     self.append((page_id, '', file_name, None, len(self)))
                 except StopIteration as e:
                     raise ValueError('Page {} / Group {}  not in workspace'.format(page_id, DEFAULT_FILE_GROUP)) from e
