@@ -56,17 +56,8 @@ class Document:
         self._modified = False
 
     @classmethod
-    def create(cls, mets_url: Union[Path, str] = None, emitter: EventCallBack = None) -> 'Document':
-        if mets_url:
-            mets_path = Path(cls._strip_local(mets_url, disallow_remote=True))
-            workspace_directory = mets_path.parent
-            mets_basename = mets_path.name
-        else:
-            workspace_directory = None
-            mets_basename = 'mets.xml'
-
-        workspace = Resolver().workspace_from_nothing(directory=workspace_directory, mets_basename=mets_basename)
-        return cls(workspace, emitter=emitter, original_url=mets_url)
+    def create(cls, emitter: EventCallBack = None) -> 'Document':
+        return cls(None, emitter=emitter)
 
     @classmethod
     def load(cls, mets_url: Union[Path, str] = None, emitter: EventCallBack = None) -> 'Document':
@@ -76,7 +67,7 @@ class Document:
         If you want to modify the Workspace, use Document.clone instead
         """
         if not mets_url:
-            return cls.create(None, emitter=emitter)
+            return cls.create(emitter=emitter)
         mets_url = cls._strip_local(mets_url)
 
         workspace = Resolver().workspace_from_url(mets_url, download=True)
@@ -148,26 +139,28 @@ class Document:
         """
         Get workspace directory as a Path object
         """
-        return Path(self.workspace.directory)
+        return Path(self.workspace.directory) if self.workspace else None
 
     @property
     def mets_filename(self) -> str:
         """
         Gets the mets file name (e.g. "mets.xml")
         """
-        return Path(self.workspace.mets_target).name
+        return Path(self.workspace.mets_target).name if self.workspace else 'mets.xml'
 
     @property
     def baseurl_mets(self) -> str:
         """
         Gets the uri of the original mets file name
         """
-        return str(self.workspace.baseurl) + '/' + self.mets_filename
+        return str(self.workspace.baseurl) + '/' + self.mets_filename if self.workspace else None
 
     def path(self, other: Union[OcrdFile, Path, str]) -> Path:
         """
         Resolves other relative to current workspace
         """
+        if not self.directory:
+            return None
         if isinstance(other, OcrdFile):
             return self.directory.joinpath(other.local_filename)
         elif isinstance(other, Path):
@@ -178,12 +171,12 @@ class Document:
             raise ValueError('Unsupported other of type {}'.format(type(other)))
 
     @property
-    def _tree(self) -> ElementTree:
+    def _tree(self) -> Optional[ElementTree]:
         # noinspection PyProtectedMember
-        return self.workspace.mets._tree
+        return self.workspace.mets._tree if self.workspace else None
 
     def xpath(self, xpath: str) -> Any:
-        return self._tree.getroot().xpath(xpath, namespaces=NS)
+        return self._tree.getroot().xpath(xpath, namespaces=NS) if self.workspace else []
 
     @property
     def page_ids(self) -> List[str]:
@@ -195,7 +188,7 @@ class Document:
         @return: List[str]
         """
         # noinspection PyTypeChecker
-        return cast(List[str], self.workspace.mets.physical_pages)
+        return cast(List[str], self.workspace.mets.physical_pages if self.workspace else [])
 
     @property
     def file_groups(self) -> List[str]:
@@ -205,7 +198,7 @@ class Document:
         @return: List[str]
         """
         # noinspection PyTypeChecker
-        return cast(List[str], self.workspace.mets.file_groups)
+        return cast(List[str], self.workspace.mets.file_groups) if self.workspace else []
 
     # noinspection PyProtectedMember
     @property
@@ -226,11 +219,14 @@ class Document:
         @return: List[Tuple[str,str]]
         """
         distinct_groups: OrderedDict[Tuple[str, str], None] = OrderedDict()
-        # noinspection PyProtectedMember
         for el in self.xpath('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]'):
             distinct_groups[(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
 
         return list(distinct_groups.keys())
+
+    @property
+    def title(self):
+        return self.workspace.mets.unique_identifier if self.workspace and self.workspace.mets.unique_identifier else '<unnamed>'
 
     def get_file_index(self) -> Dict[str, OcrdFile]:
         """
@@ -242,9 +238,10 @@ class Document:
         """
         log = getLogger('ocrd_browser.model.document.Document.get_file_index')
         file_index = {}
-        for file in self.workspace.mets.find_files():
-            file.static_page_id = None
-            file_index[file.ID] = file
+        if self.workspace:
+            for file in self.workspace.mets.find_files():
+                file.static_page_id = None
+                file_index[file.ID] = file
 
         file_pointers: List[Element] = self.xpath(
             'mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]/mets:div[@TYPE="page"]/mets:fptr')
@@ -360,7 +357,7 @@ class Document:
             image_files = [file]
             images = [image]
         elif not page_files and len(image_files) > 1:
-            log.warning("No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(page_files), page_id, file_group))
+            log.warning("No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(image_files), page_id, file_group))
 
         return Page(page_id, file, pcgts, image_files, images, None)
 
@@ -476,11 +473,13 @@ class Document:
 
     @editable.setter
     def editable(self, editable):
-        if self._original_url:
-            if editable:
+        if editable:
+            if self._original_url:
                 self.workspace = self._clone_workspace(self._original_url)
             else:
-                self.workspace = Resolver().workspace_from_url(self.baseurl_mets)
+                self.workspace = Resolver().workspace_from_nothing(directory=None, mets_basename='mets.xml')
+        else:
+            self.workspace = Resolver().workspace_from_url(self.baseurl_mets)
         self._editable = editable
         # self._empty = False
         # self._modified = False

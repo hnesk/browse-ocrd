@@ -133,9 +133,7 @@ class MainWindow(Gtk.ApplicationWindow):
         pass
 
     def update_ui(self) -> None:
-        title = self.document.workspace.mets.unique_identifier if self.document.workspace.mets.unique_identifier else '<unnamed>'
-        if self.document.modified:
-            title = title + ' *'
+        title = self.document.title + (' *' if self.document.modified else '')
         self.set_title(title)
         self.header_bar.set_title(title)
         self.header_bar.set_subtitle(self.document.original_url)
