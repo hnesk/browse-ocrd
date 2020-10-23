@@ -34,7 +34,7 @@ class ViewText(View):
                                         width_request=400)
         self.buffer = self.text_view.get_buffer()
 
-        self.viewport.add(self.text_view)
+        self.scroller.add(self.text_view)
 
     @property
     def use_file_group(self) -> str:
@@ -51,7 +51,7 @@ class ViewText(View):
             text = ''
             for i, region in enumerate(regions):
                 if i:
-                    text += '\n' # or line feed?
+                    text += '\n'  # or line feed?
                 if region.get_TextEquiv() and region.get_TextEquiv()[0].Unicode:
                     text += region.get_TextEquiv()[0].Unicode
                     continue
@@ -73,9 +73,7 @@ class ViewText(View):
                         for l, glyph in enumerate(glyphs):
                             if glyph.get_TextEquiv() and glyph.get_TextEquiv()[0].Unicode:
                                 text += glyph.get_TextEquiv()[0].Unicode
-                    
-                
+
             self.buffer.set_text(text)
         else:
             self.buffer.set_text('')
-

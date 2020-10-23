@@ -32,20 +32,17 @@ class View:
         self.configurators: Dict[str, Configurator] = {}
         self.container: Gtk.Box = None
         self.action_bar: Gtk.ActionBar = None
-        self.viewport: Gtk.Viewport = None
+        self.scroller: Gtk.ScrolledWindow = None
 
     def build(self) -> None:
         self.container = Gtk.Box(visible=True, orientation="vertical")
         self.action_bar = Gtk.ActionBar(visible=True)
         self.action_bar.pack_end(CloseButton(self.name))
 
-        scroller = Gtk.ScrolledWindow(visible=True, shadow_type='in', propagate_natural_width=True)
-        self.viewport = Gtk.Viewport(visible=True, hscroll_policy='natural', vscroll_policy='natural')
-        self.viewport.connect('size-allocate', self.on_viewport_size_allocate)
-        scroller.add(self.viewport)
+        self.scroller = Gtk.ScrolledWindow(visible=True, shadow_type='in', propagate_natural_width=True)
 
         self.container.pack_start(self.action_bar, False, True, 0)
-        self.container.pack_start(scroller, True, True, 0)
+        self.container.pack_start(self.scroller, True, True, 0)
 
     def set_document(self, document: Document) -> None:
         self.document = document
@@ -91,9 +88,6 @@ class View:
 
     def update_ui(self) -> None:
         pass
-
-    def on_viewport_size_allocate(self, _sender: Gtk.Widget, rect: Gdk.Rectangle) -> None:
-        self.on_size(rect.width, rect.height, rect.x, rect.y)
 
     def on_size(self, w: int, h: int, x: int, y: int) -> None:
         pass

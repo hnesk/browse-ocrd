@@ -39,7 +39,7 @@ class ViewXml(View):
         self.buffer.set_language(lang_manager.get_language('xml'))
         self.buffer.set_style_scheme(style_manager.get_scheme('tango'))
 
-        self.viewport.add(self.text_view)
+        self.scroller.add(self.text_view)
 
     @property
     def use_file_group(self) -> str:
@@ -52,9 +52,11 @@ class ViewXml(View):
     def redraw(self) -> None:
         if self.current:
             self.text_view.set_tooltip_text(self.page_id)
-            text = to_xml(self.current.pc_gts)
-            # TODO: Crashes with big XML, as a workaround disable highlighting
-            self.buffer.set_highlight_syntax(len(text) <= 50000)
+            if self.current.file:
+                with self.document.path(self.current.file).open('r') as f:
+                    text = f.read()
+            else:
+                text = to_xml(self.current.pc_gts)
             self.buffer.set_text(text)
         else:
             self.buffer.set_text('')
