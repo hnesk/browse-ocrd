@@ -1,5 +1,6 @@
 import atexit
 import errno
+import os
 import re
 import shutil
 from functools import wraps
@@ -54,6 +55,8 @@ class Document:
         self._editable = editable
         self._empty = True
         self._modified = False
+        if self.workspace:
+            os.chdir(self.workspace.directory)
 
     @classmethod
     def create(cls, emitter: EventCallBack = None) -> 'Document':
