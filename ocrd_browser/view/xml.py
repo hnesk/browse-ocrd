@@ -1,5 +1,7 @@
 from gi.repository import GObject, GtkSource, Gtk
 
+from subprocess import Popen
+from os import getenv
 from typing import Optional, Tuple, Any
 
 from ocrd_utils.constants import MIMETYPE_PAGE
@@ -28,6 +30,10 @@ class ViewXml(View):
     def build(self) -> None:
         super().build()
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.PAGE))
+        button = Gtk.Button.new_with_label('PageViewer')
+        button.connect('clicked', self.open_jpageviewer)
+        button.set_visible(True)
+        self.action_bar.pack_start(button)
 
         lang_manager = GtkSource.LanguageManager()
         style_manager = GtkSource.StyleSchemeManager()
@@ -48,6 +54,22 @@ class ViewXml(View):
     def config_changed(self, name: str, value: Any) -> None:
         super().config_changed(name, value)
         self.reload()
+
+    def open_jpageviewer(self, button: Gtk.Button) -> None:
+        if self.current and self.current.file:
+            # must be something like 'java -jar /path/to/JPageViewer.jar'
+            if getenv('PAGEVIEWER'):
+                pageviewer = getenv('PAGEVIEWER')
+            else:
+                pageviewer = 'pageviewer'
+            Popen([pageviewer,
+                   # without this, relative paths in imageFilename are resolved
+                   # w.r.t. the PAGE file's directory, not the workspace directory
+                   '--resolve-dir', str(self.document.directory),
+                   str(self.document.path(self.current.file)),
+                   # better omit this until prima-page-viewer#16 is fixed:
+                   #str(self.document.path(self.current.pc_gts.get_Page().get_imageFilename()))
+            ], cwd=self.document.directory)
 
     def redraw(self) -> None:
         if self.current:
