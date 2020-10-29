@@ -13,8 +13,24 @@ class SettingsTestCase(TestCase):
         settings = _Settings({})
         self.assertEqual(['OCR-D-IMG','OCR-D-IMG.*'], settings.file_groups.preferred_images)
 
-    def test_default_value(self):
+    def test_loaded_value(self):
         self.assertEqual(['OCR-D-IMG','OCR-D-IMG.*','ORIGINAL'], self.settings.file_groups.preferred_images)
+
+    def test_tools(self):
+        pv = self.settings.tools['PageViewer']
+        self.assertEqual('-jar /home/jk/bin/JPageViewer/JPageViewer.jar --resolve-dir . {current}', pv.args)
+        self.assertEqual('p', pv.shortcut)
+
+        pv = self.settings.tools['Open']
+        self.assertEqual('/usr/bin/xdg-open', pv.executable)
+        self.assertEqual('{current}', pv.args)
+        self.assertEqual('o', pv.shortcut)
+
+        print(self.settings)
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
