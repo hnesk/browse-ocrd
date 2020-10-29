@@ -2,23 +2,9 @@ import unittest
 from PIL import Image, ImageDraw
 from gi.repository import GdkPixbuf
 
-from tests import TestCase, ASSETS_PATH
+from tests import TestCase, ASSETS_PATH, data_provider
 from ocrd_browser.util.image import pil_to_pixbuf, _pil_to_pixbuf_via_cv, _pil_to_pixbuf_via_pixbuf_loader
 from timeit import timeit
-
-# @see http://melp.nl/2011/02/phpunit-style-dataprovider-in-python-unit-test/
-def data_provider(fn_data_provider):
-    """Data provider decorator, allows another callable to provide the data for the test"""
-    def test_decorator(fn):
-        def repl(self, *args):
-            for i in fn_data_provider():
-                try:
-                    fn(self, *i)
-                except AssertionError:
-                    print("Assertion error caught with data set ", i)
-                    raise
-        return repl
-    return test_decorator
 
 class ImageUtilTestCase(TestCase):
 
