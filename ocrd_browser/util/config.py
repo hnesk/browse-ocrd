@@ -1,6 +1,7 @@
 import os
 from collections import OrderedDict
 from configparser import ConfigParser, SectionProxy
+import shlex
 from typing import List, Optional, OrderedDict as OrderedDictType
 from shutil import which
 
@@ -32,22 +33,20 @@ class _Tool(_SubSettings):
 
     PREFIX = 'Tool '
 
-    def __init__(self, name: str, executable: str, args: str, shortcut: Optional[str] = None):
+    def __init__(self, name: str, commandline: str, shortcut: Optional[str] = None):
         self.name = name
+        executable = shlex.split(commandline)[0]
         resolved = which(executable)
         if not resolved:
             raise ValueError('Could not locate executable "{}"'.format(executable))
-        self.executable = resolved
-        self.args = args
+        self.commandline = commandline
         self.shortcut = shortcut
 
     @classmethod
     def from_section(cls, section: SectionProxy):
-        executable, args = section['commandline'].split(' ', 1)
         return cls(
             section.name[len(cls.PREFIX):],
-            executable,
-            args,
+            section['commandline'],
             section.get('shortcut', None)
         )
 
@@ -57,7 +56,6 @@ class _Settings:
 
 
     def __init__(self, config: ConfigParser):
-        self.__class__.__annotations__
         self.file_groups = _FileGroups.from_section(config['FileGroups'] if 'FileGroups' in config else {})
         self.tools = OrderedDict()
         for name, section in config.items():
@@ -83,7 +81,7 @@ class _Settings:
         config = ConfigParser()
         config.optionxform = lambda option: option
         read_files = config.read(files)
-        log.debug('Read config files: %s', ', '.join(read_files))
+        log.warning('Read config files: %s, tried %s', ', '.join(read_files), ', '.join(str(file) for file in files))
         return cls(config)
 
 
