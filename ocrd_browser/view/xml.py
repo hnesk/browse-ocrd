@@ -1,11 +1,11 @@
 from gi.repository import GObject, GtkSource, Gtk
 
-from subprocess import Popen
-from os import getenv
 from typing import Optional, Tuple, Any
 
 from ocrd_utils.constants import MIMETYPE_PAGE
 from ocrd_models.ocrd_page import to_xml
+
+from ocrd_browser.util.launcher import Launcher
 from ocrd_browser.view import View
 from ocrd_browser.view.base import FileGroupSelector, FileGroupFilter
 
@@ -57,19 +57,7 @@ class ViewXml(View):
 
     def open_jpageviewer(self, button: Gtk.Button) -> None:
         if self.current and self.current.file:
-            # must be something like 'java -jar /path/to/JPageViewer.jar'
-            if getenv('PAGEVIEWER'):
-                pageviewer = getenv('PAGEVIEWER')
-            else:
-                pageviewer = 'pageviewer'
-            Popen([pageviewer,
-                   # without this, relative paths in imageFilename are resolved
-                   # w.r.t. the PAGE file's directory, not the workspace directory
-                   '--resolve-dir', str(self.document.directory),
-                   str(self.document.path(self.current.file)),
-                   # better omit this until prima-page-viewer#16 is fixed:
-                   #str(self.document.path(self.current.pc_gts.get_Page().get_imageFilename()))
-            ], cwd=self.document.directory)
+            Launcher().launch('PageViewer', self.document, self.current.file)
 
     def redraw(self) -> None:
         if self.current:
