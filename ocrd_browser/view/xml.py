@@ -4,6 +4,8 @@ from typing import Optional, Tuple, Any
 
 from ocrd_utils.constants import MIMETYPE_PAGE
 from ocrd_models.ocrd_page import to_xml
+
+from ocrd_browser.util.launcher import Launcher
 from ocrd_browser.view import View
 from ocrd_browser.view.base import FileGroupSelector, FileGroupFilter
 
@@ -28,6 +30,10 @@ class ViewXml(View):
     def build(self) -> None:
         super().build()
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.PAGE))
+        button = Gtk.Button.new_with_label('PageViewer')
+        button.connect('clicked', self.open_jpageviewer)
+        button.set_visible(True)
+        self.action_bar.pack_start(button)
 
         lang_manager = GtkSource.LanguageManager()
         style_manager = GtkSource.StyleSchemeManager()
@@ -48,6 +54,10 @@ class ViewXml(View):
     def config_changed(self, name: str, value: Any) -> None:
         super().config_changed(name, value)
         self.reload()
+
+    def open_jpageviewer(self, button: Gtk.Button) -> None:
+        if self.current and self.current.file:
+            Launcher().launch('PageViewer', self.document, self.current.file)
 
     def redraw(self) -> None:
         if self.current:
