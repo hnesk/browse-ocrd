@@ -2,7 +2,7 @@ import os
 from collections import OrderedDict
 from configparser import ConfigParser, SectionProxy
 import shlex
-from typing import List, Optional, OrderedDict as OrderedDictType
+from typing import List, Optional
 from shutil import which
 
 from gi.repository import GLib
@@ -51,10 +51,6 @@ class _Tool(_SubSettings):
         )
 
 class _Settings:
-    file_groups: _FileGroups
-    tools: OrderedDictType[str, _Tool]
-
-
     def __init__(self, config: ConfigParser):
         self.file_groups = _FileGroups.from_section(config['FileGroups'] if 'FileGroups' in config else {})
         self.tools = OrderedDict()
