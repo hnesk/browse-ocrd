@@ -10,6 +10,9 @@ SHARE_DIR=~/.local/share
 deps-ubuntu:
 	apt install -y libcairo2-dev libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev pkg-config cmake
 
+deps-dev:
+	$(PIP) install -r requirements-dev.txt
+
 deps:
 	$(PIP) install -r requirements.txt
 
@@ -50,8 +53,7 @@ pypi: clean-build build
 	twine upload ./dist/browse[_-]ocrd*.{tar.gz,whl}
 
 test: tests/assets
-	$(PYTHON) -m unittest discover -s tests
-
+	$(PYTHON) -m xmlrunner discover -s tests -o `readlink -f build_artifacts/tests`
 
 # Clone OCR-D/assets to ./repo/assets
 repo/assets:

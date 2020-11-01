@@ -1,0 +1,5 @@
+wheel
+setuptools
+unittest-xml-reporting
+flake8
+mypy

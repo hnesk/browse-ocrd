@@ -20,6 +20,7 @@ MANIFEST
 htmlcov/
 .tox/
 .nox/
+build_artifacts/
 
 # Translations
 *.mo
