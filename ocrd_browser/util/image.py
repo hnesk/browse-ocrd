@@ -4,8 +4,15 @@ import struct
 import zlib
 
 from typing import Tuple, Union
-from PIL.Image import Image
-from numpy import ndarray, array as np_array, uint8 as np_uint8, bool as np_bool, stack as np_stack
+from PIL.Image import Image, fromarray
+from numpy import (
+    ndarray,
+    dtype as np_dtype,
+    array as np_array,
+    uint8 as np_uint8,
+    bool as np_bool,
+    stack as np_stack
+)
 from gi.repository import GdkPixbuf, GLib
 
 __all__ = ['cv_scale', 'cv_to_pixbuf', 'pil_to_pixbuf', 'pil_scale', 'add_dpi_to_png_buffer']
@@ -83,6 +90,26 @@ def pil_scale(orig: Image, w: int = None, h: int = None) -> Image:
     # thumb = orig.copy()
     # thumb.thumbnail((new_width, new_height))
     # also allows enlarging:
+    if orig.mode.startswith('I'):
+        # workaround for Pillow#4402:
+        arr = np_array(orig)
+        if arr.dtype.kind == 'i':
+            # signed integer is *not* trustworthy in this context
+            # (usually a mistake in the array interface)
+            arr.dtype = np_dtype('u' + arr.dtype.name)
+        if arr.dtype.kind == 'u':
+            # integer needs to be scaled linearly to 8 bit
+            # of course, an image might actually have some lower range
+            # (e.g. 10-bit in I;16 or 20-bit in I or 4-bit in L),
+            # but that would be guessing anyway, so here don't
+            # make assumptions on _scale_, just reduce _precision_
+            arr = arr >> 8 * (arr.dtype.itemsize-1)
+            arr = arr.astype(np_uint8)
+        elif arr.dtype.kind == 'f':
+            # float needs to be scaled from [0,1.0] to [0,255]
+            arr *= 255
+            arr = arr.astype(np_uint8)
+        orig = fromarray(arr)
     thumb = orig.resize((new_width, new_height))
     return thumb
 
