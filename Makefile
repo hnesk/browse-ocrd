@@ -8,16 +8,16 @@ PYTHONIOENCODING=utf8
 SHARE_DIR=~/.local/share
 
 deps-ubuntu:
-	apt install -y libcairo2-dev libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev pkg-config cmake imagemagick
+	apt install -y libcairo2-dev libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev pkg-config cmake
 
 deps-dev:
-	$(PIP) install -r requirements-dev.txt
+	$(PIP) --use-feature=2020-resolver install -r requirements-dev.txt
 
 deps:
-	$(PIP) install -r requirements.txt
+	$(PIP) --use-feature=2020-resolver install -r requirements.txt
 
 install:
-	$(PIP) install .
+	$(PIP) --use-feature=2020-resolver install .
 
 install-xdg-mime: share/mime/packages/org.readmachine.ocrd-browser.xml
 	mkdir -p $(SHARE_DIR)/mime/packages
@@ -53,7 +53,7 @@ pypi: clean-build build
 	twine upload ./dist/browse[_-]ocrd*.{tar.gz,whl}
 
 test: tests/assets
-	$(PYTHON) -m xmlrunner discover -s tests -o $(CURDIR)/unittest.xml
+	$(PYTHON) -m xmlrunner discover -s tests --output-file $(CURDIR)/unittest.xml
 
 # Clone OCR-D/assets to ./repo/assets
 repo/assets:
