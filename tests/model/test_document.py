@@ -19,16 +19,16 @@ class DocumentTestCase(TestCase):
 
     def test_get_mime_types(self):
         doc = Document.load(self.path)
-        self.assertEqual({'application/vnd.prima.page+xml', 'image/tiff', 'application/alto+xml'} , doc.mime_types)
+        self.assertEqual({'application/vnd.prima.page+xml', 'image/tiff', 'application/alto+xml'}, doc.mime_types)
 
     def test_get_file_groups_and_mimetypes(self):
         doc = Document.load(self.path)
         expected = [
-            ('OCR-D-IMG','image/tiff'),
-            ('OCR-D-GT-PAGE','application/vnd.prima.page+xml'),
-            ('OCR-D-GT-ALTO','application/alto+xml')
+            ('OCR-D-IMG', 'image/tiff'),
+            ('OCR-D-GT-PAGE', 'application/vnd.prima.page+xml'),
+            ('OCR-D-GT-ALTO', 'application/alto+xml')
         ]
-        self.assertEqual(expected , doc.file_groups_and_mimetypes)
+        self.assertEqual(expected, doc.file_groups_and_mimetypes)
 
     def test_get_page_index(self):
         doc = Document.load(self.path)
@@ -91,7 +91,6 @@ class DocumentTestCase(TestCase):
         doc.delete_page('PHYS_0017')
         self.assertEqual(['PHYS_0020'], doc.page_ids)
 
-
     def test_clone(self):
         doc = Document.clone(self.path)
         self.assertIn('browse-ocrd-clone-', doc.workspace.directory)
@@ -152,7 +151,6 @@ class DocumentTestCase(TestCase):
         self.assertEqual("No PAGE-XML and no image for page 'PHYS_0020' in fileGrp 'OCR-D-GT-PAGE'",
                          log_watch.records[0].msg)
 
-
     def test_page_for_id_with_multiple_images_for_page_and_fileGrp(self):
         """
         returns first image and warns
@@ -169,7 +167,6 @@ class DocumentTestCase(TestCase):
         doc = Document.load(self.path)
         with self.assertRaises(PermissionError):
             doc.reorder(['PHYS_0020', 'PHYS_0017'])
-
 
     def test_modify_when_editable(self):
         doc = Document.clone(self.path)

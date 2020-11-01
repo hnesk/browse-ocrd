@@ -27,7 +27,7 @@ def _bytes_to_pixbuf(bytes_: bytes) -> GdkPixbuf.Pixbuf:
 
 def _cv_to_pixbuf_via_cv(z: ndarray) -> GdkPixbuf.Pixbuf:
     if z.dtype == np_bool:
-        z = (z*255).astype(np_uint8)
+        z = (z * 255).astype(np_uint8)
     if z.ndim == 2:
         z = np_stack((z, z, z), axis=2)
     assert z.ndim == 3
@@ -37,10 +37,11 @@ def _cv_to_pixbuf_via_cv(z: ndarray) -> GdkPixbuf.Pixbuf:
         z = cv2.cvtColor(z, cv2.COLOR_BGR2RGB)
     else:
         z = cv2.cvtColor(z, cv2.COLOR_BGRA2RGBA)
-    args = {'colorspace': GdkPixbuf.Colorspace.RGB, 'has_alpha': c == 4, 'bits_per_sample':8, 'width': w, 'height': h}
-    rowstride = w*c
-    pb = GdkPixbuf.Pixbuf.new_from_bytes(data=GLib.Bytes(z.tobytes()), rowstride = rowstride, **args)
+    args = {'colorspace': GdkPixbuf.Colorspace.RGB, 'has_alpha': c == 4, 'bits_per_sample': 8, 'width': w, 'height': h}
+    rowstride = w * c
+    pb = GdkPixbuf.Pixbuf.new_from_bytes(data=GLib.Bytes(z.tobytes()), rowstride=rowstride, **args)
     return pb
+
 
 def _cv_to_pixbuf_via_pixbuf_loader(cv_image: ndarray) -> GdkPixbuf:
     ret, byte_array = cv2.imencode('.jpg', cv_image)
@@ -60,10 +61,12 @@ def _pil_to_pixbuf_via_cv(im: Image) -> GdkPixbuf.Pixbuf:
         im = cv2.cvtColor(np_array(im.convert('RGB'), dtype=np_uint8), cv2.COLOR_RGB2BGR)
     return _cv_to_pixbuf_via_cv(im)
 
+
 def _pil_to_pixbuf_via_pixbuf_loader(im: Image) -> GdkPixbuf.Pixbuf:
     bytes_io = io.BytesIO()
     im.save(bytes_io, "PNG" if im.mode in ("LA", "RGBA") else "JPEG")
     return _bytes_to_pixbuf(bytes_io.getvalue())
+
 
 def cv_scale(orig: ndarray, w: int = None, h: int = None) -> ndarray:
     """
@@ -103,7 +106,7 @@ def pil_scale(orig: Image, w: int = None, h: int = None) -> Image:
             # (e.g. 10-bit in I;16 or 20-bit in I or 4-bit in L),
             # but that would be guessing anyway, so here don't
             # make assumptions on _scale_, just reduce _precision_
-            arr = arr >> 8 * (arr.dtype.itemsize-1)
+            arr = arr >> 8 * (arr.dtype.itemsize - 1)
             arr = arr.astype(np_uint8)
         elif arr.dtype.kind == 'f':
             # float needs to be scaled from [0,1.0] to [0,255]
@@ -156,8 +159,9 @@ def _calculate_scale(old_width: int, old_height: int, new_width: int = None, new
 
     return int(old_width * image_scale), int(old_height * image_scale)
 
+
 pil_to_pixbuf = _pil_to_pixbuf_via_cv
 cv_to_pixbuf = _cv_to_pixbuf_via_cv
 
-#pil_to_pixbuf = _pil_to_pixbuf_via_pixbuf_loader
-#cv_to_pixbuf = _cv_to_pixbuf_via_pixbuf_loader
+# pil_to_pixbuf = _pil_to_pixbuf_via_pixbuf_loader
+# cv_to_pixbuf = _cv_to_pixbuf_via_pixbuf_loader

@@ -30,25 +30,25 @@ from PIL import Image
 
 import cv2
 
-
 EventCallBack = Optional[Callable[[str, Any], None]]
 
 
 def check_editable(func: Callable):
     @wraps(func)
     def guard(self, *args, **kwargs):
-        if self._editable != True:
+        if self._editable is not True:
             raise PermissionError('Document is not editable, can not call  {}'.format(func.__qualname__))
         return_value = func(self, *args, **kwargs)
         return return_value
+
     return guard
 
 
 class Document:
-
     temporary_workspaces = []
 
-    def __init__(self, workspace: Workspace, emitter: EventCallBack = None, editable: bool = False, original_url: str = None):
+    def __init__(self, workspace: Workspace, emitter: EventCallBack = None, editable: bool = False,
+                 original_url: str = None):
         self.workspace: Workspace = workspace
         self.emitter: EventCallBack = emitter
         self._original_url = original_url
@@ -79,7 +79,7 @@ class Document:
         return doc
 
     @classmethod
-    def clone(cls, mets_url: Union[Path, str], emitter: EventCallBack = None, editable = True) -> 'Document':
+    def clone(cls, mets_url: Union[Path, str], emitter: EventCallBack = None, editable=True) -> 'Document':
         """
         Clones a project (mets.xml and all used files) to a temporary directory for editing
         """
@@ -362,7 +362,8 @@ class Document:
             image_files = [file]
             images = [image]
         elif not page_files and len(image_files) > 1:
-            log.warning("No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(image_files), page_id, file_group))
+            log.warning(
+                "No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(image_files), page_id, file_group))
 
         return Page(page_id, file, pcgts, image_files, images, None)
 
@@ -488,7 +489,6 @@ class Document:
         self._editable = editable
         # self._empty = False
         # self._modified = False
-
 
     def _emit(self, event: str, *args: Any) -> None:
         if self.emitter is not None:

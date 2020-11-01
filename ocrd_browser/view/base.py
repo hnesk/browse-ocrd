@@ -1,4 +1,4 @@
-from gi.repository import Gtk, Pango, GObject, Gdk
+from gi.repository import Gtk, Pango, GObject
 
 from typing import List, Tuple, Any, Optional, Dict
 
@@ -122,16 +122,18 @@ class PageQtySelector(Gtk.Box, Configurator):
     def changed(self, page_qty: int) -> None:
         self.value = page_qty
 
+
 class ImageZoomSelector(Gtk.Box, Configurator):
 
-    def __init__(self, base:float = 2, step = 0.1, min_=-4.0, max_ = 4.0) -> None:
+    def __init__(self, base: float = 2, step=0.1, min_=-4.0, max_=4.0) -> None:
         super().__init__(visible=True, spacing=3)
         self.value = None
 
         label = Gtk.Label(label='Zoom:', visible=True)
 
         self.base = base
-        self.scale = Gtk.SpinButton(visible=True, max_length=5, width_chars=5, max_width_chars=5, numeric=True, digits = 2)
+        self.scale = Gtk.SpinButton(visible=True, max_length=5, width_chars=5, max_width_chars=5, numeric=True,
+                                    digits=2)
         self.scale.set_tooltip_text('log{:+.2f} scale factor for viewing images'.format(base))
         # noinspection PyCallByClass,PyArgumentList
         self.scale.set_adjustment(Gtk.Adjustment.new(0.0, min_, max_, step, 0, 0))
@@ -151,11 +153,12 @@ class ImageZoomSelector(Gtk.Box, Configurator):
 
     def value_changed(self, spin: Gtk.SpinButton) -> None:
         self.emit('changed', spin.get_value())
-    
+
     @GObject.Signal(arg_types=[float])
     def changed(self, scale: float) -> None:
         self.value = scale
-        self.scale.set_tooltip_text('{:.2%} / log{:.2f} scale factor for viewing images'.format(self.get_exp(), self.base))
+        self.scale.set_tooltip_text(
+            '{:.2%} / log{:.2f} scale factor for viewing images'.format(self.get_exp(), self.base))
 
 
 class FileGroupSelector(Gtk.Box, Configurator):

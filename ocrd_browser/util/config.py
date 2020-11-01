@@ -8,6 +8,7 @@ from shutil import which
 from gi.repository import GLib
 from ocrd_utils import getLogger
 
+
 class _SubSettings:
     @classmethod
     def from_section(cls, section: SectionProxy):
@@ -30,7 +31,6 @@ class _FileGroups(_SubSettings):
 
 
 class _Tool(_SubSettings):
-
     PREFIX = 'Tool '
 
     def __init__(self, name: str, commandline: str, shortcut: Optional[str] = None):
@@ -50,6 +50,7 @@ class _Tool(_SubSettings):
             section.get('shortcut', None)
         )
 
+
 class _Settings:
     def __init__(self, config: ConfigParser):
         self.file_groups = _FileGroups.from_section(config['FileGroups'] if 'FileGroups' in config else {})
@@ -62,9 +63,8 @@ class _Settings:
     def __repr__(self):
         return '{}({})'.format(self.__class__.__name__, repr(vars(self)))
 
-
     @classmethod
-    def build_default(cls, config_dirs = None) -> '_Settings':
+    def build_default(cls, config_dirs=None) -> '_Settings':
         if config_dirs is None:
             config_dirs = GLib.get_system_config_dirs() + [GLib.get_user_config_dir()] + [os.getcwd()]
 

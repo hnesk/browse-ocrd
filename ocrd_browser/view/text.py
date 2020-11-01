@@ -70,7 +70,7 @@ class ViewText(View):
                             text += word.get_TextEquiv()[0].Unicode
                             continue
                         glyphs = word.get_Glyph()
-                        for l, glyph in enumerate(glyphs):
+                        for l, glyph in enumerate(glyphs): # noqa E741
                             if glyph.get_TextEquiv() and glyph.get_TextEquiv()[0].Unicode:
                                 text += glyph.get_TextEquiv()[0].Unicode
 

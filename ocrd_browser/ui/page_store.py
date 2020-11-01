@@ -2,9 +2,6 @@ from gi.repository import Gtk, GLib, GdkPixbuf
 
 from typing import Tuple, Optional, Dict, List, Union, NewType, Callable, Any
 from itertools import count
-from pathlib import Path
-
-from ocrd_utils import getLogger
 
 from ocrd_browser.util.image import cv_to_pixbuf, cv_scale
 from ocrd_browser.model import Document, DEFAULT_FILE_GROUP
@@ -14,10 +11,10 @@ from ..util.config import SETTINGS
 import cv2
 import os
 
-
 RowResult = Tuple[Optional[int], Optional[Gtk.TreeModelRow]]
 ChangeList = Union[List[str], Dict[str, str]]
 Column = NewType('Column', int)
+
 
 class PageListStore(LazyLoadingListStore):
     """
@@ -105,7 +102,8 @@ class PageListStore(LazyLoadingListStore):
         def _page_added(page_ids: List[str]) -> None:
             for page_id in page_ids:
                 try:
-                    file = next(iter(self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)))
+                    file = next(
+                        iter(self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)))
                     file_name = str(self.document.path(file))
                     self.append((page_id, '', file_name, None, len(self)))
                 except StopIteration as e:
@@ -120,7 +118,8 @@ class PageListStore(LazyLoadingListStore):
             for page_id in page_ids:
                 n, row = self.get_row_by_page_id(page_id)
                 try:
-                    file = next(iter(self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)))
+                    file = next(
+                        iter(self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)))
                     file_name = str(self.document.path(file))
                     row[self.COLUMN_FILENAME] = file_name
                 except StopIteration:
@@ -158,7 +157,6 @@ class PageListStore(LazyLoadingListStore):
         else:
             row[1] = 'No image for {}'.format(row[self.COLUMN_PAGE_ID])
             row[3] = self.pixbufs['page-missing']
-
 
     @staticmethod
     def _load_row(row: Gtk.TreeModelRow) -> Gtk.TreeModelRow:

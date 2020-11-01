@@ -1,13 +1,10 @@
-import gi
-
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GdkPixbuf, GObject, GLib
-
 import unittest
+from gi.repository import Gtk, GdkPixbuf, GObject, GLib
 from ocrd_browser.ui.icon_store import LazyLoadingListStore
+from tests import TestCase
 
 
-class LazyLoadingListStoreTestCase(unittest.TestCase):
+class LazyLoadingListStoreTestCase(TestCase):
 
     def setUp(self):
         def call_instantly(fun, *args, **kwargs):

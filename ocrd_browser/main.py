@@ -12,9 +12,9 @@ except ValueError:
     gi.require_version('GtkSource', '3.0')
 
 from gi.repository import Gtk, Gio  # noqa: E402
-from pathlib import Path            # noqa: E402
-from typing import Type             # noqa: E402
-from types import TracebackType     # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Type  # noqa: E402
+from types import TracebackType  # noqa: E402
 
 BASE_PATH = Path(__file__).absolute().parent
 resources = Gio.resource_load(str(BASE_PATH / "ui.gresource"))

@@ -5,7 +5,8 @@ from typing import List
 
 
 class Page:
-    def __init__(self, id_: str, file: OcrdFile, pc_gts: PcGtsType, image_files: List[OcrdFile], images: List[Image], exif: OcrdExif):
+    def __init__(self, id_: str, file: OcrdFile, pc_gts: PcGtsType, image_files: List[OcrdFile], images: List[Image],
+                 exif: OcrdExif):
         self.id: str = id_
         self.file: OcrdFile = file
         self.pc_gts: PcGtsType = pc_gts

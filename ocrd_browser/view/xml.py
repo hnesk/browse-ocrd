@@ -70,4 +70,3 @@ class ViewXml(View):
             self.buffer.set_text(text)
         else:
             self.buffer.set_text('')
-

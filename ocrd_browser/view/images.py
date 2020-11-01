@@ -96,8 +96,7 @@ class ViewImages(View):
         if self.pages:
             box: Gtk.Box
             for box, page in zip_longest(self.image_box.get_children(), self.pages):
-                existing_images = {child.get_name():
-                                   child for child in box.get_children()}
+                existing_images = {child.get_name(): child for child in box.get_children()}
                 for i, img in enumerate(page.images if page else [None]):
                     name = 'image_{}'.format(i)
                     image: Gtk.Image
@@ -132,8 +131,7 @@ class ViewImages(View):
             box: Gtk.Box
             scale_config: ImageZoomSelector = self.configurators['scale']
             for box, page in zip_longest(self.image_box.get_children(), self.pages):
-                images = {child.get_name():
-                          child for child in box.get_children()}
+                images = {child.get_name(): child for child in box.get_children()}
                 for i, img in enumerate(page.images if page else [None]):
                     name = 'image_{}'.format(i)
                     image: Gtk.Image

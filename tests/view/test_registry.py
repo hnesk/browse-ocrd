@@ -1,9 +1,9 @@
-import tests
 import unittest
 from ocrd_browser.view import ViewImages, ViewRegistry
+from tests import TestCase
 
 
-class ViewManagerTestCase(unittest.TestCase):
+class ViewManagerTestCase(TestCase):
 
     def setUp(self):
         self.vm = ViewRegistry({'images': (ViewImages, 'Images', 'Displays Images')})
