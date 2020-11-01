@@ -53,13 +53,12 @@ pypi: clean-build build
 	twine upload ./dist/browse[_-]ocrd*.{tar.gz,whl}
 
 test: tests/assets
-	$(PYTHON) -m xmlrunner discover -s tests -o $(CURDIR)/build_artifacts/tests
+	$(PYTHON) -m xmlrunner discover -s tests -o $(CURDIR)/build_artifacts/unittest.xml
 
 # Clone OCR-D/assets to ./repo/assets
 repo/assets:
 	mkdir -p $(dir $@)
 	git clone https://github.com/OCR-D/assets "$@"
-
 
 # Setup test assets
 tests/assets: repo/assets
