@@ -347,7 +347,9 @@ class Document:
         This is modelled after Processor.input_files https://github.com/OCR-D/core/pull/556/
         """
         log = getLogger('ocrd_browser.model.document.Document.page_for_id')
-        page_files = self.files_for_page_id(page_id, file_group, MIMETYPE_PAGE)
+        if not page_id:
+            return None
+        page_files = self.files_for_page_id(page_id, file_group, mimetype=MIMETYPE_PAGE)
         image_files = self.files_for_page_id(page_id, file_group, mimetype="//image/.*")
         images = [self.resolve_image(f) for f in image_files]
         if not page_files and not image_files:
