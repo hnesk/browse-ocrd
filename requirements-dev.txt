@@ -1,5 +1,6 @@
 wheel
 setuptools
 unittest-xml-reporting
+html-testRunner
 flake8
 mypy

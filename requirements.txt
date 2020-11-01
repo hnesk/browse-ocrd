@@ -1,6 +1,6 @@
 ocrd
 Pillow
-numpy
+numpy<1.19.0,>=1.17.0
 opencv-python-headless
 PyGObject
 python-magic
