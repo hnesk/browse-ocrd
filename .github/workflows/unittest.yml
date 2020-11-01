@@ -27,7 +27,7 @@ jobs:
     - name: Install system dependencies
       run: sudo make deps-ubuntu
     - name: Install dependencies
-      run: make deps dep-dev install
+      run: make deps-dev deps install
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
