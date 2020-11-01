@@ -41,7 +41,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Unit Test Results (Python ${{ matrix.python-version }})
-        path: build_artifacts/unittest.xml
+        path: unittest.xml
     - name: Run browse-ocrd
       run: browse-ocrd tests/example/workspaces/kant_aufklaerung_1784_missing_xml/mets.xml
     - name: Screenshot

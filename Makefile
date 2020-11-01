@@ -8,7 +8,7 @@ PYTHONIOENCODING=utf8
 SHARE_DIR=~/.local/share
 
 deps-ubuntu:
-	apt install -y libcairo2-dev libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev pkg-config cmake
+	apt install -y libcairo2-dev libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev pkg-config cmake imagemagick
 
 deps-dev:
 	$(PIP) install -r requirements-dev.txt
@@ -53,7 +53,7 @@ pypi: clean-build build
 	twine upload ./dist/browse[_-]ocrd*.{tar.gz,whl}
 
 test: tests/assets
-	$(PYTHON) -m xmlrunner discover -s tests -o $(CURDIR)/build_artifacts/unittest.xml
+	$(PYTHON) -m xmlrunner discover -s tests -o $(CURDIR)/unittest.xml
 
 # Clone OCR-D/assets to ./repo/assets
 repo/assets:
