@@ -53,7 +53,7 @@ pypi: clean-build build
 	twine upload ./dist/browse[_-]ocrd*.{tar.gz,whl}
 
 test: tests/assets
-	$(PYTHON) -m xmlrunner discover -s tests -o `readlink -f build_artifacts/tests`
+	$(PYTHON) -m xmlrunner discover -s tests -o $(CURDIR)/build_artifacts/tests
 
 # Clone OCR-D/assets to ./repo/assets
 repo/assets:
