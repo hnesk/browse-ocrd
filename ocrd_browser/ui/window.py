@@ -102,6 +102,7 @@ class MainWindow(Gtk.ApplicationWindow):
         view: View = view_class(name, self)
         view.build()
         view.set_document(self.document)
+        view.page_activated(self, self.current_page_id)
         self.views.append(view)
         self.connect('page_activated', view.page_activated)
         self.page_list.connect('pages_selected', view.pages_selected)
