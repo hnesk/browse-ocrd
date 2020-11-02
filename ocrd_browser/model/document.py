@@ -33,9 +33,9 @@ import cv2
 EventCallBack = Optional[Callable[[str, Any], None]]
 
 
-def check_editable(func: Callable):
+def check_editable(func: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(func)
-    def guard(self, *args, **kwargs):
+    def guard(self: 'Document', *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
         if self._editable is not True:
             raise PermissionError('Document is not editable, can not call  {}'.format(func.__qualname__))
         return_value = func(self, *args, **kwargs)
@@ -45,7 +45,7 @@ def check_editable(func: Callable):
 
 
 class Document:
-    temporary_workspaces = []
+    temporary_workspaces: List[str] = []
 
     def __init__(self, workspace: Workspace, emitter: EventCallBack = None, editable: bool = False,
                  original_url: str = None):
@@ -79,16 +79,16 @@ class Document:
         return doc
 
     @classmethod
-    def clone(cls, mets_url: Union[Path, str], emitter: EventCallBack = None, editable=True) -> 'Document':
+    def clone(cls, mets_url: Union[Path, str], emitter: EventCallBack = None, editable: bool = True) -> 'Document':
         """
         Clones a project (mets.xml and all used files) to a temporary directory for editing
         """
-        doc = cls(cls._clone_workspace(mets_url), emitter=emitter, editable=editable, original_url=mets_url)
+        doc = cls(cls._clone_workspace(mets_url), emitter=emitter, editable=editable, original_url=str(mets_url))
         doc._empty = False
         return doc
 
     @classmethod
-    def _clone_workspace(cls, mets_url):
+    def _clone_workspace(cls, mets_url: Union[Path, str]) -> Workspace:
         """
         Clones a workspace (mets.xml and all used files) to a temporary directory for editing
         """
@@ -102,7 +102,7 @@ class Document:
         return workspace
 
     @check_editable
-    def save(self, backup_directory: Union[bool, Path, str] = True):
+    def save(self, backup_directory: Union[bool, Path, str] = True) -> None:
         if not self._original_url:
             raise ValueError('Need an _original_url to save')
         self.save_as(self._original_url, backup_directory=backup_directory)
@@ -116,9 +116,9 @@ class Document:
             if backup_directory:
                 if isinstance(backup_directory, bool):
                     backup_directory = self._derive_backup_directory(workspace_directory)
-                shutil.move(workspace_directory, backup_directory)
+                shutil.move(str(workspace_directory), str(backup_directory))
             else:
-                shutil.rmtree(workspace_directory)
+                shutil.rmtree(str(workspace_directory))
 
         mets_basename = mets_path.name
         workspace_directory.mkdir(parents=True, exist_ok=True)
@@ -228,8 +228,8 @@ class Document:
         return list(distinct_groups.keys())
 
     @property
-    def title(self):
-        return self.workspace.mets.unique_identifier if self.workspace and self.workspace.mets.unique_identifier else '<unnamed>'
+    def title(self) -> str:
+        return str(self.workspace.mets.unique_identifier) if self.workspace and self.workspace.mets.unique_identifier else '<unnamed>'
 
     def get_file_index(self) -> Dict[str, OcrdFile]:
         """
@@ -277,7 +277,7 @@ class Document:
                 image_paths[page_id] = None
         return image_paths
 
-    def get_default_image_group(self, preferred_image_file_groups: Optional[List] = None) -> Optional[str]:
+    def get_default_image_group(self, preferred_image_file_groups: Optional[List[str]] = None) -> Optional[str]:
         image_file_groups = []
         for file_group, mimetype in self.file_groups_and_mimetypes:
             weight = 0.0
@@ -431,7 +431,7 @@ class Document:
         self._emit('document_changed', 'page_changed', [page_id])
         return image_files
 
-    def save_mets(self):
+    def save_mets(self) -> None:
         if not self._editable:
             raise PermissionError('Can not modify Document with _editable == False')
         self.workspace.save_mets()
@@ -462,23 +462,23 @@ class Document:
         return current_file
 
     @property
-    def modified(self):
+    def modified(self) -> bool:
         return self._modified
 
     @property
-    def empty(self):
+    def empty(self) -> bool:
         return self._empty
 
     @property
-    def original_url(self):
+    def original_url(self) -> str:
         return self._original_url
 
     @property
-    def editable(self):
+    def editable(self) -> bool:
         return self._editable
 
     @editable.setter
-    def editable(self, editable):
+    def editable(self, editable: bool) -> None:
         if editable:
             if self._original_url:
                 self.workspace = self._clone_workspace(self._original_url)
@@ -509,7 +509,7 @@ class Document:
         return workspace_directory.parent / ('.bak.' + workspace_directory.name + '.' + now.strftime('%Y%m%d-%H%M%S'))
 
     @classmethod
-    def delete_temporary_workspaces(cls):
+    def delete_temporary_workspaces(cls) -> None:
         for temporary_workspace in cls.temporary_workspaces:
             try:
                 shutil.rmtree(temporary_workspace)

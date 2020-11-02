@@ -43,7 +43,7 @@ class FileProxy(QuotingProxy):
         self.in_doc = in_doc
 
     @property
-    def local_filename(self) -> ResolvableFileName:
+    def local_filename(self):
         return ResolvableFileName(self.object.local_filename, self.in_doc)
 
     # Recommended alias path, because local_filename sounds like a relative path

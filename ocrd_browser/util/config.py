@@ -1,20 +1,22 @@
 import os
 from collections import OrderedDict
-from configparser import ConfigParser, SectionProxy
+from configparser import ConfigParser
 import shlex
-from typing import List, Optional
+from typing import List, Optional, MutableMapping
 from shutil import which
 
 from gi.repository import GLib
 from ocrd_utils import getLogger
 
+ConfigDict = MutableMapping[str, str]
+
 
 class _SubSettings:
     @classmethod
-    def from_section(cls, section: SectionProxy):
+    def from_section(cls, _name: str, section: ConfigDict) -> '_SubSettings':
         raise NotImplementedError('please override from_section')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{}({})'.format(self.__class__.__name__, repr(vars(self)))
 
 
@@ -23,7 +25,7 @@ class _FileGroups(_SubSettings):
         self.preferred_images = preferred_images
 
     @classmethod
-    def from_section(cls, section: SectionProxy):
+    def from_section(cls, _name: str, section: ConfigDict) -> '_FileGroups':
         preferred_images = section.get('preferredImages', 'OCR-D-IMG, OCR-D-IMG.*')
         return cls(
             [grp.strip() for grp in preferred_images.split(',')]
@@ -43,9 +45,9 @@ class _Tool(_SubSettings):
         self.shortcut = shortcut
 
     @classmethod
-    def from_section(cls, section: SectionProxy):
+    def from_section(cls, name: str, section: ConfigDict) -> '_Tool':
         return cls(
-            section.name[len(cls.PREFIX):],
+            name[len(cls.PREFIX):],
             section['commandline'],
             section.get('shortcut', None)
         )
@@ -53,18 +55,18 @@ class _Tool(_SubSettings):
 
 class _Settings:
     def __init__(self, config: ConfigParser):
-        self.file_groups = _FileGroups.from_section(config['FileGroups'] if 'FileGroups' in config else {})
+        self.file_groups = _FileGroups.from_section('FileGroups', config['FileGroups'] if 'FileGroups' in config else {'': ''})
         self.tools = OrderedDict()
         for name, section in config.items():
             if name.startswith(_Tool.PREFIX):
-                tool = _Tool.from_section(section)
+                tool = _Tool.from_section(name, section)
                 self.tools[tool.name] = tool
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{}({})'.format(self.__class__.__name__, repr(vars(self)))
 
     @classmethod
-    def build_default(cls, config_dirs=None) -> '_Settings':
+    def build_default(cls, config_dirs: Optional[List[str]] = None) -> '_Settings':
         if config_dirs is None:
             config_dirs = GLib.get_system_config_dirs() + [GLib.get_user_config_dir()] + [os.getcwd()]
 
@@ -72,10 +74,10 @@ class _Settings:
         return cls.build_from_files(config_files)
 
     @classmethod
-    def build_from_files(cls, files) -> '_Settings':
+    def build_from_files(cls, files: List[str]) -> '_Settings':
         log = getLogger('ocrd_browser.util.config._Settings.build_from_files')
         config = ConfigParser()
-        config.optionxform = lambda option: option
+        setattr(config, 'optionxform', lambda option: option)
         read_files = config.read(files)
         log.warning('Read config files: %s, tried %s', ', '.join(read_files), ', '.join(str(file) for file in files))
         return cls(config)
