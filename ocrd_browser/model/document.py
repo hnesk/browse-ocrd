@@ -357,7 +357,10 @@ class Document:
             return None
         file = next(iter(page_files + image_files))
         pcgts = self.page_for_file(file)
-        if not image_files:
+        if not pcgts.get_Page().get_imageFilename():
+            log.warning("PAGE-XML with empty image path for page '{}' in fileGrp '{}'".format(
+                page_id, file_group))
+        elif not image_files:
             image, _, _ = self.workspace.image_from_page(pcgts.get_Page(), page_id)
             image_files = [file]
             images = [image]
