@@ -52,6 +52,15 @@ testpypi: clean-build build
 pypi: clean-build build
 	twine upload ./dist/browse[_-]ocrd*.{tar.gz,whl}
 
+flake8:
+	$(PYTHON) -m flake8 ocrd_browser tests
+
+mypy:
+	$(PYTHON) -m mypy --show-error-codes  -p ocrd_browser
+
+ci: flake8 mypy test
+
+
 test: tests/assets
 	$(PYTHON) -m xmlrunner discover -s tests --output-file $(CURDIR)/unittest.xml
 

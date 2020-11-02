@@ -79,7 +79,7 @@ class _Settings:
         config = ConfigParser()
         setattr(config, 'optionxform', lambda option: option)
         read_files = config.read(files)
-        log.warning('Read config files: %s, tried %s', ', '.join(read_files), ', '.join(str(file) for file in files))
+        log.info('Read %d config file(s): %s, tried %s', len(read_files), ', '.join(read_files), ', '.join(str(file) for file in files))
         return cls(config)
 
 
