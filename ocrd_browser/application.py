@@ -38,7 +38,7 @@ class OcrdBrowserApplication(Gtk.Application):
         open_windows: int = 0
         window: MainWindow
         for window in self.get_windows():
-            if isinstance(window, MainWindow) and window.close_confirm():
+            if isinstance(window, MainWindow) and window.close_confirm():  # type: ignore[unreachable]
                 window.destroy()
             else:
                 open_windows += 1

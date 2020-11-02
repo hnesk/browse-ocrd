@@ -140,7 +140,7 @@ class ViewImages(View):
                         thumbnail = pil_scale(img, None, int(scale_config.get_exp() * img.height))
                         image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
 
-    def on_scroll(self, _widget: Gtk.Widget, event: Gdk.EventButton):
+    def on_scroll(self, _widget: Gtk.Widget, event: Gdk.EventButton) -> bool:
         # Handles zoom in / zoom out on Ctrl+mouse wheel
         accel_mask = Gtk.accelerator_get_default_mod_mask()
         if event.state & accel_mask == Gdk.ModifierType.CONTROL_MASK:

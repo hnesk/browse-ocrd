@@ -1,6 +1,6 @@
 import shlex
 from subprocess import Popen
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from ocrd_models import OcrdFile
 from ocrd_utils import getLogger
@@ -10,27 +10,27 @@ from ocrd_browser.util.config import _Tool, SETTINGS
 
 
 class ResolvableFileName:
-    def __init__(self, filename, in_doc: Document):
+    def __init__(self, filename: str, in_doc: Document):
         self.filename = filename
         self.in_doc = in_doc
 
     @property
-    def absolute(self):
+    def absolute(self) -> str:
         return shlex.quote(str(self.in_doc.path(self.filename).absolute()))
 
     @property
-    def relative(self):
+    def relative(self) -> str:
         return shlex.quote(self.filename)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.absolute
 
 
 class QuotingProxy:
-    def __init__(self, object_):
+    def __init__(self, object_:Any):
         self.object = object_
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> str:
         if hasattr(self.object, item):
             return shlex.quote(getattr(self.object, item))
         else:
@@ -54,7 +54,7 @@ class Launcher:
     def __init__(self, tools: Optional[Dict[str, _Tool]] = None):
         self.tools = tools if tools else SETTINGS.tools
 
-    def launch(self, toolname: str, doc: Document, file: OcrdFile) -> Optional[Popen]:
+    def launch(self, toolname: str, doc: Document, file: OcrdFile) -> Optional[Popen[bytes]]:
         if toolname in self.tools:
             return self.launch_tool(self.tools[toolname], doc, file)
         else:
@@ -66,7 +66,7 @@ class Launcher:
             log.error('commandline = /usr/bin/yourtool --base-dir {workspace.directory} {file.path.absolute}')
             return None
 
-    def launch_tool(self, tool: _Tool, doc: Document, file: OcrdFile, **kwargs) -> Popen:
+    def launch_tool(self, tool: _Tool, doc: Document, file: OcrdFile, **kwargs: Any) -> Popen[bytes]:
         log = getLogger('ocrd_browser.util.launcher.Launcher.launch_tool')
         commandline = self._template(tool.commandline, doc, file)
         log.debug('Calling tool "%s" with commandline: ', tool.name)
@@ -74,5 +74,5 @@ class Launcher:
         process = Popen(args=commandline, shell=True, cwd=doc.directory, **kwargs)
         return process
 
-    def _template(self, arg: str, doc: Document, file: OcrdFile):
+    def _template(self, arg: str, doc: Document, file: OcrdFile) -> str:
         return arg.format(file=FileProxy(file, doc), workspace=QuotingProxy(doc.workspace))

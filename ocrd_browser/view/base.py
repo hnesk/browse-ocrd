@@ -1,6 +1,6 @@
 from gi.repository import Gtk, Pango, GObject
 
-from typing import List, Tuple, Any, Optional, Dict
+from typing import List, Tuple, Any, Optional, Dict, cast
 
 from enum import Enum
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
@@ -125,7 +125,7 @@ class PageQtySelector(Gtk.Box, Configurator):
 
 class ImageZoomSelector(Gtk.Box, Configurator):
 
-    def __init__(self, base: float = 2, step=0.1, min_=-4.0, max_=4.0) -> None:
+    def __init__(self, base: float = 2, step: float = 0.1, min_: float = -4.0, max_: float = 4.0) -> None:
         super().__init__(visible=True, spacing=3)
         self.value = None
 
@@ -143,8 +143,8 @@ class ImageZoomSelector(Gtk.Box, Configurator):
         self.pack_start(label, False, True, 0)
         self.pack_start(self.scale, False, True, 0)
 
-    def get_exp(self):
-        return self.base ** self.value
+    def get_exp(self) -> float:
+        return cast(float, self.base ** self.value)
 
     def set_value(self, value: float) -> None:
         adj: Gtk.Adjustment = self.scale.get_adjustment()

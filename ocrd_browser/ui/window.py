@@ -157,7 +157,7 @@ class MainWindow(Gtk.ApplicationWindow):
         for view in self.views:
             view.update_ui()
 
-    def close_confirm(self):
+    def close_confirm(self) -> bool:
         if self.document.modified:
             # Do you wanna save the changes?
             d = SaveChangesDialog(document=self.document, transient_for=self, modal=True)
@@ -178,7 +178,7 @@ class MainWindow(Gtk.ApplicationWindow):
         if self.close_confirm():
             self.destroy()
 
-    def on_delete_event(self, _window: 'MainWindow', _event: Gdk.Event):
+    def on_delete_event(self, _window: 'MainWindow', _event: Gdk.Event) -> bool:
         return not self.close_confirm()
 
     def on_goto_first(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
@@ -211,13 +211,13 @@ class MainWindow(Gtk.ApplicationWindow):
             self.views.remove(closing_view)
             del closing_view
 
-    def on_save(self, _a: Gio.SimpleAction = None, _p: None = None):
+    def on_save(self, _a: Gio.SimpleAction = None, _p: None = None) -> bool:
         if self.document.original_url:
             return self.save()
         else:
             return self.save_as()
 
-    def on_save_as(self, _a: Gio.SimpleAction = None, _p: None = None):
+    def on_save_as(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
         self.save_as()
 
     def save(self) -> bool:
@@ -232,13 +232,13 @@ class MainWindow(Gtk.ApplicationWindow):
         else:
             save_dialog.set_current_name('mets.xml')
         response = save_dialog.run()
-        should_save = response == Gtk.ResponseType.OK
+        should_save = bool(response == Gtk.ResponseType.OK)
         if should_save:
             self.document.save_as(save_dialog.get_uri())
         save_dialog.destroy()
         self.update_ui()
         return should_save
 
-    def on_toggle_edit_mode(self, _a: Gio.SimpleAction = None, _p: None = None):
+    def on_toggle_edit_mode(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
         self.document.editable = not self.document.editable
         self.update_ui()
