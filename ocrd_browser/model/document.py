@@ -73,7 +73,7 @@ class Document:
             return cls.create(emitter=emitter)
         mets_url = cls._strip_local(mets_url)
 
-        workspace = Resolver().workspace_from_url(mets_url, download=True)
+        workspace = Resolver().workspace_from_url(mets_url, download=False)
         doc = cls(workspace, emitter=emitter, original_url=mets_url)
         doc._empty = False
         return doc
