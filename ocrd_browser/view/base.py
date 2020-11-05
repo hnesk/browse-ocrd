@@ -37,6 +37,7 @@ class View:
     def build(self) -> None:
         self.container = Gtk.Box(visible=True, orientation="vertical")
         self.action_bar = Gtk.ActionBar(visible=True)
+        self.action_bar.pack_end(SplitViewButton(self.name))
         self.action_bar.pack_end(CloseButton(self.name))
 
         self.scroller = Gtk.ScrolledWindow(visible=True, shadow_type='in', propagate_natural_width=True)
@@ -87,9 +88,6 @@ class View:
         pass
 
     def update_ui(self) -> None:
-        pass
-
-    def on_size(self, w: int, h: int, x: int, y: int) -> None:
         pass
 
 
@@ -297,6 +295,21 @@ class CloseButton(Gtk.Button):
         self.set_always_show_image(True)
         # noinspection PyArgumentList
         pixbuf = Gtk.IconTheme.get_default().load_icon('window-close', Gtk.IconSize.SMALL_TOOLBAR,
+                                                       Gtk.IconLookupFlags.FORCE_SYMBOLIC)
+        image = Gtk.Image(visible=True)
+        image.set_from_pixbuf(pixbuf)
+        self.set_image(image)
+
+
+class SplitViewButton(Gtk.Button):
+    def __init__(self, view_name: str):
+        Gtk.Button.__init__(self, visible=True)
+        self.set_name('split_{}'.format(view_name))
+        self.set_detailed_action_name('win.split_view("{}")'.format(view_name))
+        self.set_relief(Gtk.ReliefStyle.NONE)
+        self.set_always_show_image(True)
+        # noinspection PyArgumentList
+        pixbuf = Gtk.IconTheme.get_default().load_icon('object-flip-horizontal', Gtk.IconSize.SMALL_TOOLBAR,
                                                        Gtk.IconLookupFlags.FORCE_SYMBOLIC)
         image = Gtk.Image(visible=True)
         image.set_from_pixbuf(pixbuf)

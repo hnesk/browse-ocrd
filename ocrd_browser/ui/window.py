@@ -2,14 +2,13 @@ from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib, Gdk
 from ocrd_models import OcrdFile
 
 from ocrd_browser.model import Document
-from ocrd_browser.view import ViewRegistry, View, ViewImages
+from ocrd_browser.view import ViewRegistry, ViewImages
 from ocrd_browser.util.gtk import ActionRegistry
 from .dialogs import SaveDialog, SaveChangesDialog
 from .page_browser import PagePreviewList
 from pkg_resources import resource_filename
 from typing import List, cast, Any, Optional
 
-from ..view.empty import ViewEmpty
 from ..view.manager import ViewManager
 
 
@@ -53,6 +52,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.page_list = PagePreviewList(self.document)
         self.page_list_scroller.add(self.page_list)
         self.page_list.connect('page_activated', self.on_page_activated)
+        self.page_list.connect('pages_selected', self.on_pages_selected)
+
 
         for id_, view in self.view_registry.get_view_options().items():
             menu_item = Gtk.ModelButton(visible=True, centered=False, halign=Gtk.Align.FILL, label=view, hexpand=True)
@@ -110,6 +111,14 @@ class MainWindow(Gtk.ApplicationWindow):
         index = self.document.page_ids.index(page_id)
         self.current_page_label.set_text('{}/{}'.format(index + 1, len(self.document.page_ids)))
         self.update_ui()
+        pass
+
+    def on_pages_selected(self, _sender: Optional[Gtk.Widget], page_ids: List[str]) -> None:
+        self.emit('pages_selected', page_ids)
+
+    @GObject.Signal(arg_types=[object])
+    def pages_selected(self, page_ids: List[str]) -> None:
+        print(page_ids)
         pass
 
     @GObject.Signal(arg_types=[str, object])
