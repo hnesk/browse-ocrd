@@ -4,15 +4,19 @@ Change Log
 
 ## Unreleased
 
+<!-- ## [0.4.2](../../compare/v0.4.1...v0.4.2) - 2020-11-05 -->
+
 Fixed: 
 
+* Catch empty imageFilename case &  don't download remote urls upfront #25  
 * Pillow workaround: convert 16-bit images to 8-bit #23
 * Don't crash on unhandled mimetype #18
 * typing.OrederedDict is not available in python 3.6  #22
 
 Changed
 
-* Added a button to launch PageViewer from XmlView #21 
+* Added Webkit-HTML-View for [dinglehopper](https://github.com/qurator-spk/dinglehopper) #25 (partially fixes #13)
+* Added a button to launch [PageViewer]() from XmlView #21 
 
 
 ## [0.4.1](../../compare/v0.4.0...v0.4.1) - 2020-10-30
