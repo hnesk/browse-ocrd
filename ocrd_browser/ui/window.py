@@ -9,6 +9,9 @@ from .page_browser import PagePreviewList
 from pkg_resources import resource_filename
 from typing import List, cast, Any, Optional
 
+from ..view.empty import ViewEmpty
+from ..view.manager import ViewManager
+
 
 @Gtk.Template(filename=resource_filename(__name__, '../resources/main-window.ui'))
 class MainWindow(Gtk.ApplicationWindow):
@@ -25,7 +28,7 @@ class MainWindow(Gtk.ApplicationWindow):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
         # noinspection PyCallByClass,PyArgumentList
         self.set_icon(GdkPixbuf.Pixbuf.new_from_resource("/org/readmachine/ocrd-browser/icons/icon.png"))
-        self.views: List[View] = []
+        self.view_manager = ViewManager(self, self.view_container)
         self.current_page_id: Optional[str] = None
         # noinspection PyTypeChecker
         self.document = Document.create(emitter=self.emit)
@@ -39,6 +42,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions.create('page_remove')
         self.actions.create('page_properties')
         self.actions.create('close_view', param_type=GLib.VariantType("s"))
+        self.actions.create('split_view', param_type=GLib.VariantType("s"))
         self.actions.create('create_view', param_type=GLib.VariantType("s"))
         self.actions.create('toggle_edit_mode', state=GLib.Variant('b', False))
         self.actions.create('save')
@@ -55,7 +59,7 @@ class MainWindow(Gtk.ApplicationWindow):
             menu_item.set_detailed_action_name('win.create_view("{}")'.format(id_))
             self.view_menu_box.pack_start(menu_item, True, True, 0)
 
-        self.add_view(ViewImages)
+        self.view_manager.add(ViewImages)
 
         self.update_ui()
 
@@ -87,8 +91,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.page_list.set_document(self.document)
 
         self.update_ui()
-        for view in self.views:
-            view.set_document(self.document)
+        self.view_manager.set_document(self.document)
 
         if len(self.document.page_ids):
             self.on_page_activated(None, self.document.page_ids[0])
@@ -96,17 +99,6 @@ class MainWindow(Gtk.ApplicationWindow):
     @property
     def view_registry(self) -> ViewRegistry:
         return cast(MainWindow, self.get_application()).view_registry
-
-    def add_view(self, view_class: type) -> None:
-        name = 'view_{}'.format(len(self.views))
-        view: View = view_class(name, self)
-        view.build()
-        view.set_document(self.document)
-        view.page_activated(self, self.current_page_id)
-        self.views.append(view)
-        self.connect('page_activated', view.page_activated)
-        self.page_list.connect('pages_selected', view.pages_selected)
-        self.view_container.pack_start(view.container, True, True, 3)
 
     def on_page_activated(self, _sender: Optional[Gtk.Widget], page_id: str) -> None:
         if self.current_page_id != page_id:
@@ -155,9 +147,7 @@ class MainWindow(Gtk.ApplicationWindow):
         # noinspection PyCallByClass
         self.actions['toggle_edit_mode'].set_state(GLib.Variant.new_boolean(self.document.editable))
         self.actions['save'].set_enabled(self.document.modified)
-        # self.actions['save_as'].set_enabled(self.document.modified)
-        for view in self.views:
-            view.update_ui()
+        self.view_manager.update_ui()
 
     def close_confirm(self) -> bool:
         if self.document.modified:
@@ -197,21 +187,13 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_create_view(self, _a: Gio.SimpleAction, selected_view_id: GLib.Variant) -> None:
         view_class = self.view_registry.get_view(selected_view_id.get_string())
-        if view_class:
-            self.add_view(view_class)
+        self.view_manager.add_view(view_class)
 
     def on_close_view(self, _action: Gio.SimpleAction, view_name: GLib.Variant) -> None:
-        closing_view = None
-        for view in self.views:
-            if view.name == view_name.get_string():
-                closing_view = view
-                break
+        self.view_manager.close(view_name.get_string())
 
-        if closing_view:
-            closing_view.container.destroy()
-            self.disconnect_by_func(closing_view.page_activated)
-            self.views.remove(closing_view)
-            del closing_view
+    def on_split_view(self, _action: Gio.SimpleAction, view_name: GLib.Variant) -> None:
+        self.view_manager.split(view_name.get_string())
 
     def on_save(self, _a: Gio.SimpleAction = None, _p: None = None) -> bool:
         if self.document.original_url:
