@@ -24,6 +24,8 @@ try:
 except ValueError:
     gi.require_version('GtkSource', '3.0')
 
+gi.require_version('WebKit2', '4.0')
+
 initLogging()
 
 TEST_BASE_PATH = (Path(__file__).parent).absolute()

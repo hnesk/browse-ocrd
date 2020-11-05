@@ -23,6 +23,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 from datetime import datetime
 from urllib.parse import urlparse
+# noinspection PyProtectedMember
 from lxml.etree import ElementBase as Element, _ElementTree as ElementTree
 
 from numpy import array as ndarray
@@ -47,10 +48,10 @@ def check_editable(func: Callable[..., Any]) -> Callable[..., Any]:
 class Document:
     temporary_workspaces: List[str] = []
 
-    def __init__(self, workspace: Workspace, emitter: EventCallBack = None, editable: bool = False,
+    def __init__(self, workspace: Optional[Workspace], emitter: Optional[EventCallBack] = None, editable: bool = False,
                  original_url: str = None):
-        self.workspace: Workspace = workspace
-        self.emitter: EventCallBack = emitter
+        self.workspace = workspace
+        self.emitter = emitter
         self._original_url = original_url
         self._editable = editable
         self._empty = True
@@ -368,7 +369,7 @@ class Document:
             log.warning(
                 "No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(image_files), page_id, file_group))
 
-        return Page(page_id, file, pcgts, image_files, images, None)
+        return Page(page_id, file, pcgts, image_files, images)
 
     def files_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP, mimetype: str = None) \
             -> List[OcrdFile]:

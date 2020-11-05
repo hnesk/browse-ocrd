@@ -55,7 +55,7 @@ class ViewXml(View):
         super().config_changed(name, value)
         self.reload()
 
-    def open_jpageviewer(self, button: Gtk.Button) -> None:
+    def open_jpageviewer(self, _button: Gtk.Button) -> None:
         if self.current and self.current.file:
             Launcher().launch('PageViewer', self.document, self.current.file)
 

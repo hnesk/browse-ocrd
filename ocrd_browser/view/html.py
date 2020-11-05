@@ -1,5 +1,3 @@
-import gi
-gi.require_version('WebKit2', '4.0')
 from gi.repository import GObject, Gtk, WebKit2
 
 from typing import Optional, Tuple, Any
@@ -43,13 +41,11 @@ class ViewHtml(View):
     def reload(self) -> None:
         files = self.document.files_for_page_id(self.page_id, self.use_file_group, mimetype='text/html')
         if files:
-            self.current = Page(self.page_id, files[0], None, [], [], None)
+            self.current = Page(self.page_id, files[0], None, [], [])
         self.redraw()
-    
+
     def redraw(self) -> None:
         if self.current:
             self.web_view.set_tooltip_text(self.page_id)
             self.web_view.load_uri('file://' + str(self.document.path(self.current.file.local_filename)))
             self.web_view.show()
-
-                        

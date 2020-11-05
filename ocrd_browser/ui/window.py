@@ -152,6 +152,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions['go_forward'].set_enabled(can_go_forward)
         self.actions['goto_last'].set_enabled(can_go_forward)
         self.actions['page_remove'].set_enabled(self.document.editable)
+        # noinspection PyCallByClass
         self.actions['toggle_edit_mode'].set_state(GLib.Variant.new_boolean(self.document.editable))
         self.actions['save'].set_enabled(self.document.modified)
         # self.actions['save_as'].set_enabled(self.document.modified)

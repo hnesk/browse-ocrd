@@ -70,7 +70,7 @@ class _Settings:
         if config_dirs is None:
             config_dirs = GLib.get_system_config_dirs() + [GLib.get_user_config_dir()] + [os.getcwd()]
 
-        config_files = [dir + '/ocrd-browser.conf' for dir in config_dirs]
+        config_files = [dir_ + '/ocrd-browser.conf' for dir_ in config_dirs]
         return cls.build_from_files(config_files)
 
     @classmethod
