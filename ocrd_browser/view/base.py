@@ -249,7 +249,11 @@ class FileGroupModel(Gtk.ListStore):
     def __init__(self, document: Document):
         super().__init__(str, str, str, str)
         for group, mime in document.file_groups_and_mimetypes:
-            self.append(('{}|{}'.format(group, mime), group, mime, MIME_TO_EXT.get(mime, '.???')))
+            if mime == 'text/html':
+                ext = '.html'
+            else:
+                ext = MIME_TO_EXT.get(mime, '.???')
+            self.append(('{}|{}'.format(group, mime), group, mime, ext))
 
     @classmethod
     def build(cls, document: Document, filter_: 'FileGroupFilter' = None) -> 'FileGroupModel':
@@ -268,6 +272,11 @@ class FileGroupModel(Gtk.ListStore):
         return str(model[it][FileGroupComboBox.COLUMN_MIME]) == str(MIMETYPE_PAGE)
 
     @staticmethod
+    def html_filter(model: Gtk.TreeModel, it: Gtk.TreeIter, _data: None) -> bool:
+        # str casts for mypy
+        return str(model[it][FileGroupComboBox.COLUMN_MIME]) == 'text/html'
+
+    @staticmethod
     def all_filter(_model: Gtk.TreeModel, _it: Gtk.TreeIter, _data: None) -> bool:
         return True
 
@@ -275,6 +284,7 @@ class FileGroupModel(Gtk.ListStore):
 class FileGroupFilter(Enum):
     IMAGE = FileGroupModel.image_filter
     PAGE = FileGroupModel.page_filter
+    HTML = FileGroupModel.html_filter
     ALL = FileGroupModel.all_filter
 
 

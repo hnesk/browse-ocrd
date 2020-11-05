@@ -1,6 +1,6 @@
 # OCR-D Browser
 
-An extensible viewer for [OCR-D](https://ocr-d.de/) mets.xml files 
+An extensible viewer for [OCR-D](https://ocr-d.de/) [mets.xml](https://ocr-d.de/en/spec/mets) files
 
 ## Screenshot
 
@@ -9,15 +9,24 @@ An extensible viewer for [OCR-D](https://ocr-d.de/) mets.xml files
 ## Installation on Ubuntu 18.04
 
 ```
-sudo apt install libcairo2-dev libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev pkg-config cmake
+sudo make deps-ubuntu
 pip install browse-ocrd
 ```
 
 
 ## Usage
 ```
-browse-ocrd ./path/to/mets.xml
+browse-ocrd ./path/to/mets.xml # or open interactively
 ```
+
+## Features
+
+- Browse fileGrps and pages, arranging views next to each other for comparison
+- Show original or derived images (`AlternativeImage` on any level of the structural hierarchy)
+- Show multiple images at once for different pages (horizontally) or different segments (vertically), zooming freely
+- Show raw [PAGE-XML](https://ocr-d.de/en/spec/page) with syntax highlighting, open with [PageViewer](https://github.com/PRImA-Research-Lab/prima-page-viewer)
+- Show concatenated [PAGE-XML](https://ocr-d.de/en/spec/page) text annotation
+- Show rendered HTML comparison from [dinglehopper](https://github.com/qurator-spk/dinglehopper) evaluations
 
 ## Configuration
 
@@ -53,3 +62,4 @@ The `commandline` string will be used as a python format string with the keyword
 * `workspace` : The current `ocrd.Workspace`, all properties get shell escaped (by `shlex.quote`) automatically.
 * `file` : The current `ocrd_models.OcrdFile`, all properties get shell escaped (by `shlex.quote`) automatically, also there is an additional property `path` with the properties `absolute` and `relative`, so `{file.path.absolute}` will be replaced by the shell quoted absolute path of the file. 
 
+> Note: You can get PRImA's PageViewer at [Github](https://github.com/PRImA-Research-Lab/prima-page-viewer/releases).
