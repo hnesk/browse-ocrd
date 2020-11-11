@@ -1,0 +1,24 @@
+#view_container paned separator {
+    min-width: 5px;
+    min-height: 5px;
+}
+
+#view_container paned paned separator {
+    min-width: 4px;
+    min-height: 4px;
+}
+
+#view_container paned paned paned separator {
+    min-width: 3px;
+    min-height: 3px;
+}
+
+#view_container paned paned paned paned separator {
+    min-width: 2px;
+    min-height: 2px;
+}
+
+#view_container paned paned paned paned paned separator {
+    min-width: 1px;
+    min-height: 1px;
+}
