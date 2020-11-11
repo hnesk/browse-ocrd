@@ -4,5 +4,7 @@ from .html import ViewHtml
 from .images import ViewImages
 from .text import ViewText
 from .xml import ViewXml
+from .empty import ViewEmpty
 
-__all__ = ['View', 'ViewRegistry', 'ViewImages', 'ViewText', 'ViewXml', 'ViewHtml']
+
+__all__ = ['View', 'ViewRegistry', 'ViewImages', 'ViewText', 'ViewXml', 'ViewHtml', 'ViewEmpty']

@@ -35,10 +35,11 @@ class View:
         self.scroller: Gtk.ScrolledWindow = None
 
     def build(self) -> None:
-        self.container = Gtk.Box(visible=True, orientation="vertical")
+        self.container = Gtk.Box(visible=True, orientation="vertical", name=self.name)
         self.action_bar = Gtk.ActionBar(visible=True)
-        self.action_bar.pack_end(SplitViewButton(self.name))
         self.action_bar.pack_end(CloseButton(self.name))
+        self.action_bar.pack_end(SplitViewButton(self.name, True))
+        self.action_bar.pack_end(SplitViewButton(self.name, False))
 
         self.scroller = Gtk.ScrolledWindow(visible=True, shadow_type='in', propagate_natural_width=True)
 
@@ -302,15 +303,18 @@ class CloseButton(Gtk.Button):
 
 
 class SplitViewButton(Gtk.Button):
-    def __init__(self, view_name: str):
+    def __init__(self, view_name: str, vertical: bool = True):
         Gtk.Button.__init__(self, visible=True)
-        self.set_name('split_{}'.format(view_name))
-        self.set_detailed_action_name('win.split_view("{}")'.format(view_name))
+        self.set_name('split_{}_{}'.format(view_name, 'vertical' if vertical else 'horizontal'))
+        self.set_detailed_action_name('win.split_view(("empty", "{}", {}))'.format(view_name, 'true' if vertical else 'false'))
         self.set_relief(Gtk.ReliefStyle.NONE)
         self.set_always_show_image(True)
         # noinspection PyArgumentList
-        pixbuf = Gtk.IconTheme.get_default().load_icon('object-flip-horizontal', Gtk.IconSize.SMALL_TOOLBAR,
-                                                       Gtk.IconLookupFlags.FORCE_SYMBOLIC)
+        pixbuf = Gtk.IconTheme.get_default().load_icon(
+            'object-flip-{}'.format('vertical' if vertical else 'horizontal'),
+            Gtk.IconSize.SMALL_TOOLBAR,
+            Gtk.IconLookupFlags.FORCE_SYMBOLIC
+        )
         image = Gtk.Image(visible=True)
         image.set_from_pixbuf(pixbuf)
         self.set_image(image)

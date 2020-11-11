@@ -41,8 +41,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions.create('page_remove')
         self.actions.create('page_properties')
         self.actions.create('close_view', param_type=GLib.VariantType("s"))
-        self.actions.create('split_view', param_type=GLib.VariantType("s"))
+        self.actions.create('split_view', param_type=GLib.VariantType("(ssb)"))
         self.actions.create('create_view', param_type=GLib.VariantType("s"))
+        self.actions.create('replace_view', param_type=GLib.VariantType("(ss)"))
         self.actions.create('toggle_edit_mode', state=GLib.Variant('b', False))
         self.actions.create('save')
         self.actions.create('save_as')
@@ -54,13 +55,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.page_list.connect('page_activated', self.on_page_activated)
         self.page_list.connect('pages_selected', self.on_pages_selected)
 
-
         for id_, view in self.view_registry.get_view_options().items():
             menu_item = Gtk.ModelButton(visible=True, centered=False, halign=Gtk.Align.FILL, label=view, hexpand=True)
             menu_item.set_detailed_action_name('win.create_view("{}")'.format(id_))
             self.view_menu_box.pack_start(menu_item, True, True, 0)
 
-        self.view_manager.add(ViewImages)
+        self.view_manager.set_root_view(ViewImages)
 
         self.update_ui()
 
@@ -69,7 +69,6 @@ class MainWindow(Gtk.ApplicationWindow):
             self.document.delete_page(page_id)
 
     def on_page_properties(self, _a: Gio.SimpleAction, _p: None) -> None:
-        # TODO: implement or remove
         pass
 
     @Gtk.Template.Callback()
@@ -153,7 +152,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions['go_forward'].set_enabled(can_go_forward)
         self.actions['goto_last'].set_enabled(can_go_forward)
         self.actions['page_remove'].set_enabled(self.document.editable)
-        # noinspection PyCallByClass
+        # noinspection PyCallByClass,PyArgumentList
         self.actions['toggle_edit_mode'].set_state(GLib.Variant.new_boolean(self.document.editable))
         self.actions['save'].set_enabled(self.document.modified)
         self.view_manager.update_ui()
@@ -196,13 +195,20 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_create_view(self, _a: Gio.SimpleAction, selected_view_id: GLib.Variant) -> None:
         view_class = self.view_registry.get_view(selected_view_id.get_string())
-        self.view_manager.add_view(view_class)
+        self.view_manager.add(view_class)
+
+    def on_replace_view(self, _a: Gio.SimpleAction, arguments: GLib.Variant) -> None:
+        (replace_view, new_view_name) = arguments
+        new_view_type = self.view_registry.get_view(new_view_name)
+        self.view_manager.replace(replace_view, new_view_type)
 
     def on_close_view(self, _action: Gio.SimpleAction, view_name: GLib.Variant) -> None:
         self.view_manager.close(view_name.get_string())
 
-    def on_split_view(self, _action: Gio.SimpleAction, view_name: GLib.Variant) -> None:
-        self.view_manager.split(view_name.get_string())
+    def on_split_view(self, _action: Gio.SimpleAction, arguments: GLib.Variant) -> None:
+        (new_view_name, split_view, horizontal) = arguments
+        new_view_type = self.view_registry.get_view(new_view_name)
+        self.view_manager.split(new_view_type, split_view, horizontal)
 
     def on_save(self, _a: Gio.SimpleAction = None, _p: None = None) -> bool:
         if self.document.original_url:
