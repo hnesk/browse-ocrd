@@ -26,13 +26,13 @@ class OcrdBrowserApplication(Gtk.Application):
 
         self.load_css()
 
-    def load_css(self):
+    def load_css(self) -> None:
         css = Gtk.CssProvider()
         css.load_from_resource('/org/readmachine/ocrd-browser/css/theme.css')
         Gtk.StyleContext().add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_USER)
-        #css = Gtk.CssProvider()
-        #css.load_from_path('/home/jk/PycharmProjects/ocrd-browser/gresources/css/test.css')
-        #Gtk.StyleContext().add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+        # css = Gtk.CssProvider()
+        # css.load_from_path('/home/jk/PycharmProjects/ocrd-browser/gresources/css/test.css')
+        # Gtk.StyleContext().add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
     def do_activate(self) -> None:
 

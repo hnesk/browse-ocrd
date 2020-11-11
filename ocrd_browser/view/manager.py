@@ -2,8 +2,8 @@ from typing import Dict, Optional
 
 from gi.repository import Gtk
 
+from . import ViewEmpty
 from .base import View
-from .empty import ViewEmpty
 from ..model import Document
 
 
@@ -61,11 +61,11 @@ class ViewManager:
         split_view_name = split_view_name or list(self.views.keys())[0]
         view = self[split_view_name]
         parent: Gtk.Box = view.container.get_parent()
-        new_pane_root = Gtk.Paned(visible=True, orientation=Gtk.Orientation(vertical), wide_handle=True)
+        new_pane_root = Gtk.Paned(visible=True, orientation=Gtk.Orientation(vertical))
         new_view = self._create_view(new_view_type)
         parent.remove(view.container)
-        new_pane_root.add1(view.container)
-        new_pane_root.add2(new_view.container)
+        new_pane_root.pack1(view.container, True, False)
+        new_pane_root.pack2(new_view.container, True, False)
         parent.add(new_pane_root)
         self.connect(self.window, new_view)
         self.print()
@@ -120,8 +120,9 @@ class ViewManager:
         win.connect('pages_selected', view.pages_selected)
 
     def print(self) -> None:
-        print(self.views)
-        print(self.print_level())
+        return
+        # print(self.views)
+        # print(self.print_level())
 
     def print_level(self, root: Gtk.Paned = None, indent: int = 0) -> str:
         root: Gtk.Container = root or self.root  # type: ignore[no-redef]

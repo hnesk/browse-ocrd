@@ -206,7 +206,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.view_manager.close(view_name.get_string())
 
     def on_split_view(self, _action: Gio.SimpleAction, arguments: GLib.Variant) -> None:
-        (new_view_type, split_view, horizontal) = arguments
+        (new_view_name, split_view, horizontal) = arguments
+        new_view_type = self.view_registry.get_view(new_view_name)
         self.view_manager.split(new_view_type, split_view, horizontal)
 
     def on_save(self, _a: Gio.SimpleAction = None, _p: None = None) -> bool:
