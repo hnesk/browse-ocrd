@@ -294,27 +294,15 @@ class CloseButton(Gtk.Button):
         self.set_detailed_action_name('win.close_view("{}")'.format(view_name))
         self.set_relief(Gtk.ReliefStyle.NONE)
         self.set_always_show_image(True)
-        # noinspection PyArgumentList
-        pixbuf = Gtk.IconTheme.get_default().load_icon('window-close', Gtk.IconSize.SMALL_TOOLBAR,
-                                                       Gtk.IconLookupFlags.FORCE_SYMBOLIC)
-        image = Gtk.Image(visible=True)
-        image.set_from_pixbuf(pixbuf)
-        self.set_image(image)
+        self.set_image(Gtk.Image.new_from_icon_name('window-close-symbolic', Gtk.IconSize.SMALL_TOOLBAR))
 
 
 class SplitViewButton(Gtk.Button):
     def __init__(self, view_name: str, vertical: bool = True):
         Gtk.Button.__init__(self, visible=True)
-        self.set_name('split_{}_{}'.format(view_name, 'vertical' if vertical else 'horizontal'))
-        self.set_detailed_action_name('win.split_view(("empty", "{}", {}))'.format(view_name, 'true' if vertical else 'false'))
+        direction = 'vertical' if vertical else 'horizontal'
+        self.set_name('split_{}_{}'.format(view_name, direction))
+        self.set_detailed_action_name('win.split_view(("{}","empty", {}))'.format(view_name, 'true' if vertical else 'false'))
         self.set_relief(Gtk.ReliefStyle.NONE)
         self.set_always_show_image(True)
-        # noinspection PyArgumentList
-        pixbuf = Gtk.IconTheme.get_default().load_icon(
-            'object-flip-{}'.format('vertical' if vertical else 'horizontal'),
-            Gtk.IconSize.SMALL_TOOLBAR,
-            Gtk.IconLookupFlags.FORCE_SYMBOLIC
-        )
-        image = Gtk.Image(visible=True)
-        image.set_from_pixbuf(pixbuf)
-        self.set_image(image)
+        self.set_image(Gtk.Image.new_from_icon_name('split-{}'.format(direction), Gtk.IconSize.SMALL_TOOLBAR))
