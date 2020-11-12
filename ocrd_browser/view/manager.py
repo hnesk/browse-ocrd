@@ -53,12 +53,11 @@ class ViewManager:
         self.print()
 
     def add(self, new_view_type: Optional[type] = None) -> View:
-        new_view_type = new_view_type or ViewEmpty
-        return self.split(new_view_type, None, False)
+        return self.split(None, new_view_type, False)
 
-    def split(self, new_view_type: Optional[type] = None, split_view_name: Optional[str] = None, vertical: bool = True) -> View:
-        new_view_type = new_view_type or ViewEmpty
+    def split(self, split_view_name: Optional[str] = None, new_view_type: Optional[type] = None, vertical: bool = True) -> View:
         split_view_name = split_view_name or list(self.views.keys())[0]
+        new_view_type = new_view_type or ViewEmpty
         view = self[split_view_name]
         parent: Gtk.Box = view.container.get_parent()
         new_pane_root = Gtk.Paned(visible=True, orientation=Gtk.Orientation(vertical))
@@ -125,14 +124,14 @@ class ViewManager:
         # print(self.print_level())
 
     def print_level(self, root: Gtk.Paned = None, indent: int = 0) -> str:
-        root: Gtk.Container = root or self.root  # type: ignore[no-redef]
-        s: str = ('\t' * indent) + root.get_name()
-        if isinstance(root, Gtk.Box) and root.get_name().startswith('view_'):
-            view = self[root.get_name()]
+        current: Gtk.Container = root or self.root
+        s: str = ('\t' * indent) + current.get_name()
+        if isinstance(current, Gtk.Box) and current.get_name().startswith('view_'):
+            view = self[current.get_name()]
             s = s + ': ' + type(view).__qualname__ + "\n"
         else:
             s = s + "\n"
-            for c in root.get_children():
+            for c in current.get_children():
                 if isinstance(c, Gtk.Container):
                     s = s + self.print_level(c, indent + 1)
         return s
