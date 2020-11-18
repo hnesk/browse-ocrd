@@ -28,7 +28,7 @@ setup(
     long_description=codecs.open('README.md', encoding='utf-8').read(),
     long_description_content_type='text/markdown',
     url="https://github.com/hnesk/browse-ocrd",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=('tests')),
     install_requires=install_requires,
     include_package_data=True,
     setup_requires=['wheel'],
