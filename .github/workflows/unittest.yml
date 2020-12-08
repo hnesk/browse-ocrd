@@ -26,8 +26,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install system dependencies
       run: sudo make deps-ubuntu
-#    - name: Install system dependencies (screenshot)
-#      run: sudo apt install xrandr imagemagick
+    - name: Install system dependencies (screenshot)
+      run: sudo apt install xvfb xrandr imagemagick
     - name: Install dependencies and browse-ocrd
       run: make deps-dev deps install
     - name: Lint with flake8
@@ -37,7 +37,7 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Unittest
-      run: make test
+      run: xvfb-run make test
     - name: Upload Unit Test Results
       if: always()
       uses: actions/upload-artifact@v2
