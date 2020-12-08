@@ -6,7 +6,7 @@ name: Install and Unittest
 on:
   workflow_dispatch:
   push:
-    branches: [ master ]
+    branches: [ master, debug-github-ci ]
   pull_request:
     branches: [ master ]
 
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.8]
 
     steps:
     - uses: actions/checkout@v2
