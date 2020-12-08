@@ -11,7 +11,6 @@ class XmlViewTestCase(TestCase):
         self.vx = ViewXml('unique', MagicMock(spec=MainWindow))
 
     def test_can_construct(self):
-        self.skipTest('triggers a segfault in github actions')
         self.assertIsNotNone(self.vx)
 
 
