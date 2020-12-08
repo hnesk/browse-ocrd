@@ -6,7 +6,7 @@ from ocrd_models import OcrdFile
 from ocrd_utils import getLogger
 
 from ocrd_browser.model import Document
-from ocrd_browser.util.config import _Tool, SETTINGS
+from ocrd_browser.util.config import _Tool, Settings
 
 
 class ResolvableFileName:
@@ -52,7 +52,7 @@ class FileProxy(QuotingProxy):
 
 class Launcher:
     def __init__(self, tools: Optional[Dict[str, _Tool]] = None):
-        self.tools = tools if tools else SETTINGS.tools
+        self.tools = tools if tools else Settings.get().tools
 
     def launch(self, toolname: str, doc: Document, file: OcrdFile) -> Optional[Popen]:  # type: ignore[type-arg]
         if toolname in self.tools:
