@@ -62,7 +62,7 @@ ci: flake8 mypy test
 
 
 test: tests/assets
-	$(PYTHON) -m xmlrunner discover -s tests --output-file $(CURDIR)/unittest.xml
+	$(PYTHON) -m xmlrunner discover -v -s tests --output-file $(CURDIR)/unittest.xml
 
 # Clone OCR-D/assets to ./repo/assets
 repo/assets:
