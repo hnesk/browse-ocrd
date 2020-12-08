@@ -11,13 +11,13 @@ deps-ubuntu:
 	apt install -y libcairo2-dev libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev gir1.2-webkit2-4.0 pkg-config cmake
 
 deps-dev:
-	$(PIP) --use-feature=2020-resolver install -r requirements-dev.txt
+	$(PIP) install -r requirements-dev.txt
 
 deps:
-	$(PIP) --use-feature=2020-resolver install -r requirements.txt
+	$(PIP) install -r requirements.txt
 
 install:
-	$(PIP) --use-feature=2020-resolver install .
+	$(PIP) install .
 
 install-xdg-mime: share/mime/packages/org.readmachine.ocrd-browser.xml
 	mkdir -p $(SHARE_DIR)/mime/packages
