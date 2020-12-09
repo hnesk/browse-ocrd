@@ -43,7 +43,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v2
       with:
-        name: Unit Test Results (${{ matrix.os }} / python-${{ matrix.python-version }})
+        name: Unit Test Results (python-${{ matrix.python-version }} on ${{ matrix.os }})
         path: unittest.xml
     - name: Make a screenshot
       run: make screen
