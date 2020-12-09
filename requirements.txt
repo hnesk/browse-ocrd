@@ -2,7 +2,7 @@ ocrd
 Pillow
 numpy<1.19.0,>=1.17.0
 opencv-python-headless
-PyGObject
+PyGObject >= 3.28
 python-magic
 wheel
 setuptools
