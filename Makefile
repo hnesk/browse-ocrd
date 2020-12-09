@@ -60,6 +60,23 @@ mypy:
 
 ci: flake8 mypy test
 
+screen: browse-ocrd-stop xvfb-stop
+
+docs/screenshot-live.png: browse.PID
+	import -display :99 -silent -border -window 'http://kant_aufklaerung_1784_missing_xml' -transparent '#000000' $@
+
+browse.PID: server.PID
+	DISPLAY=:99 browse-ocrd tests/example/workspaces/kant_aufklaerung_1784_missing_xml/mets.xml & echo $$! > $@
+	sleep 3
+
+server.PID:
+	Xvfb :99 -ac -screen 0 2400x1600x24 & echo $$! > $@
+
+browse-ocrd-stop: browse.PID docs/screenshot-live.png
+	kill `cat $<` && rm $<
+
+xvfb-stop: server.PID
+	kill `cat $<` && rm $<
 
 test: tests/assets
 	$(PYTHON) -m xmlrunner discover -v -s tests --output-file $(CURDIR)/unittest.xml

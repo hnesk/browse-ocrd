@@ -44,9 +44,11 @@ jobs:
       with:
         name: Unit Test Results (Python ${{ matrix.python-version }})
         path: unittest.xml
-#    - name: Run browse-ocrd
-#      run: browse-ocrd tests/example/workspaces/kant_aufklaerung_1784_missing_xml/mets.xml
-#    - name: Screenshot
-#      uses: OrbitalOwen/desktop-screenshot-action@0.1
-#      with:
-#        file-name: 'desktop.jpg'
+    - name: Make a screenshot
+      run: make screen
+    - name: Upload Screenshot
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: Unit Test Results (Python ${{ matrix.python-version }})
+        path: docs/screenshot-live.png
