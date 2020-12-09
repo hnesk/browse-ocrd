@@ -62,7 +62,7 @@ class ViewXml(View):
     def redraw(self) -> None:
         if self.current:
             self.text_view.set_tooltip_text(self.page_id)
-            if self.current.file:
+            if self.current.file and self.current.file.mimetype == MIMETYPE_PAGE:
                 with self.document.path(self.current.file).open('r') as f:
                     text = f.read()
             else:
