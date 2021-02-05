@@ -13,7 +13,21 @@ class OcrdBrowserApplication(Gtk.Application):
         Gtk.Application.__init__(self, application_id='org.readmachine.ocrd-browser',
                                  flags=Gio.ApplicationFlags.HANDLES_OPEN)
         self.actions = ActionRegistry(for_widget=self)
+        backend = Gio.keyfile_settings_backend_new('/home/jk/.config/ocrd-browser-gs.conf', '/')
+        schema_source:Gio.SettingsSchemaSource  = Gio.SettingsSchemaSource.new_from_directory(
+            '/home/jk/PycharmProjects/gsettings',
+            Gio.SettingsSchemaSource.get_default(),
+            False
+        )
+        sc = schema_source.list_schemas(False)
+        schema = schema_source.lookup('org.readmachine.ocrd-browser', False)
+        settings = Gio.Settings.new_full(schema,backend, '/org/readmachine/ocrd-browser/')
+
+
         self.view_registry = ViewRegistry.create_from_entry_points()
+        #self.settings = Gio.Settings.new_with_backend('org.readmachine.ocrd-browser', backend)
+
+        #Gio.SettingsBackend
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
