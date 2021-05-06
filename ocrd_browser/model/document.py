@@ -8,6 +8,7 @@ from functools import wraps
 from ocrd import Workspace, Resolver
 from ocrd_browser.model import Page
 from ocrd_browser.util.image import add_dpi_to_png_buffer
+from ocrd_browser.util.streams import SilencedStreams
 from ocrd_modelfactory import page_from_file
 from ocrd_models import OcrdFile
 from ocrd_models.ocrd_page_generateds import PcGtsType
@@ -381,7 +382,9 @@ class Document:
 
     def page_for_file(self, page_file: OcrdFile) -> PcGtsType:
         with pushd_popd(self.workspace.directory):
-            return page_from_file(page_file)
+            # Silence Warning: Value "ocrd-cis-word-alignment" ... does not match xsd enumeration restriction on TextDataTypeSimpleType
+            with SilencedStreams(False, True):
+                return page_from_file(page_file)
 
     def resolve_image(self, image_file: OcrdFile) -> Image:
         with pushd_popd(self.workspace.directory):
