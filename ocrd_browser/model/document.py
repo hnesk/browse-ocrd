@@ -15,7 +15,6 @@ from ocrd_models.ocrd_page_generateds import PcGtsType
 from ocrd_models.constants import NAMESPACES as NS
 from ocrd_utils import pushd_popd
 from ocrd_utils.constants import MIME_TO_EXT, MIMETYPE_PAGE
-from . import DEFAULT_FILE_GROUP
 
 from logging import getLogger
 from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any, Dict
@@ -372,8 +371,7 @@ class Document:
 
         return Page(page_id, file, pcgts, image_files, images)
 
-    def files_for_page_id(self, page_id: str, file_group: str = DEFAULT_FILE_GROUP, mimetype: str = None) \
-            -> List[OcrdFile]:
+    def files_for_page_id(self, page_id: str, file_group: str = None, mimetype: str = None) -> List[OcrdFile]:
         with pushd_popd(self.workspace.directory):
             files: List[OcrdFile] = self.workspace.mets.find_files(fileGrp=file_group, pageId=page_id,
                                                                    mimetype=mimetype)

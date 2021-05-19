@@ -4,7 +4,7 @@ from typing import Tuple, Optional, Dict, List, Union, NewType, Callable, Any
 from itertools import count
 
 from ocrd_browser.util.image import cv_to_pixbuf, cv_scale
-from ocrd_browser.model import Document, DEFAULT_FILE_GROUP
+from ocrd_browser.model import Document
 from .icon_store import LazyLoadingListStore
 from ..util.config import Settings
 
@@ -103,11 +103,11 @@ class PageListStore(LazyLoadingListStore):
             for page_id in page_ids:
                 try:
                     file = next(
-                        iter(self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)))
+                        iter(self.document.workspace.mets.find_files(fileGrp=self.file_group, pageId=page_id)))
                     file_name = str(self.document.path(file))
                     self.append((page_id, '', file_name, None, len(self)))
                 except StopIteration as e:
-                    raise ValueError('Page {} / Group {}  not in workspace'.format(page_id, DEFAULT_FILE_GROUP)) from e
+                    raise ValueError('Page {} / Group {}  not in workspace'.format(page_id, self.file_group)) from e
 
         def _page_deleted(page_ids: List[str]) -> None:
             for delete_page_id in reversed(page_ids):
@@ -119,7 +119,7 @@ class PageListStore(LazyLoadingListStore):
                 n, row = self.get_row_by_page_id(page_id)
                 try:
                     file = next(
-                        iter(self.document.workspace.mets.find_files(fileGrp=DEFAULT_FILE_GROUP, pageId=page_id)))
+                        iter(self.document.workspace.mets.find_files(fileGrp=self.file_group, pageId=page_id)))
                     file_name = str(self.document.path(file))
                     row[self.COLUMN_FILENAME] = file_name
                 except StopIteration:
