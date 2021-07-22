@@ -2,7 +2,7 @@ from difflib import SequenceMatcher
 
 from gi.repository import GObject, GtkSource, Gtk
 
-from typing import Optional, Tuple, Any, NamedTuple
+from typing import Optional, Tuple, Any, NamedTuple, List
 
 from ocrd_models.ocrd_page_generateds import PcGtsType
 from ocrd_utils.constants import MIMETYPE_PAGE
@@ -13,17 +13,19 @@ from ocrd_browser.view.base import FileGroupSelector, FileGroupFilter
 
 GObject.type_register(GtkSource.View)
 
+
 class TaggedText:
-    def __init__(self):
-        self.parts = []
+    def __init__(self) -> None:
+        self.parts: List[TaggedString] = []
         self.len = 0
 
-    def append(self, string:str, tag:Optional[str]=None):
+    def append(self, string: str, tag: Optional[str] = None) -> None:
         self.parts.append(TaggedString(string, self.len, self.len + len(string), tag))
         self.len += len(string)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return ''.join(part.text for part in self.parts)
+
 
 class TaggedString(NamedTuple):
     text: str
@@ -31,32 +33,38 @@ class TaggedString(NamedTuple):
     end: float
     tag: Optional[str] = None
 
-def diff_strings(text1, text2):
-    def isjunk(x):
+
+def diff_strings(text1: str, text2: str) -> TaggedText:
+    def isjunk(x: str) -> bool:
         return x in " \t"
 
     sm = SequenceMatcher(isjunk=isjunk, a=text1, b=text2, autojunk=False)
     parts = TaggedText()
-    for op, s1, e1, s2, e2 in sm.get_opcodes():
-        t1, t2 = text1[s1:e1], text2[s2:e2]
-        if op == 'equal':
-            parts.append(t1, None)
+    try:
+        if sm.quick_ratio() < 0.5 and len(text1) > 5:
+            parts.append('ERROR: Texts differ too much (similarity {:2%})to compute an actual alignment and comparison.'.format(sm.ratio()), 'deleted')
         else:
-            if op in ('delete', 'replace'):
-                parts.append(t1,'deleted')
-            if op in ('insert', 'replace'):
-                parts.append(t2, 'inserted')
+            for op, s1, e1, s2, e2 in sm.get_opcodes():
+                t1, t2 = text1[s1:e1], text2[s2:e2]
+                if op == 'equal':
+                    parts.append(t1, None)
+                else:
+                    if op in ('delete', 'replace'):
+                        parts.append(t1, 'deleted')
+                    if op in ('insert', 'replace'):
+                        parts.append(t2, 'inserted')
+    except Exception as err:
+        parts.append(str(err), 'deleted')
 
     return parts
 
 
 class IdTag(Gtk.TextTag):
-    def __init__(self, _id = None, **properties):
+    def __init__(self, _id: Optional[str] = None, **properties: Any) -> None:
         super().__init__()
         self.id = _id
-        for prop,value in properties.items():
+        for prop, value in properties.items():
             setattr(self.props, prop, value)
-
 
 
 class ViewDiff(View):
@@ -82,12 +90,9 @@ class ViewDiff(View):
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.PAGE))
         self.add_configurator('file_group2', FileGroupSelector(FileGroupFilter.PAGE))
 
-
         self.text_view = GtkSource.View(visible=True, vexpand=False, editable=False,
-                                        monospace=False,
-                                        show_line_numbers=True,
-                                        width_request=400)
-        self.buffer:Gtk.TextBuffer = self.text_view.get_buffer()
+                                        monospace=False, show_line_numbers=True, width_request=400)
+        self.buffer = self.text_view.get_buffer()
 
         self.scroller.add(self.text_view)
 
@@ -135,8 +140,7 @@ class ViewDiff(View):
         else:
             self.buffer.set_text('')
 
-
-    def get_page_text(self, pc_gts: PcGtsType):
+    def get_page_text(self, pc_gts: PcGtsType) -> str:
         regions = pc_gts.get_Page().get_AllRegions(classes=['Text'], order='reading-order')
         text = ''
         for i, region in enumerate(regions):
