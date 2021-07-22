@@ -24,7 +24,7 @@ class ViewImages(View):
 
     def __init__(self, name: str, window: Gtk.Window):
         super().__init__(name, window)
-        self.file_group: Tuple[Optional[str], Optional[str]] = ('OCR-D-IMG', None)
+        self.file_group: Tuple[Optional[str], Optional[str]] = (None, None)
         self.page_qty: int = 1
         self.preview_height: int = 10
         self.scale: float = -1.0
