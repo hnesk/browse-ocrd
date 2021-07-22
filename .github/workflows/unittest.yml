@@ -25,8 +25,6 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install system dependencies
       run: sudo make deps-ubuntu
-    - name: Install system dependencies (headless gtk tests & screenshot)
-      run: sudo apt install xvfb imagemagick
     - name: Install dependencies and browse-ocrd
       run: make deps-dev deps install
     - name: Lint with flake8
@@ -43,11 +41,3 @@ jobs:
       with:
         name: Unit Test Results (python-${{ matrix.python-version }} on ${{ matrix.os }})
         path: unittest.xml
-    - name: Make a screenshot
-      run: make screen
-    - name: Upload Screenshot
-      if: always()
-      uses: actions/upload-artifact@v2
-      with:
-        name: Screenshot (python-${{ matrix.python-version }} on ${{ matrix.os }})
-        path: docs/screenshot-live.png
