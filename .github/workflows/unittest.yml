@@ -24,7 +24,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install system dependencies
-    - name: Install system dependencies (headless gtk tests & screenshot)
       run: |
         sudo apt -o Acquire::Retries=3 update
         sudo apt -o Acquire::Retries=3 install xvfb
