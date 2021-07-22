@@ -2,21 +2,35 @@ Change Log
 ==========
 
 
-## Unreleased
+<!-- ## Unreleased (../../compare/v0.4.3...master) -->
 
-<!-- ## [0.4.2](../../compare/v0.4.1...v0.4.2) - 2020-11-05 -->
+## [0.4.3](../../compare/v0.4.2...v0.4.3) - 2021-07-22 
+
+Fixed: 
+* require gi >= 3.28 [#26](../../pull/26)
+
+Changed:
+* [Using Github actions for CI](https://github.com/hnesk/browse-ocrd/actions/workflows/unittest.yml)
+* Get rid of DEFAULT_FILE_GROUP = 'OCR-D-IMG'
+* Silence xsd error messages on stderr, when reading files produced by ocrd-cis-align 
+
+New Features:
+* Added a Diff-View [#13](../../issues/13) & [#29](../../pull/29)
+
+## [0.4.2](../../compare/v0.4.1...v0.4.2) - 2020-11-12 
 
 Fixed: 
 
-* Catch empty imageFilename case &  don't download remote urls upfront #25  
-* Pillow workaround: convert 16-bit images to 8-bit #23
-* Don't crash on unhandled mimetype #18
-* typing.OrederedDict is not available in python 3.6  #22
+* Catch empty imageFilename case &  don't download remote urls upfront [#25](../../issues/25)  
+* Pillow workaround: convert 16-bit images to 8-bit [#23](../../pull/23)
+* Don't crash on unhandled mimetype [#18](../../issues/18)
+* typing.OrderedDict is not available in python 3.6  [#22](../../issues/22)
 
-Changed
+New Features
 
-* Added Webkit-HTML-View for [dinglehopper](https://github.com/qurator-spk/dinglehopper) #25 (partially fixes #13)
-* Added a button to launch [PageViewer]() from XmlView #21 
+* Views can be resized and splitted now [#12](../../issues/12) 
+* Added Webkit-HTML-View for [dinglehopper](https://github.com/qurator-spk/dinglehopper) [#25](../../pull/25) (partially fixes [#13](../../issues/13))
+* Added a button to launch [PageViewer](https://www.primaresearch.org/tools/PAGEViewer) from XmlView [#21](../../pull/21) 
 
 
 ## [0.4.1](../../compare/v0.4.0...v0.4.1) - 2020-10-30
