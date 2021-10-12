@@ -124,7 +124,7 @@ class PageQtySelector(Gtk.Box, Configurator):
 
 class ImageZoomSelector(Gtk.Box, Configurator):
 
-    def __init__(self, base: float = 2, step: float = 0.1, min_: float = -4.0, max_: float = 4.0) -> None:
+    def __init__(self, base: float = 2, step: float = 0.1, min_: float = -4.0, max_: float = 2.0) -> None:
         super().__init__(visible=True, spacing=3)
         self.value = None
 

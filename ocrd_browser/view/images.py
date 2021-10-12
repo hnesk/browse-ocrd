@@ -1,4 +1,4 @@
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GLib
 
 from typing import Any, List, Optional, Tuple
 
@@ -27,7 +27,8 @@ class ViewImages(View):
         self.file_group: Tuple[Optional[str], Optional[str]] = (None, None)
         self.page_qty: int = 1
         self.preview_height: int = 10
-        self.scale: float = -1.0
+        self.scale: float = -2.0
+        self.last_rescale = -100
         self.viewport: Optional[Gtk.Viewport] = None
         self.image_box: Optional[Gtk.Box] = None
         self.pages: List[Page] = []
@@ -37,25 +38,31 @@ class ViewImages(View):
 
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.IMAGE))
         self.add_configurator('page_qty', PageQtySelector())
-        self.add_configurator('scale', ImageZoomSelector(2.0, 0.05, -3.0, 2.0))
+        self.add_configurator('scale', ImageZoomSelector(2.0, 0.05, -4.0, 2.0))
 
         self.image_box = Gtk.Box(visible=True, orientation=Gtk.Orientation.HORIZONTAL, homogeneous=True)
+
+        eventbox = Gtk.EventBox(visible=True)
+        eventbox.add_events(Gdk.EventMask.SMOOTH_SCROLL_MASK)
+        eventbox.connect('scroll-event', self.on_scroll)
+        eventbox.add(self.image_box)
+
         self.viewport = Gtk.Viewport(visible=True, hscroll_policy='natural', vscroll_policy='natural')
         self.viewport.connect('size-allocate', self.on_viewport_size_allocate)
-        self.viewport.add(self.image_box)
+        self.viewport.add(eventbox)
+
         self.scroller.add(self.viewport)
 
         self.rebuild_pages()
-        self.window.connect('scroll-event', self.on_scroll)
-        self.window.add_events(Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.SMOOTH_SCROLL_MASK)
 
     def config_changed(self, name: str, value: Any) -> None:
         super(ViewImages, self).config_changed(name, value)
         if name == 'page_qty':
-            self.rebuild_pages()
+            GLib.idle_add(self.rebuild_pages, priority=GLib.PRIORITY_DEFAULT_IDLE)
         if name == 'scale':
-            self.rescale()
-        self.reload()
+            GLib.idle_add(self.rescale, priority=GLib.PRIORITY_DEFAULT_IDLE)
+        if name == 'file_group':
+            GLib.idle_add(self.reload, priority=GLib.PRIORITY_DEFAULT_IDLE)
 
     def rebuild_pages(self) -> None:
         existing_pages = {child.get_name(): child for child in self.image_box.get_children()}
@@ -74,11 +81,11 @@ class ViewImages(View):
         for child in existing_pages.values():
             child.destroy()
 
-        self.reload()
+        GLib.idle_add(self.reload, priority=GLib.PRIORITY_DEFAULT_IDLE)
 
     def page_activated(self, _sender: Gtk.Widget, page_id: str) -> None:
         self.page_id = page_id
-        self.reload()
+        GLib.idle_add(self.reload, priority=GLib.PRIORITY_DEFAULT_IDLE)
 
     @property
     def use_file_group(self) -> str:
@@ -90,7 +97,7 @@ class ViewImages(View):
             self.pages = []
             for display_id in display_ids:
                 self.pages.append(self.document.page_for_id(display_id, self.use_file_group))
-        self.redraw()
+        GLib.idle_add(self.redraw, priority=GLib.PRIORITY_DEFAULT_IDLE)
 
     def redraw(self) -> None:
         if self.pages:
@@ -124,41 +131,34 @@ class ViewImages(View):
                         image.set_from_stock('missing-image', Gtk.IconSize.DIALOG)
                 for child in existing_images.values():
                     child.destroy()
-            self.rescale()
+            GLib.idle_add(self.rescale, True, priority=GLib.PRIORITY_DEFAULT_IDLE)
 
-    def rescale(self) -> None:
+    def rescale(self, force: bool = False) -> None:
         if self.pages:
             box: Gtk.Box
             scale_config: ImageZoomSelector = self.configurators['scale']
-            for box, page in zip_longest(self.image_box.get_children(), self.pages):
-                images = {child.get_name(): child for child in box.get_children()}
-                for i, img in enumerate(page.images if page else [None]):
-                    name = 'image_{}'.format(i)
-                    image: Gtk.Image
-                    image = images[name]
-                    if img:
-                        thumbnail = pil_scale(img, None, int(scale_config.get_exp() * img.height))
-                        image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
+            if force or abs(scale_config.value - self.last_rescale) > (scale_config.scale.get_adjustment().get_step_increment() - 0.0001):
+                self.last_rescale = scale_config.value
+                for box, page in zip_longest(self.image_box.get_children(), self.pages):
+                    images = {child.get_name(): child for child in box.get_children()}
+                    for i, img in enumerate(page.images if page else [None]):
+                        name = 'image_{}'.format(i)
+                        image: Gtk.Image
+                        image = images[name]
+                        if img:
+                            thumbnail = pil_scale(img, None, int(scale_config.get_exp() * img.height))
+                            image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
 
-    def on_scroll(self, _widget: Gtk.Widget, event: Gdk.EventButton) -> bool:
+    def on_scroll(self, _widget: Gtk.EventBox, event: Gdk.EventScroll) -> bool:
         # Handles zoom in / zoom out on Ctrl+mouse wheel
         accel_mask = Gtk.accelerator_get_default_mod_mask()
         if event.state & accel_mask == Gdk.ModifierType.CONTROL_MASK:
-            release, direction = event.get_scroll_direction()
-            if not release:
-                return False
-            scale_config: ImageZoomSelector = self.configurators['scale']
-            adj: Gtk.Adjustment = scale_config.scale.get_adjustment()
-            # print(self.scale , adj.get_step_increment())
-            if direction == Gdk.ScrollDirection.DOWN:
-                scale_config.set_value(self.scale - adj.get_step_increment())
-            else:
-                scale_config.set_value(self.scale + adj.get_step_increment())
-            self.rescale()
-            return False
-        else:
-            # delegate to normal scroll handler (vertical/horizontal navigation)
-            return True
+            did_scroll, delta_x, delta_y = event.get_scroll_deltas()
+            if did_scroll and abs(delta_y) > 0:
+                scale_config: ImageZoomSelector = self.configurators['scale']
+                scale_config.set_value(self.scale + delta_y * 0.1)
+                return True
+        return False
 
     def on_viewport_size_allocate(self, _sender: Gtk.Widget, rect: Gdk.Rectangle) -> None:
         """
