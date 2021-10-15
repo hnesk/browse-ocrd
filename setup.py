@@ -52,7 +52,8 @@ setup(
             'html = ocrd_browser.view:ViewHtml',
             'text = ocrd_browser.view:ViewText',
             'images = ocrd_browser.view:ViewImages',
-            'diff = ocrd_browser.view:ViewDiff'
+            'diff = ocrd_browser.view:ViewDiff',
+            'page = ocrd_browser.view:ViewPage'
         ],
 
     },

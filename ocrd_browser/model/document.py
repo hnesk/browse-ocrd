@@ -6,7 +6,7 @@ import shutil
 from functools import wraps
 
 from ocrd import Workspace, Resolver
-from ocrd_browser.model import Page
+from ocrd_browser.model.page import Page, LazyPage
 from ocrd_browser.util.image import add_dpi_to_png_buffer
 from ocrd_browser.util.streams import SilencedStreams
 from ocrd_modelfactory import page_from_file
@@ -335,7 +335,7 @@ class Document:
         index = index - index % page_qty
         return self.page_ids[index:index + page_qty]
 
-    def page_for_id(self, page_id: str, file_group: str = None) -> Optional['Page']:
+    def _page_for_id_eager(self, page_id: str, file_group: str = None) -> Optional['Page']:
         """
         Find the Page object for page_id and file_group, including any PAGE-XML file and image files.
 
@@ -370,6 +370,14 @@ class Document:
                 "No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(image_files), page_id, file_group))
 
         return Page(page_id, file, pcgts, image_files, images)
+
+    def _page_for_id_lazy(self, page_id: str, file_group: str = None) -> Optional['Page']:
+        if not page_id:
+            return None
+        return LazyPage(page_id, file_group, self)
+
+    # page_for_id = _page_for_id_eager
+    page_for_id = _page_for_id_lazy
 
     def files_for_page_id(self, page_id: str, file_group: str = None, mimetype: str = None) -> List[OcrdFile]:
         with pushd_popd(self.workspace.directory):
