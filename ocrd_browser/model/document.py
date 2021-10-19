@@ -387,10 +387,9 @@ class Document:
             return files
 
     def page_for_file(self, page_file: OcrdFile) -> PcGtsType:
-        with pushd_popd(self.workspace.directory):
-            # Silence Warning: Value "ocrd-cis-word-alignment" ... does not match xsd enumeration restriction on TextDataTypeSimpleType
-            with SilencedStreams(False, True):
-                return page_from_file(page_file)
+        # cd and silence Warning: Value "ocrd-cis-word-alignment" ... does not match xsd enumeration restriction on TextDataTypeSimpleType
+        with pushd_popd(self.workspace.directory), SilencedStreams(False, True):
+            return page_from_file(page_file)
 
     def resolve_image(self, image_file: OcrdFile) -> Image:
         with pushd_popd(self.workspace.directory):

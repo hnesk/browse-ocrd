@@ -2,7 +2,6 @@ from typing import List, Optional, Any, Tuple, Dict, cast
 
 from PIL.Image import Image
 from ocrd import Workspace
-from ocrd_modelfactory import page_from_file
 from ocrd_models import OcrdFile, OcrdExif
 from ocrd_models.ocrd_page import PcGtsType, PageType, MetadataType
 from ocrd_utils import MIMETYPE_PAGE
@@ -81,7 +80,7 @@ class LazyPage(Page):
 
     @property
     def pc_gts(self) -> PcGtsType:
-        return page_from_file(self.file)
+        return self.document.page_for_file(self.file)
 
     def get_image(self, feature_selector: str = '', feature_filter: str = '') -> Tuple[Image, Dict[str, Any], OcrdExif]:
         ws: Workspace = self.document.workspace
