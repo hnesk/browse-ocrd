@@ -1,4 +1,4 @@
-from gi.repository import Gtk, Gdk, GLib
+from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
 
 from typing import Any, Optional, Tuple
 
@@ -12,7 +12,7 @@ from .base import (
     ImageZoomSelector
 )
 from ..model import LazyPage
-from ..model.page_xml_renderer import PageXmlRenderer
+from ..model.page_xml_renderer import PageXmlRenderer, RegionMap
 
 
 class ViewPage(View):
@@ -31,7 +31,8 @@ class ViewPage(View):
         self.last_rescale = -100
         self.viewport: Optional[Gtk.Viewport] = None
         self.image: Optional[Gtk.Image] = None
-        self.page_image: Optional[Image] = None
+        self.page_image: Optional[Image.Image] = None
+        self.region_map: Optional[RegionMap] = None
 
     def build(self) -> None:
         super(ViewPage, self).build()
@@ -41,10 +42,14 @@ class ViewPage(View):
 
         self.image = Gtk.Image(visible=True, icon_name='gtk-missing-image', icon_size=Gtk.IconSize.DIALOG)
 
+        # Gtk.EventBox allows to listen for events per view (Gtk.Image doesn't listen, Gtk.Window listen too broad)
         eventbox = Gtk.EventBox(visible=True)
         eventbox.add_events(Gdk.EventMask.SMOOTH_SCROLL_MASK)
         eventbox.connect('scroll-event', self.on_scroll)
         eventbox.add(self.image)
+
+        self.image.set_has_tooltip(True)
+        self.image.connect('query-tooltip', self._query_tooltip)
 
         self.viewport = Gtk.Viewport(visible=True, hscroll_policy='natural', vscroll_policy='natural')
         self.viewport.connect('size-allocate', self.on_viewport_size_allocate)
@@ -68,9 +73,9 @@ class ViewPage(View):
             page_image, page_coords, page_image_info = self.current.get_image(feature_selector='binarized', feature_filter='deskewed')
             renderer = PageXmlRenderer(page_image, page_coords, self.current.id)
             renderer.render_all(self.current.pc_gts)
-            self.page_image = renderer.get_canvas()
+            self.page_image, self.region_map = renderer.get_canvas()
         else:
-            self.page_image = None
+            self.page_image, self.region_map = None, None
         GLib.idle_add(self.rescale, True, priority=GLib.PRIORITY_DEFAULT_IDLE)
 
     def rescale(self, force: bool = False) -> None:
@@ -84,7 +89,9 @@ class ViewPage(View):
             self.image.set_from_stock('missing-image', Gtk.IconSize.DIALOG)
 
     def on_scroll(self, _widget: Gtk.EventBox, event: Gdk.EventScroll) -> bool:
-        # Handles zoom in / zoom out on Ctrl+mouse wheel
+        """
+        Handles zoom in / zoom out on Ctrl+mouse wheel
+        """
         accel_mask = Gtk.accelerator_get_default_mod_mask()
         if event.state & accel_mask == Gdk.ModifierType.CONTROL_MASK:
             did_scroll, delta_x, delta_y = event.get_scroll_deltas()
@@ -99,3 +106,35 @@ class ViewPage(View):
         Nothing for now, needed when  we have "fit to width/height"
         """
         pass
+
+    def _query_tooltip(self, _image: Gtk.Image, x: int, y: int, _keyboard_mode: bool, tooltip: Gtk.Tooltip) -> bool:
+        tx, ty = self.screen_to_image(x, y)
+        if tx is None:
+            return False
+
+        region = self.region_map.find_region(tx, ty)
+
+        tooltip.set_text('{0:d}:{1:d} {2:s}{3:s}'.format(int(tx), int(ty), type(region).__name__ if region else '', '#' + region.id if region and hasattr(region, 'id') else ''))
+
+        return True
+
+    def screen_to_image(self, x: int, y: int) -> Tuple[Optional[float], Optional[float]]:
+        """
+        Transforms screen coordinates to image coordinates for centered and scaled `Gtk.Image`s
+        """
+        if self.image is None:
+            return None, None
+
+        pb: GdkPixbuf.Pixbuf = self.image.get_pixbuf()
+        if pb is None:
+            return None, None
+
+        ww, wh = self.image.get_allocated_width(), self.image.get_allocated_height()
+        iw, ih = pb.get_width(), pb.get_height()
+
+        rel_x = (x - (ww - iw) / 2) / iw
+        rel_y = (y - (wh - ih) / 2) / ih
+        if rel_x < 0 or rel_x > 1 or rel_y < 0 or rel_y > 1:
+            return None, None
+
+        return rel_x * self.page_image.width, rel_y * self.page_image.height
