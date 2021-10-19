@@ -3,7 +3,7 @@ from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
 from typing import Any, Optional, Tuple
 
 from PIL import Image
-
+from xml.sax.saxutils import escape
 from ocrd_browser.util.image import pil_to_pixbuf, pil_scale
 from .base import (
     View,
@@ -70,10 +70,10 @@ class ViewPage(View):
 
     def redraw(self) -> None:
         if self.current:
-            page_image, page_coords, page_image_info = self.current.get_image(feature_selector='binarized', feature_filter='deskewed')
+            page_image, page_coords, page_image_info = self.current.get_image(feature_selector='', feature_filter='deskewed,binarized,cropped')
             renderer = PageXmlRenderer(page_image, page_coords, self.current.id)
             renderer.render_all(self.current.pc_gts)
-            self.page_image, self.region_map = renderer.get_canvas()
+            self.page_image, self.region_map = renderer.get_result()
         else:
             self.page_image, self.region_map = None, None
         GLib.idle_add(self.rescale, True, priority=GLib.PRIORITY_DEFAULT_IDLE)
@@ -112,9 +112,13 @@ class ViewPage(View):
         if tx is None:
             return False
 
-        region = self.region_map.find_region(tx, ty)
+        node = self.region_map.find_region(tx, ty)
 
-        tooltip.set_text('{0:d}:{1:d} {2:s}{3:s}'.format(int(tx), int(ty), type(region).__name__ if region else '', '#' + region.id if region and hasattr(region, 'id') else ''))
+        content = '<tt>{:d}, {:d}</tt>'.format(int(tx), int(ty))
+        if node:
+            content += '\n<tt><big>{}</big></tt>\n\n{}'.format(str(node.region), escape(node.region.text))
+
+        tooltip.set_markup(content)
 
         return True
 

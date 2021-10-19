@@ -3,18 +3,20 @@ Page-XML rendering object
 
 This is heavily copy-pasted from ocrd_segment.extract_pages (https://github.com/OCR-D/ocrd_segment/blob/master/ocrd_segment/extract_pages.py)
 """
-from typing import Optional, Dict, Any, Union, List, Iterator, Tuple, Type
+from typing import Optional, Dict, Any, Union, List, Iterator, Tuple, Type, cast
 from collections import defaultdict
 from logging import Logger
 
 from PIL import ImageDraw, Image
-from ocrd_models.ocrd_page import PcGtsType, PageType, BorderType, PrintSpaceType, RegionType, TextRegionType, TextLineType, WordType, GlyphType, GraphemeType
+
+from ocrd_models.ocrd_page import PcGtsType, PageType, BorderType, PrintSpaceType, RegionType, TextRegionType, TextLineType, WordType, GlyphType, GraphemeType, ChartRegionType, GraphicRegionType
 from ocrd_utils import coordinates_of_segment, getLogger
+
 from shapely.geometry import Polygon, Point
 from shapely.validation import explain_validity
+from shapely import prepared
 
 RegionWithCoords = Union[RegionType, TextLineType, WordType, GlyphType, GraphemeType, PrintSpaceType, BorderType]
-RegionAndPoly = Tuple[Polygon, RegionWithCoords]
 
 # pragma pylint: disable=bad-whitespace
 CLASSES = {
@@ -78,35 +80,117 @@ CLASSES = {
 # pragma pylint: enable=bad-whitespace
 
 
-def get_breadcrumbs(region: RegionWithCoords) -> List[RegionWithCoords]:
+class Region:
     """
-    Traverses region up to the root (PcGts) element
+    A wrapper around all types of Page-XML regions
     """
-    breadcrumbs: List[RegionWithCoords] = [region]
-    while hasattr(region, 'parent_object_'):
-        region = region.parent_object_
-        breadcrumbs.append(region)
-    return list(reversed(breadcrumbs))
+    def __init__(self, region: RegionWithCoords) -> None:
+        self.region = region
+
+    @property
+    def id(self) -> int:
+        return id(self.region)
+
+    @property
+    def region_type(self) -> str:
+        return self.base_type + (':' + self.region_subtype if self.region_subtype else '')
+
+    @property
+    def base_type(self) -> str:
+        return cast(str, self.region.__class__.__name__[:-4])
+
+    @property
+    def region_subtype(self) -> str:
+        return cast(str, self.region.get_type()) if isinstance(self.region, (TextRegionType, ChartRegionType, GraphicRegionType)) else ''
+
+    @property
+    def text(self) -> str:
+        if isinstance(self.region, (TextRegionType, TextLineType, WordType, GlyphType)):
+            if self.region.get_TextEquiv() and self.region.get_TextEquiv()[0].Unicode:
+                return cast(str, self.region.get_TextEquiv()[0].Unicode)
+        return ''
+
+    @property
+    def parent(self) -> Optional['Region']:
+        return Region(self.region.parent_object_) if hasattr(self.region, 'parent_object_') and self.region.parent_object_ else None
+
+    def breadcrumbs(self) -> List['Region']:
+        """
+        Traverses region up to the root (PcGts) element
+        """
+        breadcrumbs: List[Region] = []
+        r = self
+        while r:
+            breadcrumbs.append(r)
+            r = r.parent
+        return list(breadcrumbs)
+
+    def __str__(self) -> str:
+        return '{:s}{:s}'.format(self.region_type, '#' + self.region.id if hasattr(self.region, 'id') else '')
+
+    def __hash__(self) -> int:
+        return hash(id(self.region))
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, self.__class__) and self.region is other.region
 
 
-class RegionMap:
-    def __init__(self) -> None:
-        self.region_nodes: List[RegionAndPoly] = []
+class RegionBase:
+    def __init__(self, children: Optional[List['RegionNode']] = None):
+        self.children: List['RegionNode'] = children or []
 
-    def append(self, poly: Polygon, region: RegionWithCoords) -> None:
-        self.region_nodes.append((poly, region))
+    def append(self, node: 'RegionNode') -> None:
+        self.children.append(node)
 
-    def find_region(self, x: float, y: float, ignore_regions: Optional[List[Type[RegionWithCoords]]] = None) -> Optional[RegionWithCoords]:
+    def find_region(self, x: float, y: float, ignore_regions: Optional[List[Type[RegionWithCoords]]] = None) -> Optional['RegionNode']:
         ignore_regions = ignore_regions or [BorderType, PrintSpaceType]
+
+        def filter_regions(n: RegionNode) -> bool:
+            return type(n.region.region) not in ignore_regions
+
         p = Point(x, y)
-        for poly, region in self.region_nodes:
-            if poly.contains(p) and not type(region) in ignore_regions:
-                return region
-        return None
+
+        regions = list(filter(filter_regions, self.find_region_nodes(p)))
+        return regions[-1] if regions else None
+
+    def find_region_nodes(self, p: Point) -> List['RegionNode']:
+        regions: List[RegionNode] = []
+        for node in self.children:
+            if node.contains(p):
+                regions.append(node)
+                regions.extend(node.find_region_nodes(p))
+        return regions
+
+
+class RegionNode(RegionBase):
+    def __init__(self, poly: Polygon, region: Region, children: Optional[List['RegionNode']] = None):
+        super().__init__(children)
+        self.poly = poly
+        self.prep_poly = prepared.prep(self.poly)
+        self.region = region
+
+    def contains(self, p: Point) -> bool:
+        return cast(bool, self.prep_poly.contains(p))
+
+    def __str__(self) -> str:
+        return '{}'.format(self.region)
+
+
+class RegionMap(RegionBase):
+    def __init__(self) -> None:
+        super().__init__()
+        self.nodes_by_id: Dict[int, RegionNode] = {}
+
+    def append(self, node: RegionNode) -> None:
+        self.nodes_by_id[node.region.id] = node
+        if node.region.parent.id in self.nodes_by_id:
+            self.nodes_by_id[node.region.parent.id].append(node)
+        else:
+            self.children.append(node)
 
 
 class Operation:
-    def __init__(self, region: RegionWithCoords, fill: str, outline: str):
+    def __init__(self, region: Region, fill: str, outline: str):
         self.region = region
         self.fill = fill
         self.outline = outline
@@ -116,18 +200,18 @@ class Operation:
 
     @property
     def depth(self) -> int:
-        return len(get_breadcrumbs(self.region))
+        return len(self.region.breadcrumbs())
 
 
 class PolygonOperation(Operation):
-    def __init__(self, poly: Polygon, region: RegionWithCoords, fill: str, outline: str) -> None:
+    def __init__(self, poly: Polygon, region: Region, fill: str, outline: str) -> None:
         super().__init__(region, fill, outline)
         self.poly = poly
 
     def paint(self, draw: ImageDraw.Draw, regions: RegionMap) -> None:
         xy = list(map(tuple, self.poly.exterior.coords[:-1]))
         draw.polygon(xy, self.fill, self.outline)
-        regions.append(self.poly, self.region)
+        regions.append(RegionNode(self.poly, self.region))
 
 
 class Operations:
@@ -141,13 +225,11 @@ class Operations:
     def __init__(self) -> None:
         self.operations: Dict[int, List[Operation]] = defaultdict(list)
 
-    clear = __init__
-
     def append(self, op: Operation) -> None:
         self.operations[op.depth].append(op)
 
     def layers(self) -> Iterator[Tuple[int, List[Operation]]]:
-        for layer in sorted(self.operations, reverse=True):
+        for layer in sorted(self.operations, reverse=False):
             yield layer, self.operations[layer]
 
     def paint(self, canvas: Image.Image) -> Tuple[Image.Image, RegionMap]:
@@ -181,7 +263,7 @@ class PageXmlRenderer:
         for region in page.get_AllRegions(order='reading-order'):
             self.render_type(region)
 
-    def get_canvas(self) -> Tuple[Image.Image, RegionMap]:
+    def get_result(self) -> Tuple[Image.Image, RegionMap]:
         canvas, regions = self.operations.paint(self.canvas.copy())
         return canvas, regions
 
@@ -201,7 +283,7 @@ class PageXmlRenderer:
             return
         poly = self.segment_poly(region)
         if poly:
-            self.plot_segment(poly, region)
+            self.plot_segment(poly, Region(region))
             if isinstance(region, TextRegionType):
                 self.render_text_region(region)
 
@@ -230,11 +312,9 @@ class PageXmlRenderer:
             return None
         return poly
 
-    def plot_segment(self, poly: Polygon, region: RegionWithCoords) -> None:
-        # Remove 'Type' for lookup
-        region_type = region.__class__.__name__[:-4]
-        color = self.colors[region_type]
+    def plot_segment(self, poly: Polygon, region: Region) -> None:
+        color = self.colors[region.region_type]
 
-        # draw segment
+        # schedule region for drawing
         op = PolygonOperation(poly, region, '#' + color[:6] + '1E', '#' + color[:6] + '96')
         self.operations.append(op)
