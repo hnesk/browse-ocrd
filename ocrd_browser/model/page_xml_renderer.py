@@ -1,11 +1,14 @@
 """
 Page-XML rendering object
 
-This is heavily copy-pasted from ocrd_segment.extract_pages (https://github.com/OCR-D/ocrd_segment/blob/master/ocrd_segment/extract_pages.py)
+This is heavily based on ocrd_segment.extract_pages (https://github.com/OCR-D/ocrd_segment/blob/master/ocrd_segment/extract_pages.py)
 """
+from enum import Flag
 from typing import Optional, Dict, Any, Union, List, Iterator, Tuple, Type, cast
 from collections import defaultdict
 from logging import Logger
+
+from functools import lru_cache as memoized
 
 from PIL import ImageDraw, Image
 
@@ -18,7 +21,6 @@ from shapely import prepared
 
 RegionWithCoords = Union[RegionType, TextLineType, WordType, GlyphType, GraphemeType, PrintSpaceType, BorderType]
 
-# pragma pylint: disable=bad-whitespace
 CLASSES = {
     '': 'FFFFFF00',
     'Glyph': '2E8B08FF',
@@ -75,17 +77,67 @@ CLASSES = {
     'NoiseRegion': 'FF0000FF',
     'SeparatorRegion': 'FF00FFFF',
     'UnknownRegion': '646464FF',
-    'CustomRegion': '637C81FF'}
+    'CustomRegion': '637C81FF'
+}
 
-# pragma pylint: enable=bad-whitespace
+
+class Feature(Flag):
+    icon: str
+    label: str
+    region_type: Optional[RegionWithCoords]
+
+    IMAGE = (1, '🖺', 'image')
+    BORDER = (2, '🗋', 'border', BorderType)
+    PRINTSPACE = (4, '🗌', 'printspace', PrintSpaceType)
+    # ORDER      = (8, '↯', 'order')
+    REGIONS = (16, '⬓', 'regions', RegionType)
+    LINES = (32, '𝌆', 'lines', TextLineType)
+    WORDS = (64, '𝌶', 'words', WordType)
+    GLYPHS = (128, '𝍖', 'glyphs', GlyphType)
+    # GRAPHEME = (256, '#', 'grapheme', GraphemeType            )
+    WARNINGS = (512, '🤔', 'warnings')
+
+    def __new__(cls, value: int, icon: str, label: str, region_type: RegionWithCoords = None) -> 'Feature':
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.icon = icon
+        obj.label = label
+        obj.region_type = region_type
+        return obj  # type: ignore[no-any-return]
+
+    @classmethod
+    def default(cls) -> 'Feature':
+        return cls.IMAGE | cls.BORDER | cls.REGIONS | cls.LINES | cls.WARNINGS
+
+    def should_render(self, region: RegionWithCoords) -> bool:
+        feature: Feature
+        for feature in list(Feature):
+            if feature.value & self.value and feature.region_type and isinstance(region, feature.region_type):
+                return True
+        return False
 
 
 class Region:
     """
-    A wrapper around all types of Page-XML regions
+    A wrapper around all types of Page-XML regions and their polygon with convenience methods
     """
     def __init__(self, region: RegionWithCoords) -> None:
         self.region = region
+        self._poly: Polygon = None
+        self._prep_poly: prepared.PreparedGeometry = None
+        self.warnings: List[str] = []
+
+    @property
+    def poly(self) -> Polygon:
+        return self._poly
+
+    @poly.setter
+    def poly(self, poly: Polygon) -> None:
+        self._poly = poly
+        self._prep_poly = prepared.prep(self._poly)
+
+    def contains(self, p: Point) -> bool:
+        return self._prep_poly and cast(bool, self._prep_poly.contains(p))
 
     @property
     def id(self) -> int:
@@ -114,6 +166,11 @@ class Region:
     def parent(self) -> Optional['Region']:
         return Region(self.region.parent_object_) if hasattr(self.region, 'parent_object_') and self.region.parent_object_ else None
 
+    @memoized(maxsize=1)
+    def depth(self) -> int:
+        return len(self.breadcrumbs())
+
+    @memoized(maxsize=1)
     def breadcrumbs(self) -> List['Region']:
         """
         Traverses region up to the root (PcGts) element
@@ -136,55 +193,61 @@ class Region:
 
 
 class RegionBase:
-    def __init__(self, children: Optional[List['RegionNode']] = None):
-        self.children: List['RegionNode'] = children or []
+    def __init__(self) -> None:
+        self.children: List['RegionNode'] = []
 
     def append(self, node: 'RegionNode') -> None:
         self.children.append(node)
 
-    def find_region(self, x: float, y: float, ignore_regions: Optional[List[Type[RegionWithCoords]]] = None) -> Optional['RegionNode']:
+    def find_region(self, x: float, y: float, ignore_regions: Optional[List[Type[RegionWithCoords]]] = None) -> Optional[Region]:
+        """
+        Finds deepest region at x,y
+        """
         ignore_regions = ignore_regions or [BorderType, PrintSpaceType]
 
-        def filter_regions(n: RegionNode) -> bool:
-            return type(n.region.region) not in ignore_regions
+        def filter_regions(n: Region) -> bool:
+            return type(n.region) not in ignore_regions
 
         p = Point(x, y)
 
-        regions = list(filter(filter_regions, self.find_region_nodes(p)))
+        regions = list(filter(filter_regions, self.find_regions(p)))
         return regions[-1] if regions else None
 
-    def find_region_nodes(self, p: Point) -> List['RegionNode']:
-        regions: List[RegionNode] = []
+    def find_regions(self, p: Point) -> List[Region]:
+        regions: List[Region] = []
         for node in self.children:
-            if node.contains(p):
-                regions.append(node)
-                regions.extend(node.find_region_nodes(p))
+            if node.region.contains(p):
+                regions.append(node.region)
+                regions.extend(node.find_regions(p))
         return regions
 
 
 class RegionNode(RegionBase):
-    def __init__(self, poly: Polygon, region: Region, children: Optional[List['RegionNode']] = None):
-        super().__init__(children)
-        self.poly = poly
-        self.prep_poly = prepared.prep(self.poly)
+    def __init__(self, region: Region):
+        super().__init__()
         self.region = region
-
-    def contains(self, p: Point) -> bool:
-        return cast(bool, self.prep_poly.contains(p))
 
     def __str__(self) -> str:
         return '{}'.format(self.region)
 
 
 class RegionMap(RegionBase):
+    """
+    Builds a tree of regions based on their Page-XML nesting.
+    """
     def __init__(self) -> None:
         super().__init__()
         self.nodes_by_id: Dict[int, RegionNode] = {}
 
     def append(self, node: RegionNode) -> None:
+        """
+        appends a RegionNode to the tree
+        IMPORTANT: this will only work if the parent node already exists, so the calls
+        """
         self.nodes_by_id[node.region.id] = node
         if node.region.parent.id in self.nodes_by_id:
-            self.nodes_by_id[node.region.parent.id].append(node)
+            parent_region = self.nodes_by_id[node.region.parent.id]
+            parent_region.append(node)
         else:
             self.children.append(node)
 
@@ -200,18 +263,15 @@ class Operation:
 
     @property
     def depth(self) -> int:
-        return len(self.region.breadcrumbs())
+        return self.region.depth()
 
 
 class PolygonOperation(Operation):
-    def __init__(self, poly: Polygon, region: Region, fill: str, outline: str) -> None:
-        super().__init__(region, fill, outline)
-        self.poly = poly
 
     def paint(self, draw: ImageDraw.Draw, regions: RegionMap) -> None:
-        xy = list(map(tuple, self.poly.exterior.coords[:-1]))
+        xy = list(map(tuple, self.region.poly.exterior.coords[:-1]))
         draw.polygon(xy, self.fill, self.outline)
-        regions.append(RegionNode(self.poly, self.region))
+        regions.append(RegionNode(self.region))
 
 
 class Operations:
@@ -233,6 +293,9 @@ class Operations:
             yield layer, self.operations[layer]
 
     def paint(self, canvas: Image.Image) -> Tuple[Image.Image, RegionMap]:
+        """
+        Paints the operations on canvas and fills the RegionMap accordingly
+        """
         regions = RegionMap()
         for depth, operations in self.layers():
             layer = Image.new(mode='RGBA', size=canvas.size, color='#FFFFFF00')
@@ -244,16 +307,88 @@ class Operations:
         return canvas, regions
 
 
+class RegionFactory:
+    def __init__(self, image: Image.Image, coords: Dict[str, Any], page_id: str = '<unknown>', logger: Logger = None):
+        self.image = image
+        self.coords = coords
+        self.page_id = page_id
+        self.logger = logger or getLogger(self.__class__.__name__)
+
+    def create(self, region_ds: RegionWithCoords) -> Optional[Region]:
+        if not region_ds:
+            return None
+
+        region = Region(region_ds)
+        coords = coordinates_of_segment(region_ds, self.image, self.coords)
+
+        warnings = []
+
+        try:
+            poly = Polygon(coords)
+        except ValueError as err:
+            self.logger.error('Page "%s" @ %s %s', self.page_id, str(region), str(err))
+            return None
+
+        if not poly.is_valid:
+            warning = explain_validity(poly)
+            poly, error = self.make_valid(poly)
+            if not poly.is_valid:
+                self.logger.error('Page "%s" @ %s %s', self.page_id, str(region), str(warning))
+                return None
+            else:
+                warnings.append('{} fixed with an error of {:.3%}'.format(warning, error))
+
+        if poly.length < 4:
+            warnings.append(str('has too few points'))
+
+        if poly.is_empty:
+            self.logger.error('Page "%s" @ %s %s', self.page_id, str(region), 'is empty')
+            return None
+
+        if poly.bounds[0] < 0 or poly.bounds[1] < 0:
+            warnings.append('is negative')
+
+        if warnings:
+            self.logger.warning('Page "%s" @ %s %s', self.page_id, str(region), ' | '.join(warnings))
+
+        region.poly = poly
+        region.warnings = warnings
+
+        return region
+
+    @staticmethod
+    def make_valid(polygon: Polygon) -> Tuple[Polygon, float]:
+        """Ensures shapely.geometry.Polygon object is valid by repeated simplification"""
+        for split in range(1, len(polygon.exterior.coords) - 1):
+            if polygon.is_valid or polygon.simplify(polygon.area).is_valid:
+                break
+            # simplification may not be possible (at all) due to ordering
+            # in that case, try another starting point
+            polygon = Polygon(polygon.exterior.coords[-split:] + polygon.exterior.coords[:-split])
+        for tolerance in range(1, int(polygon.area)):
+            if polygon.is_valid:
+                break
+            # simplification may require a larger tolerance
+            polygon = polygon.simplify(tolerance)
+        return polygon, tolerance / polygon.area
+
+
 class PageXmlRenderer:
 
     def __init__(self, canvas: Image.Image, coords: Dict[str, Any], page_id: str = '<unknown>',
-                 colors: Optional[Dict[str, str]] = None, logger: Logger = None):
-        self.canvas = canvas.convert('RGBA')
-        self.coords = coords
-        self.page_id = page_id
+                 features: Optional[Feature] = None, colors: Optional[Dict[str, str]] = None, logger: Logger = None):
+        self.features = features or Feature.default()
+
+        if self.features & Feature.IMAGE:
+            self.canvas = canvas.convert('RGBA')
+        else:
+            self.canvas = Image.new(mode='RGBA', size=canvas.size, color='#FFFFFF00')
+
+        self.region_factory = RegionFactory(self.canvas, coords, page_id, logger)
+
         self.colors: Dict[str, str] = defaultdict(lambda: 'FF0000FF')
         self.colors.update(colors or CLASSES)
-        self.logger = logger or getLogger(self.__class__.__name__)
+
         self.operations = Operations()
 
     def render_all(self, pc_gts: PcGtsType) -> None:
@@ -267,6 +402,21 @@ class PageXmlRenderer:
         canvas, regions = self.operations.paint(self.canvas.copy())
         return canvas, regions
 
+    def render_type(self, region_ds: RegionWithCoords) -> None:
+        region = self.region_factory.create(region_ds)
+        if region:
+            if self.features.should_render(region_ds):
+                color = self.colors[region.region_type]
+                # schedule region for drawing
+                if self.features & Feature.WARNINGS and region.warnings:
+                    op = PolygonOperation(region, '#FF00003E', '#FF000076')
+                else:
+                    op = PolygonOperation(region, '#' + color[:6] + '1E', '#' + color[:6] + '96')
+                self.operations.append(op)
+
+            if isinstance(region.region, TextRegionType):
+                self.render_text_region(region.region)
+
     def render_text_region(self, text_region: TextRegionType) -> None:
         line: TextLineType
         word: WordType
@@ -277,44 +427,3 @@ class PageXmlRenderer:
                 self.render_type(word)
                 for glyph in word.get_Glyph():
                     self.render_type(glyph)
-
-    def render_type(self, region: RegionWithCoords) -> None:
-        if not region:
-            return
-        poly = self.segment_poly(region)
-        if poly:
-            self.plot_segment(poly, Region(region))
-            if isinstance(region, TextRegionType):
-                self.render_text_region(region)
-
-    def segment_poly(self, segment: RegionWithCoords) -> Optional[Polygon]:
-        polygon = coordinates_of_segment(segment, self.canvas, self.coords)
-        poly = None
-        # validate coordinates
-        try:
-            poly = Polygon(polygon)
-            reason = ''
-            if not poly.is_valid:
-                reason = explain_validity(poly)
-            elif poly.is_empty:
-                reason = 'is empty'
-            elif poly.bounds[0] < 0 or poly.bounds[1] < 0:
-                reason = 'is negative'
-            elif poly.length < 4:
-                reason = 'has too few points'
-        except ValueError as err:
-            reason = str(err)
-        if reason:
-            tag = segment.__class__.__name__.replace('Type', '')
-            if hasattr(segment, 'id'):
-                tag += ' "%s"' % segment.id
-            self.logger.error('Page "%s" %s %s', self.page_id, tag, reason)
-            return None
-        return poly
-
-    def plot_segment(self, poly: Polygon, region: Region) -> None:
-        color = self.colors[region.region_type]
-
-        # schedule region for drawing
-        op = PolygonOperation(poly, region, '#' + color[:6] + '1E', '#' + color[:6] + '96')
-        self.operations.append(op)

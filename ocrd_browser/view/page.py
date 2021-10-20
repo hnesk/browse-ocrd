@@ -1,6 +1,7 @@
-from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
+# import cairo
+from gi.repository import Gtk, Gdk, GLib, GdkPixbuf, GObject
 
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Dict
 
 from PIL import Image
 from xml.sax.saxutils import escape
@@ -9,10 +10,50 @@ from .base import (
     View,
     FileGroupSelector,
     FileGroupFilter,
-    ImageZoomSelector
+    ImageZoomSelector,
+    Configurator
 )
 from ..model import LazyPage
-from ..model.page_xml_renderer import PageXmlRenderer, RegionMap
+from ..model.page_xml_renderer import PageXmlRenderer, RegionMap, Feature
+
+
+class PageFeaturesSelector(Gtk.Box, Configurator):
+
+    def __init__(self) -> None:
+        super().__init__(visible=True, spacing=3)
+        self.value = None
+        self.items: Dict[Feature, Gtk.CheckMenuItem] = {}
+
+        menu = Gtk.Menu(visible=True)
+        for feature in list(Feature):
+            item = Gtk.CheckMenuItem(label=feature.icon + ' ' + feature.label, name=feature.name.upper(), tooltip_text='Show ' + feature.label, visible=True)
+            item.connect("toggled", self.on_feature_toggled)
+            menu.append(item)
+            self.items[feature] = item
+
+        menubutton = Gtk.MenuButton(visible=True)
+        menubutton.set_direction(Gtk.ArrowType.UP)
+        menubutton.set_popup(menu)
+
+        self.pack_start(menubutton, False, False, 0)
+
+    def on_feature_toggled(self, item: Gtk.CheckMenuItem) -> None:
+        toggle_feature: Feature = Feature[item.get_name()]
+        if item.get_active():
+            self.value = Feature(self.value) | toggle_feature  # type: ignore[call-arg]
+        else:
+            self.value = Feature(self.value) & ~toggle_feature  # type: ignore[call-arg]
+        self.emit('changed', self.value)
+
+    def set_value(self, value: int) -> None:
+        self.value = Feature(value)  # type: ignore[call-arg]
+        for feature in list(Feature):
+            self.items[feature].set_active(feature & value)  # type: ignore[operator]
+        self.emit('changed', self.value)
+
+    @GObject.Signal(arg_types=[object])
+    def changed(self, features: Feature) -> None:
+        self.value = features
 
 
 class ViewPage(View):
@@ -25,9 +66,12 @@ class ViewPage(View):
     def __init__(self, name: str, window: Gtk.Window):
         super().__init__(name, window)
         self.current: LazyPage = None
+
         self.file_group: Tuple[Optional[str], Optional[str]] = (None, None)
-        self.preview_height: int = 10
         self.scale: float = -2.0
+        self.features = Feature.default()
+
+        self.preview_height: int = 10
         self.last_rescale = -100
         self.viewport: Optional[Gtk.Viewport] = None
         self.image: Optional[Gtk.Image] = None
@@ -39,6 +83,7 @@ class ViewPage(View):
 
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.PAGE))
         self.add_configurator('scale', ImageZoomSelector(2.0, 0.05, -4.0, 2.0))
+        self.add_configurator('features', PageFeaturesSelector())
 
         self.image = Gtk.Image(visible=True, icon_name='gtk-missing-image', icon_size=Gtk.IconSize.DIALOG)
 
@@ -47,6 +92,17 @@ class ViewPage(View):
         eventbox.add_events(Gdk.EventMask.SMOOTH_SCROLL_MASK)
         eventbox.connect('scroll-event', self.on_scroll)
         eventbox.add(self.image)
+
+        # Momentane Reihenfolge: scroller->viewport->eventbox->image
+        # Kaputte  Reihenfolge:  scroller->viewport->eventbox->overlay->image|b
+
+        # overlay = Gtk.Overlay(visible=True)
+        # b: Gtk.DrawingArea = Gtk.DrawingArea(visible=True, valign = Gtk.Align.CENTER, halign = Gtk.Align.CENTER)
+        # b.set_size_request(200,200)
+        # b.connect('draw', self.draw)
+        # overlay.add(self.image)
+        # overlay.add_overlay(b)
+        # eventbox.add(overlay)
 
         self.image.set_has_tooltip(True)
         self.image.connect('query-tooltip', self._query_tooltip)
@@ -57,8 +113,16 @@ class ViewPage(View):
 
         self.scroller.add(self.viewport)
 
+#    def draw(self, area: Gtk.DrawingArea, context: cairo.Context) -> None:
+#        context.scale(area.get_allocated_width(), area.get_allocated_height())
+#        context.set_source_rgb(0.5, 0.5, 0.7)
+#        context.fill()
+#        context.paint()
+
     def config_changed(self, name: str, value: Any) -> None:
         super(ViewPage, self).config_changed(name, value)
+        if name == 'features':
+            GLib.idle_add(self.redraw, priority=GLib.PRIORITY_DEFAULT_IDLE)
         if name == 'scale':
             GLib.idle_add(self.rescale, priority=GLib.PRIORITY_DEFAULT_IDLE)
         if name == 'file_group':
@@ -70,8 +134,8 @@ class ViewPage(View):
 
     def redraw(self) -> None:
         if self.current:
-            page_image, page_coords, page_image_info = self.current.get_image(feature_selector='', feature_filter='deskewed,binarized,cropped')
-            renderer = PageXmlRenderer(page_image, page_coords, self.current.id)
+            page_image, page_coords, _ = self.current.get_image(feature_selector='', feature_filter='deskewed,binarized,cropped')
+            renderer = PageXmlRenderer(page_image, page_coords, self.current.id, self.features)
             renderer.render_all(self.current.pc_gts)
             self.page_image, self.region_map = renderer.get_result()
         else:
@@ -112,11 +176,14 @@ class ViewPage(View):
         if tx is None:
             return False
 
-        node = self.region_map.find_region(tx, ty)
+        region = self.region_map.find_region(tx, ty)
 
         content = '<tt>{:d}, {:d}</tt>'.format(int(tx), int(ty))
-        if node:
-            content += '\n<tt><big>{}</big></tt>\n\n{}'.format(str(node.region), escape(node.region.text))
+        if region:
+            content += '\n<tt><big>{}</big></tt>\n\n{}'.format(str(region), escape(region.text))
+
+            if region.warnings:
+                content += '\n' + ('\n'.join(region.warnings))
 
         tooltip.set_markup(content)
 
