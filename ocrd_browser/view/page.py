@@ -13,26 +13,53 @@ from .base import (
     ImageZoomSelector,
     Configurator
 )
-from ..model import LazyPage
+from ..model import LazyPage, Page
 from ..model.page_xml_renderer import PageXmlRenderer, RegionMap, Feature
 
 
+class FeatureDescription:
+    def __init__(self, icon: str, label: str, xpath: str, tooltip: str = None):
+        self.icon = icon
+        self.label = label
+        self.xpath = xpath
+        self.tooltip = tooltip if tooltip else 'Show ' + label
+
+    def available(self, page: Page) -> bool:
+        return len(page.xpath(self.xpath)) > 0
+
+
 class PageFeaturesSelector(Gtk.Box, Configurator):
+
+    FEATURES: Dict[Feature, FeatureDescription] = {
+        Feature.IMAGE: FeatureDescription('🖺', 'image', '/page:PcGts/page:Page/@imageFilename'),
+        Feature.BORDER: FeatureDescription('🗋', 'border', '/page:PcGts/page:Page/page:Border/page:Coords'),
+        Feature.PRINT_SPACE: FeatureDescription('🗌', 'printspace', '/page:PcGts/page:Page/page:PrintSpace/page:Coords'),
+        Feature.ORDER: FeatureDescription('↯', 'order', '/page:PcGts/page:Page/page:ReadingOrder/*'),
+        Feature.REGIONS: FeatureDescription('⬓', 'regions', '/page:PcGts/page:Page/*[not(local-name(.) = "Border" or local-name(.) = "PrintSpace")]/page:Coords'),
+        Feature.LINES: FeatureDescription('𝌆', 'lines', '/page:PcGts/page:Page/*//page:TextLine/page:Coords'),
+        Feature.WORDS: FeatureDescription('𝌶', 'words', '/page:PcGts/page:Page/*//page:TextLine/page:Word/page:Coords'),
+        Feature.GLYPHS: FeatureDescription('𝍖', 'glyphs', '/page:PcGts/page:Page/*//page:TextLine/page:Word/page:Glyph/page:Coords'),
+        # Feature.GRAPHEMES: FeatureDescription('#', 'graphemes', '/page:PcGts/page:Page/*//page:TextLine/page:Word/page:Glyph/page:Graphemes/*/page:Coords')
+        Feature.WARNINGS: FeatureDescription('‽', 'warnings', '/page:PcGts/page:Page//page:Coords', 'Mark regions with warnings in red')
+    }
 
     def __init__(self) -> None:
         super().__init__(visible=True, spacing=3)
         self.value = None
         self.items: Dict[Feature, Gtk.CheckMenuItem] = {}
 
-        menu = Gtk.Menu(visible=True)
-        for feature in list(Feature):
-            item = Gtk.CheckMenuItem(label=feature.icon + ' ' + feature.label, name=feature.name.upper(), tooltip_text='Show ' + feature.label, visible=True)
-            item.connect("toggled", self.on_feature_toggled)
-            menu.append(item)
-            self.items[feature] = item
+        menubutton = Gtk.MenuButton(label='Show:', visible=True)
+        self.menu_label: Gtk.AccelLabel = menubutton.get_child()
 
-        menubutton = Gtk.MenuButton(visible=True)
-        menubutton.set_direction(Gtk.ArrowType.UP)
+        menu = Gtk.Menu(visible=True)
+        for feature, desc in self.FEATURES.items():
+            item = Gtk.CheckMenuItem(label=desc.label, name=feature.name, tooltip_text=desc.tooltip, visible=True)
+            item.get_child().set_markup('<tt>{0.icon}</tt>\t{0.label}'.format(desc))
+            item.connect("toggled", self.on_feature_toggled)
+            self.items[feature] = item
+            menu.append(item)
+
+        menubutton.set_direction(Gtk.ArrowType.DOWN)
         menubutton.set_popup(menu)
 
         self.pack_start(menubutton, False, False, 0)
@@ -40,20 +67,41 @@ class PageFeaturesSelector(Gtk.Box, Configurator):
     def on_feature_toggled(self, item: Gtk.CheckMenuItem) -> None:
         toggle_feature: Feature = Feature[item.get_name()]
         if item.get_active():
-            self.value = Feature(self.value) | toggle_feature  # type: ignore[call-arg]
+            self.value = Feature(self.value) | toggle_feature
         else:
-            self.value = Feature(self.value) & ~toggle_feature  # type: ignore[call-arg]
+            self.value = Feature(self.value) & ~toggle_feature
         self.emit('changed', self.value)
 
+    def update_label_markup(self) -> None:
+        markup = 'Show: '
+        for feature, desc in self.FEATURES.items():
+            s = '<tt>' + desc.icon + '</tt>'
+            if not self.items[feature].get_sensitive():
+                s = '<span background="#eeeeee" foreground="#bbbbbb">{}</span>'.format(s)
+            elif self.items[feature].get_active():
+                s = '<span background="#ffffff" foreground="#000000"><b>{}</b></span>'.format(s)
+            else:
+                s = '<span background="#ffffff" foreground="#999999">{}</span>'.format(s)
+
+            markup += s
+        self.menu_label.set_markup(markup)
+
     def set_value(self, value: int) -> None:
-        self.value = Feature(value)  # type: ignore[call-arg]
-        for feature in list(Feature):
-            self.items[feature].set_active(feature & value)  # type: ignore[operator]
+        self.value = Feature(value)
+        for feature in self.FEATURES:
+            self.items[feature].set_active(feature & value)
         self.emit('changed', self.value)
 
     @GObject.Signal(arg_types=[object])
     def changed(self, features: Feature) -> None:
+        self.update_label_markup()
         self.value = features
+
+    def set_page(self, page: Page) -> None:
+        if page:
+            for feature, desc in self.FEATURES.items():
+                self.items[feature].set_sensitive(desc.available(page))
+            self.update_label_markup()
 
 
 class ViewPage(View):
@@ -69,7 +117,7 @@ class ViewPage(View):
 
         self.file_group: Tuple[Optional[str], Optional[str]] = (None, None)
         self.scale: float = -2.0
-        self.features = Feature.default()
+        self.features = Feature.DEFAULT
 
         self.preview_height: int = 10
         self.last_rescale = -100
@@ -134,6 +182,7 @@ class ViewPage(View):
 
     def redraw(self) -> None:
         if self.current:
+            # self.configurators['features']
             page_image, page_coords, _ = self.current.get_image(feature_selector='', feature_filter='deskewed,binarized,cropped')
             renderer = PageXmlRenderer(page_image, page_coords, self.current.id, self.features)
             renderer.render_all(self.current.pc_gts)

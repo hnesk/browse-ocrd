@@ -16,6 +16,9 @@ class Configurator(Gtk.Widget):
     def set_document(self, document: Document) -> None:
         self.document = document
 
+    def set_page(self, page: Page) -> None:
+        pass
+
     def set_value(self, value: Any) -> None:
         raise NotImplementedError('You have to override set_value')
 
@@ -83,6 +86,9 @@ class View:
 
     def reload(self) -> None:
         self.current = self.document.page_for_id(self.page_id, self.use_file_group)
+        for configurator in self.configurators.values():
+            configurator.set_page(self.current)
+
         self.redraw()
 
     def redraw(self) -> None:

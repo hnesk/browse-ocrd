@@ -3,14 +3,14 @@ Page-XML rendering object
 
 This is heavily based on ocrd_segment.extract_pages (https://github.com/OCR-D/ocrd_segment/blob/master/ocrd_segment/extract_pages.py)
 """
-from enum import Flag
+from enum import IntFlag
 from typing import Optional, Dict, Any, Union, List, Iterator, Tuple, Type, cast
 from collections import defaultdict
 from logging import Logger
 
 from functools import lru_cache as memoized
 
-from PIL import ImageDraw, Image
+from PIL import ImageDraw, Image, ImageFont
 
 from ocrd_models.ocrd_page import PcGtsType, PageType, BorderType, PrintSpaceType, RegionType, TextRegionType, TextLineType, WordType, GlyphType, GraphemeType, ChartRegionType, GraphicRegionType
 from ocrd_utils import coordinates_of_segment, getLogger
@@ -20,6 +20,7 @@ from shapely.validation import explain_validity
 from shapely import prepared
 
 RegionWithCoords = Union[RegionType, TextLineType, WordType, GlyphType, GraphemeType, PrintSpaceType, BorderType]
+__all__ = ['PageXmlRenderer', 'RegionMap', 'Feature']
 
 CLASSES = {
     '': 'FFFFFF00',
@@ -81,38 +82,32 @@ CLASSES = {
 }
 
 
-class Feature(Flag):
-    icon: str
-    label: str
-    region_type: Optional[RegionWithCoords]
+class Feature(IntFlag):
+    IMAGE = 1
+    BORDER = 2
+    PRINT_SPACE = 4
+    ORDER = 8
+    REGIONS = 16
+    LINES = 32
+    WORDS = 64
+    GLYPHS = 128
+    GRAPHEMES = 256
+    WARNINGS = 512
 
-    IMAGE = (1, '🖺', 'image')
-    BORDER = (2, '🗋', 'border', BorderType)
-    PRINTSPACE = (4, '🗌', 'printspace', PrintSpaceType)
-    # ORDER      = (8, '↯', 'order')
-    REGIONS = (16, '⬓', 'regions', RegionType)
-    LINES = (32, '𝌆', 'lines', TextLineType)
-    WORDS = (64, '𝌶', 'words', WordType)
-    GLYPHS = (128, '𝍖', 'glyphs', GlyphType)
-    # GRAPHEME = (256, '#', 'grapheme', GraphemeType            )
-    WARNINGS = (512, '🤔', 'warnings')
+    DEFAULT = 1 | 2 | 16 | 32
 
-    def __new__(cls, value: int, icon: str, label: str, region_type: RegionWithCoords = None) -> 'Feature':
-        obj = object.__new__(cls)
-        obj._value_ = value
-        obj.icon = icon
-        obj.label = label
-        obj.region_type = region_type
-        return obj  # type: ignore[no-any-return]
-
-    @classmethod
-    def default(cls) -> 'Feature':
-        return cls.IMAGE | cls.BORDER | cls.REGIONS | cls.LINES | cls.WARNINGS
-
-    def should_render(self, region: RegionWithCoords) -> bool:
-        feature: Feature
-        for feature in list(Feature):
-            if feature.value & self.value and feature.region_type and isinstance(region, feature.region_type):
+    def should_render(self, region_ds: RegionWithCoords) -> bool:
+        lookup = {
+            self.BORDER: BorderType,
+            self.PRINT_SPACE: PrintSpaceType,
+            self.REGIONS: RegionType,
+            self.LINES: TextLineType,
+            self.WORDS: WordType,
+            self.GLYPHS: GlyphType,
+            # self.GRAPHEMES: GraphemeType
+        }
+        for feature, region_type in lookup.items():
+            if feature & self and isinstance(region_ds, region_type):
                 return True
         return False
 
@@ -308,8 +303,7 @@ class Operations:
 
 
 class RegionFactory:
-    def __init__(self, image: Image.Image, coords: Dict[str, Any], page_id: str = '<unknown>', logger: Logger = None):
-        self.image = image
+    def __init__(self, coords: Dict[str, Any], page_id: str = '<unknown>', logger: Logger = None):
         self.coords = coords
         self.page_id = page_id
         self.logger = logger or getLogger(self.__class__.__name__)
@@ -319,7 +313,7 @@ class RegionFactory:
             return None
 
         region = Region(region_ds)
-        coords = coordinates_of_segment(region_ds, self.image, self.coords)
+        coords = coordinates_of_segment(region_ds, None, self.coords)
 
         warnings = []
 
@@ -377,37 +371,51 @@ class PageXmlRenderer:
 
     def __init__(self, canvas: Image.Image, coords: Dict[str, Any], page_id: str = '<unknown>',
                  features: Optional[Feature] = None, colors: Optional[Dict[str, str]] = None, logger: Logger = None):
-        self.features = features or Feature.default()
+        self.features = features or Feature.DEFAULT
 
         if self.features & Feature.IMAGE:
             self.canvas = canvas.convert('RGBA')
         else:
             self.canvas = Image.new(mode='RGBA', size=canvas.size, color='#FFFFFF00')
 
-        self.region_factory = RegionFactory(self.canvas, coords, page_id, logger)
+        self.region_factory = RegionFactory(coords, page_id, logger)
 
         self.colors: Dict[str, str] = defaultdict(lambda: 'FF0000FF')
         self.colors.update(colors or CLASSES)
 
         self.operations = Operations()
+        self.order: List[Point] = []
 
     def render_all(self, pc_gts: PcGtsType) -> None:
         page: PageType = pc_gts.get_Page()
         self.render_type(page.get_PrintSpace())
         self.render_type(page.get_Border())
-        for region in page.get_AllRegions(order='reading-order'):
-            self.render_type(region)
+        for region_ds in page.get_AllRegions(order='reading-order'):
+            self.render_type(region_ds)
 
     def get_result(self) -> Tuple[Image.Image, RegionMap]:
         canvas, regions = self.operations.paint(self.canvas.copy())
+        self.draw_order(canvas)
         return canvas, regions
+
+    def draw_order(self, canvas: Image.Image) -> None:
+        if self.order:
+            fnt = ImageFont.truetype("/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf", 40)
+            draw = ImageDraw.Draw(canvas)
+            xys = list(map(lambda p: p.coords[0], self.order))  # type: ignore[no-any-return]
+            draw.line(xys, fill='#FF0000FF', width=3)
+            for i, (x, y) in enumerate(xys, start=1):
+                draw.text((x + 10, y - 20), str(i), fill='#660000FF', font=fnt)
+            self.order = []
 
     def render_type(self, region_ds: RegionWithCoords) -> None:
         region = self.region_factory.create(region_ds)
         if region:
+            if self.features & Feature.ORDER and isinstance(region_ds, RegionType):
+                self.order.append(region.poly.centroid)
+
             if self.features.should_render(region_ds):
                 color = self.colors[region.region_type]
-                # schedule region for drawing
                 if self.features & Feature.WARNINGS and region.warnings:
                     op = PolygonOperation(region, '#FF00003E', '#FF000076')
                 else:
