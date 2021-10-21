@@ -4,7 +4,11 @@ from PIL.Image import Image
 from ocrd import Workspace
 from ocrd_models import OcrdFile, OcrdExif
 from ocrd_models.ocrd_page import PcGtsType, PageType, MetadataType
+from ocrd_models.constants import NAMESPACES
 from ocrd_utils import MIMETYPE_PAGE
+
+
+from lxml.etree import ElementBase as Element
 
 
 class Page:
@@ -49,12 +53,19 @@ class Page:
     def meta(self) -> MetadataType:
         return self.pc_gts.get_Metadata()
 
+    def xpath(self, xpath: str) -> List[Element]:
+        return cast(List[Element], self.xml_root.xpath(xpath, namespaces=NAMESPACES))
+
+    @property
+    def xml_root(self) -> Element:
+        return self.pc_gts.gds_elementtree_node_
+
 
 class LazyPage(Page):
-    def __init__(self, id_: str, file_group: str, document: Any):
+    def __init__(self, document: Any, id_: str, file_group: str):
+        self.document = document
         self._id = id_
         self.file_group = file_group
-        self.document = document
 
     @property
     def images(self) -> List[Image]:

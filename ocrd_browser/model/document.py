@@ -374,7 +374,7 @@ class Document:
     def _page_for_id_lazy(self, page_id: str, file_group: str = None) -> Optional['Page']:
         if not page_id:
             return None
-        return LazyPage(page_id, file_group, self)
+        return LazyPage(self, page_id, file_group)
 
     # page_for_id = _page_for_id_eager
     page_for_id = _page_for_id_lazy
