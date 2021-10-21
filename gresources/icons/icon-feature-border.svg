@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.1"
+   width="16"
+   height="16">
+  <svg:style>
+    /* #printspace {display:none;} */
+  </svg:style>
+  <g id="page">
+    <path
+       d="m 2.25,0.75 h 9.25 l 2.25,2.5 v 12 H 2.25 Z"
+       style="fill:#ffffff;stroke:#d2d2d2;stroke-width:0.25;"
+    />
+  </g>
+  <g id="border">
+    <path
+       d="m 2.25,0.75 h 9.25 l 2.25,2.5 v 12 H 2.25 Z"
+       style="fill:none;stroke:#ff4545;stroke-width:0.5;"
+    />
+  </g>
+  <g id="printspace">
+    <rect
+       style="fill:none;stroke:#ff4545;stroke-width:0.5"
+       id="rect885"
+       width="10"
+       height="12"
+       x="3"
+       y="1.5" />
+    />
+  </g>
+
+</svg>
