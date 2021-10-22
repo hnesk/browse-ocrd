@@ -3,6 +3,7 @@ Page-XML rendering object
 
 This is heavily based on ocrd_segment.extract_pages (https://github.com/OCR-D/ocrd_segment/blob/master/ocrd_segment/extract_pages.py)
 """
+from math import sin, cos, radians
 from enum import IntFlag
 from typing import Optional, Dict, Any, Union, List, Iterator, Tuple, Type, cast
 from collections import defaultdict
@@ -10,7 +11,7 @@ from logging import Logger
 
 from functools import lru_cache as memoized
 
-from PIL import ImageDraw, Image, ImageFont
+from PIL import ImageDraw, Image
 
 from ocrd_models.ocrd_page import PcGtsType, PageType, BorderType, PrintSpaceType, RegionType, TextRegionType, TextLineType, WordType, GlyphType, GraphemeType, ChartRegionType, GraphicRegionType
 from ocrd_utils import coordinates_of_segment, getLogger
@@ -399,14 +400,30 @@ class PageXmlRenderer:
         return canvas, regions
 
     def draw_order(self, canvas: Image.Image) -> None:
-        if self.order:
-            fnt = ImageFont.truetype("/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf", 40)
+        if self.order and len(self.order) > 1:
+            last_point = None
             draw = ImageDraw.Draw(canvas)
-            xys = list(map(lambda p: p.coords[0], self.order))  # type: ignore[no-any-return]
-            draw.line(xys, fill='#FF0000FF', width=3)
-            for i, (x, y) in enumerate(xys, start=1):
-                draw.text((x + 10, y - 20), str(i), fill='#660000FF', font=fnt)
+            for p in self.order:
+                point = p.coords[0]
+                if last_point:
+                    self.draw_arrow(draw, last_point, point)  # type: ignore[unreachable]
+                last_point = point
+
             self.order = []
+
+    @staticmethod
+    def draw_arrow(draw: ImageDraw.Draw, p0: Tuple[float, float], p1: Tuple[float, float], color: str = '#FF0000FF', arrow_size: float = 30.0, angle_deg: float = 30.0, line_width: int = 3) -> None:
+        angle = radians(180.0 - angle_deg)
+        c, s = cos(angle), sin(angle)
+        d = p1[0] - p0[0], p1[1] - p0[1]
+        left = d[0] * c - d[1] * s, d[0] * s + d[1] * c
+        right = d[0] * c + d[1] * s, -d[0] * s + d[1] * c
+        lf = arrow_size / (d[0] ** 2 + d[1] ** 2) ** 0.5
+
+        draw.line([p0, p1], fill=color, width=line_width)
+        draw.ellipse((p1[0] - 5, p1[1] - 5, p1[0] + 5, p1[1] + 5), fill=color)
+        draw.line([(p1[0] + lf * left[0], p1[1] + lf * left[1]), p1], fill=color, width=line_width)
+        draw.line([(p1[0] + lf * right[0], p1[1] + lf * right[1]), p1], fill=color, width=line_width)
 
     def render_type(self, region_ds: RegionWithCoords) -> None:
         region = self.region_factory.create(region_ds)
