@@ -1,11 +1,16 @@
-# import cairo
-from gi.repository import Gtk, Gdk, GLib, GdkPixbuf, GObject
+from gi.repository import Gtk, Gdk, GLib, GObject, Pango
 
-from typing import Any, Optional, Tuple, Dict
+from typing import Any, Optional, Tuple, Dict, List, NamedTuple, FrozenSet
 
+from pathlib import Path
 from PIL import Image
+from cairo import Context
 from xml.sax.saxutils import escape
+
+from ocrd_models.ocrd_page_generateds import AlternativeImageType
+
 from ocrd_browser.util.image import pil_to_pixbuf, pil_scale
+from ocrd_utils.constants import MIMETYPE_PAGE
 from .base import (
     View,
     FileGroupSelector,
@@ -13,8 +18,8 @@ from .base import (
     ImageZoomSelector,
     Configurator
 )
-from ..model import LazyPage, Page
-from ..model.page_xml_renderer import PageXmlRenderer, RegionMap, Feature
+from ..model import LazyPage, Page, Document
+from ..model.page_xml_renderer import PageXmlRenderer, RegionMap, Feature, Region
 
 
 class FeatureDescription:
@@ -26,6 +31,121 @@ class FeatureDescription:
 
     def available(self, page: Page) -> bool:
         return len(page.xpath(self.xpath)) > 0
+
+
+class Transformation:
+    """
+    Encapsulates forward and inverse affine transform consisting of scaling and translation only
+    """
+    def __init__(self, scale: float, tx: float, ty: float):
+        self.scale = scale
+        self.tx = tx
+        self.ty = ty
+
+    @classmethod
+    def from_image(cls, page_image: Image.Image = Image, widget: Gtk.Image = None) -> Optional['Transformation']:
+        if page_image is None or widget is None or widget.get_pixbuf() is None:
+            return None
+
+        pb = widget.get_pixbuf()
+        size, _ = widget.get_allocated_size()
+
+        return Transformation(
+            page_image.width / pb.get_width(),
+            -(size.width - pb.get_width()) / 2,
+            -(size.height - pb.get_height()) / 2
+        )
+
+    def tranform_region(self, region: Region) -> Tuple[float, float, float, float]:
+        (l, t), (r, b) = self.inverse(*region.poly.bounds[0:2]), self.transform(*region.poly.bounds[2:4])
+        return l, t, r - l, b - t
+
+    def transform(self, x: float, y: float) -> Tuple[float, float]:
+        return (x + self.tx) * self.scale, (y + self.ty) * self.scale
+
+    def inverse(self, x: float, y: float) -> Tuple[float, float]:
+        return x / self.scale - self.tx, y / self.scale - self.ty
+
+
+class ImageVersion(NamedTuple):
+    path: Path
+    size: Tuple[int, int]
+    features: FrozenSet[str] = frozenset()
+    conf: float = None
+
+    def as_row(self) -> Tuple[str, str, str]:
+        return ','.join(sorted(self.features)), self.path.stem, '{0:d}x{1:d}'.format(*self.size)
+
+    @classmethod
+    def from_page(cls, doc: Document, page: Page) -> 'ImageVersion':
+        return cls(doc.path(page.page.imageFilename), (page.page.imageWidth, page.page.imageHeight), frozenset(), None)
+
+    @classmethod
+    def from_alternative_image(cls, doc: Document, alt: AlternativeImageType) -> 'ImageVersion':
+        path = doc.path(alt.filename)
+        return cls(
+            path,
+            Image.open(path).size,
+            frozenset(str(alt.comments).split(',')),
+            float(alt.conf) if alt.conf is not None else None
+        )
+
+
+class ImageVersionSelector(Gtk.Box, Configurator):
+
+    def __init__(self) -> None:
+        super().__init__(visible=True, spacing=3)
+        self.value = None
+        label = Gtk.Label(label='Image:', visible=True)
+        label = Gtk.Label(label='Image:', visible=True)
+
+        self.versions = Gtk.ListStore(str, str, str)
+        self.version_box = Gtk.ComboBox(visible=True, model=self.versions)
+        self.version_box.set_id_column(0)
+
+        self.pack_start(label, False, True, 0)
+        self.pack_start(self.version_box, False, True, 0)
+
+        renderer = Gtk.CellRendererText()
+        renderer.props.ellipsize = Pango.EllipsizeMode.START
+        self.version_box.pack_start(renderer, False)
+        self.version_box.add_attribute(renderer, "text", 1)
+
+        renderer = Gtk.CellRendererText()
+        self.version_box.pack_start(renderer, False)
+        self.version_box.add_attribute(renderer, "text", 2)
+
+        self.version_box.connect('changed', self.combo_box_changed)
+
+    def set_value(self, value: str) -> None:
+        self.value = value
+        self.version_box.set_active_id(value)
+
+    @GObject.Signal(arg_types=[str])
+    def changed(self, image: str) -> None:
+        self.value = image
+
+    def set_page(self, page: Page) -> None:
+        versions = []
+        if page:
+            versions.append(ImageVersion.from_page(self.document, page))
+            alts: List[AlternativeImageType] = page.page.get_AlternativeImage()
+            for alt in alts:
+                versions.append(ImageVersion.from_alternative_image(self.document, alt))
+
+        self.versions.clear()
+        for version in versions:
+            self.versions.append(version.as_row())
+        if self.value is None:
+            self.version_box.set_active(0)
+        else:
+            self.version_box.set_active_id(self.value)
+
+    def combo_box_changed(self, combo: Gtk.ComboBox) -> None:
+        model = combo.get_model()
+        if len(model) > 0 and combo.get_active() != -1:
+            row = combo.get_model()[combo.get_active()][:]
+            self.emit('changed', row[0])
 
 
 class PageFeaturesSelector(Gtk.Box, Configurator):
@@ -115,61 +235,60 @@ class ViewPage(View):
         super().__init__(name, window)
         self.current: LazyPage = None
 
-        self.file_group: Tuple[Optional[str], Optional[str]] = (None, None)
+        # Configurators
+        self.file_group: Tuple[Optional[str], Optional[str]] = ('OCR-D-OCR-TESS-deu', MIMETYPE_PAGE)
         self.scale: float = -2.0
-        self.features = Feature.DEFAULT
+        self.features: Feature = Feature.DEFAULT
+        self.image_version: str = ''
 
-        self.preview_height: int = 10
-        self.last_rescale = -100
-        self.viewport: Optional[Gtk.Viewport] = None
+        # GTK
         self.image: Optional[Gtk.Image] = None
+        self.highlight: Optional[Gtk.DrawingArea] = None
+        self.status_bar: Optional[Gtk.Box] = None
+
+        # Data
         self.page_image: Optional[Image.Image] = None
         self.region_map: Optional[RegionMap] = None
+        self.t: Optional[Transformation] = None
+        self.current_region: Region = None
+        self.last_rescale: int = -100
 
     def build(self) -> None:
         super(ViewPage, self).build()
 
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.PAGE))
+        self.add_configurator('image_version', ImageVersionSelector())
         self.add_configurator('scale', ImageZoomSelector(2.0, 0.05, -4.0, 2.0))
         self.add_configurator('features', PageFeaturesSelector())
 
         self.image = Gtk.Image(visible=True, icon_name='gtk-missing-image', icon_size=Gtk.IconSize.DIALOG)
 
-        # Gtk.EventBox allows to listen for events per view (Gtk.Image doesn't listen, Gtk.Window listen too broad)
-        eventbox = Gtk.EventBox(visible=True)
-        eventbox.add_events(Gdk.EventMask.SMOOTH_SCROLL_MASK)
-        eventbox.connect('scroll-event', self.on_scroll)
-        eventbox.add(self.image)
+        self.highlight = Gtk.DrawingArea(visible=True, valign=Gtk.Align.FILL, halign=Gtk.Align.FILL)
+        self.highlight.connect('draw', self.draw_highlight)
 
-        # Momentane Reihenfolge: scroller->viewport->eventbox->image
-        # Kaputte  Reihenfolge:  scroller->viewport->eventbox->overlay->image|b
+        overlay = Gtk.Overlay(visible=True, can_focus=True, has_focus=True, is_focus=True)
+        overlay.add_events(Gdk.EventMask.SMOOTH_SCROLL_MASK | Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.POINTER_MOTION_MASK)
+        overlay.set_has_tooltip(True)
+        overlay.connect('query-tooltip', self._query_tooltip)
+        overlay.connect('scroll-event', self._on_scroll)
+        overlay.connect('button-press-event', self._on_button)
+        overlay.connect('motion-notify-event', self._on_mouse)
+        overlay.add(self.image)
+        overlay.add_overlay(self.highlight)
 
-        # overlay = Gtk.Overlay(visible=True)
-        # b: Gtk.DrawingArea = Gtk.DrawingArea(visible=True, valign = Gtk.Align.CENTER, halign = Gtk.Align.CENTER)
-        # b.set_size_request(200,200)
-        # b.connect('draw', self.draw)
-        # overlay.add(self.image)
-        # overlay.add_overlay(b)
-        # eventbox.add(overlay)
+        viewport = Gtk.Viewport(visible=True, hscroll_policy='natural', vscroll_policy='natural')
+        viewport.connect('size-allocate', self._on_viewport_size_allocate)
+        viewport.add(overlay)
 
-        self.image.set_has_tooltip(True)
-        self.image.connect('query-tooltip', self._query_tooltip)
-
-        self.viewport = Gtk.Viewport(visible=True, hscroll_policy='natural', vscroll_policy='natural')
-        self.viewport.connect('size-allocate', self.on_viewport_size_allocate)
-        self.viewport.add(eventbox)
-
-        self.scroller.add(self.viewport)
-
-#    def draw(self, area: Gtk.DrawingArea, context: cairo.Context) -> None:
-#        context.scale(area.get_allocated_width(), area.get_allocated_height())
-#        context.set_source_rgb(0.5, 0.5, 0.7)
-#        context.fill()
-#        context.paint()
+        self.scroller.add(viewport)
+        self.status_bar = Gtk.Box(visible=True, orientation=Gtk.Orientation.HORIZONTAL)
+        self.container.pack_end(self.status_bar, False, False, 0)
+        self.update_status_bar()
 
     def config_changed(self, name: str, value: Any) -> None:
         super(ViewPage, self).config_changed(name, value)
-        if name == 'features':
+        print(name, value)
+        if name == 'features' or name == 'image_version':
             GLib.idle_add(self.redraw, priority=GLib.PRIORITY_DEFAULT_IDLE)
         if name == 'scale':
             GLib.idle_add(self.rescale, priority=GLib.PRIORITY_DEFAULT_IDLE)
@@ -182,8 +301,9 @@ class ViewPage(View):
 
     def redraw(self) -> None:
         if self.current:
-            # self.configurators['features']
-            page_image, page_coords, _ = self.current.get_image(feature_selector='', feature_filter='deskewed,binarized,cropped')
+            all_classes = frozenset({'binarized', 'grayscale_normalized', 'deskewed', 'despeckled', 'cropped', 'rotated-90', 'rotated-180', 'rotated-270'})
+            selected = frozenset(self.image_version.split(','))
+            page_image, page_coords, _ = self.current.get_image(feature_selector=','.join(selected), feature_filter=','.join(all_classes.difference(selected)))
             renderer = PageXmlRenderer(page_image, page_coords, self.current.id, self.features)
             renderer.render_all(self.current.pc_gts)
             self.page_image, self.region_map = renderer.get_result()
@@ -200,8 +320,47 @@ class ViewPage(View):
                 self.image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
         else:
             self.image.set_from_stock('missing-image', Gtk.IconSize.DIALOG)
+        self.t = Transformation.from_image(self.page_image, self.image)
+        self.highlight.queue_draw()
 
-    def on_scroll(self, _widget: Gtk.EventBox, event: Gdk.EventScroll) -> bool:
+    def _on_mouse(self, _widget: Gtk.Overlay, e: Gdk.EventButton) -> None:
+        if not (self.t is None or self.region_map is None):
+            tx, ty = self.t.transform(e.x, e.y)
+            if self.region_map.find_region(tx, ty, ignore_regions=[]):
+                watch = Gdk.Cursor.new_from_name(self.container.get_display(), 'pointer')
+                self.container.get_window().set_cursor(watch)
+                return
+
+        watch = Gdk.Cursor.new_from_name(self.container.get_display(), 'default')
+        self.container.get_window().set_cursor(watch)
+
+    def _on_button(self, _widget: Gtk.Overlay, e: Gdk.EventButton) -> bool:
+        _widget.grab_focus()
+        old_region = self.current_region
+        if self.t is None or self.region_map is None:
+            self.current_region = None
+        else:
+            tx, ty = self.t.transform(e.x, e.y)
+            self.current_region = self.region_map.find_region(tx, ty, ignore_regions=[])
+
+        if self.current_region is not old_region:
+            self.invalidate_region(self.current_region)
+            self.invalidate_region(old_region)
+            self.update_status_bar()
+
+        if e.button == Gdk.BUTTON_SECONDARY and e.type == Gdk.EventType.BUTTON_PRESS:
+            if self.current_region:
+                self._on_context_menu(e, self.current_region)
+        return False
+
+    def _on_context_menu(self, e: Gdk.EventButton, r: Region) -> bool:
+        p = Gtk.Menu(visible=True)
+        p.append(Gtk.MenuItem(visible=True, label=r.id))
+        p.append(Gtk.MenuItem(visible=True, label=r.text))
+        p.popup_at_pointer(e)
+        return False
+
+    def _on_scroll(self, _widget: Gtk.EventBox, event: Gdk.EventScroll) -> bool:
         """
         Handles zoom in / zoom out on Ctrl+mouse wheel
         """
@@ -214,18 +373,20 @@ class ViewPage(View):
                 return True
         return False
 
-    def on_viewport_size_allocate(self, _sender: Gtk.Widget, rect: Gdk.Rectangle) -> None:
+    def _on_viewport_size_allocate(self, _sender: Gtk.Widget, rect: Gdk.Rectangle) -> None:
         """
         Nothing for now, needed when  we have "fit to width/height"
         """
-        pass
+        self.t = Transformation.from_image(self.page_image, self.image)
+        self.highlight.queue_draw()
 
     def _query_tooltip(self, _image: Gtk.Image, x: int, y: int, _keyboard_mode: bool, tooltip: Gtk.Tooltip) -> bool:
-        tx, ty = self.screen_to_image(x, y)
-        if tx is None:
+        if self.t is None:
             return False
 
-        region = self.region_map.find_region(tx, ty)
+        tx, ty = self.t.transform(x, y)
+
+        region = self.region_map.find_region(tx, ty, ignore_regions=[])
 
         content = '<tt>{:d}, {:d}</tt>'.format(int(tx), int(ty))
         if region:
@@ -238,23 +399,31 @@ class ViewPage(View):
 
         return True
 
-    def screen_to_image(self, x: int, y: int) -> Tuple[Optional[float], Optional[float]]:
-        """
-        Transforms screen coordinates to image coordinates for centered and scaled `Gtk.Image`s
-        """
-        if self.image is None:
-            return None, None
+    def update_status_bar(self) -> None:
+        for w in self.status_bar.get_children():
+            self.status_bar.remove(w)
 
-        pb: GdkPixbuf.Pixbuf = self.image.get_pixbuf()
-        if pb is None:
-            return None, None
+        if self.current_region:
+            for i, r in enumerate(reversed(self.current_region.breadcrumbs())):
+                if i:
+                    self.status_bar.pack_start(Gtk.Separator(visible=True, orientation=Gtk.Orientation.HORIZONTAL), False, False, 5)
 
-        ww, wh = self.image.get_allocated_width(), self.image.get_allocated_height()
-        iw, ih = pb.get_width(), pb.get_height()
+                label = Gtk.Label(visible=True, label=r.id, ellipsize=Pango.EllipsizeMode.MIDDLE, max_width_chars=15, tooltip_text=r.id)
+                self.status_bar.pack_start(label, False, False, 5)
+        else:
+            self.status_bar.pack_start(Gtk.Label(visible=True, label='---'), False, False, 2)
 
-        rel_x = (x - (ww - iw) / 2) / iw
-        rel_y = (y - (wh - ih) / 2) / ih
-        if rel_x < 0 or rel_x > 1 or rel_y < 0 or rel_y > 1:
-            return None, None
+    def invalidate_region(self, r: Region) -> None:
+        if r:
+            x, y, w, h = self.t.tranform_region(r)
+            if w > 0 and h > 0:
+                self.highlight.queue_draw_area(x, y, w, h)
 
-        return rel_x * self.page_image.width, rel_y * self.page_image.height
+    def draw_highlight(self, _area: Gtk.DrawingArea, context: Context) -> None:
+        if self.current_region and self.t:
+            context.set_source_rgba(0.75, 1, 0.5, 0.33)
+            context.new_path()
+            for px, py in self.current_region.poly.exterior.coords:
+                context.line_to(*self.t.inverse(px, py))
+            context.close_path()
+            context.fill()

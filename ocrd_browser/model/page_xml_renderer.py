@@ -136,8 +136,15 @@ class Region:
         return self._prep_poly and cast(bool, self._prep_poly.contains(p))
 
     @property
-    def id(self) -> int:
-        return id(self.region)
+    def id(self) -> str:
+        if hasattr(self.region, 'id'):
+            return str(self.region.id)
+        elif hasattr(self.region, 'pcGtsId'):
+            return str(self.region.pcGtsId)
+        elif hasattr(self.region, 'imageFilename'):
+            return str(self.region.imageFilename)
+        else:
+            return '???'
 
     @property
     def region_type(self) -> str:
@@ -182,7 +189,7 @@ class Region:
         return '{:s}{:s}'.format(self.region_type, '#' + self.region.id if hasattr(self.region, 'id') else '')
 
     def __hash__(self) -> int:
-        return hash(id(self.region))
+        return id(self.region)
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, self.__class__) and self.region is other.region
@@ -233,16 +240,16 @@ class RegionMap(RegionBase):
     """
     def __init__(self) -> None:
         super().__init__()
-        self.nodes_by_id: Dict[int, RegionNode] = {}
+        self.nodes_by_region: Dict[Region, RegionNode] = {}
 
     def append(self, node: RegionNode) -> None:
         """
         appends a RegionNode to the tree
         IMPORTANT: this will only work if the parent node already exists, so the calls
         """
-        self.nodes_by_id[node.region.id] = node
-        if node.region.parent.id in self.nodes_by_id:
-            parent_region = self.nodes_by_id[node.region.parent.id]
+        self.nodes_by_region[node.region] = node
+        if node.region.parent in self.nodes_by_region:
+            parent_region = self.nodes_by_region[node.region.parent]
             parent_region.append(node)
         else:
             self.children.append(node)
