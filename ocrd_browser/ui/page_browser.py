@@ -51,12 +51,13 @@ class PagePreviewList(Gtk.IconView):
         text_renderers = [cell for cell in self.get_cells() if isinstance(cell, Gtk.CellRendererText)]
         text_renderer: Gtk.CellRendererText = text_renderers[0]
         text_renderer.props.ellipsize = Pango.EllipsizeMode.MIDDLE
-        self.connect('button-release-event', self.button_pressed)
+        self.connect('button-press-event', self.button_pressed)
 
     def button_pressed(self, _sender: Gtk.Widget, event: Gdk.EventButton) -> None:
-        if event.get_button()[1] == 3:
-            path, renderer = self.get_item_at_pos(*event.get_coords())
-            self.emit('on_context_menu', event, path, renderer)
+        if event.button == Gdk.BUTTON_SECONDARY and event.type == Gdk.EventType.BUTTON_PRESS:
+            result = self.get_item_at_pos(*event.get_coords())
+            if result:
+                self.emit('on_context_menu', event, result[0], result[1])
 
     @GObject.Signal(arg_types=[object, object, object])
     def on_context_menu(self, event: Gdk.EventButton, path: Gtk.TreePath, _renderer: Gtk.CellRenderer) -> None:
