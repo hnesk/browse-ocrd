@@ -144,7 +144,7 @@ class Region:
         elif hasattr(self.region, 'imageFilename'):
             return str(self.region.imageFilename)
         else:
-            return '???'
+            return ''
 
     @property
     def region_type(self) -> str:
@@ -186,7 +186,7 @@ class Region:
         return list(breadcrumbs)
 
     def __str__(self) -> str:
-        return '{:s}{:s}'.format(self.region_type, '#' + self.region.id if hasattr(self.region, 'id') else '')
+        return '{:s}{:s}'.format(self.region_type, '#' + self.id)
 
     def __hash__(self) -> int:
         return id(self.region)
@@ -206,7 +206,7 @@ class RegionBase:
         """
         Finds deepest region at x,y
         """
-        ignore_regions = ignore_regions or [BorderType, PrintSpaceType]
+        ignore_regions = ignore_regions if ignore_regions is not None else [BorderType, PrintSpaceType]
 
         def filter_regions(n: Region) -> bool:
             return type(n.region) not in ignore_regions
@@ -245,7 +245,8 @@ class RegionMap(RegionBase):
     def append(self, node: RegionNode) -> None:
         """
         appends a RegionNode to the tree
-        IMPORTANT: this will only work if the parent node already exists, so the calls
+        IMPORTANT: this will only work if the parent node already exists, so the calls have to be in breadth-first or depth-first pre-order order.
+        The Operations class will iterate in breadth-first order
         """
         self.nodes_by_region[node.region] = node
         if node.region.parent in self.nodes_by_region:
@@ -401,6 +402,11 @@ class PageXmlRenderer:
         for region_ds in page.get_AllRegions(order='reading-order'):
             self.render_type(region_ds)
 
+        if self.features & Feature.ORDER:
+            for region_ds in page.get_AllRegions(classes=['Text'], order='reading-order'):
+                region = self.region_factory.create(region_ds)
+                self.order.append(region.poly.centroid)
+
     def get_result(self) -> Tuple[Image.Image, RegionMap]:
         canvas, regions = self.operations.paint(self.canvas.copy())
         self.draw_order(canvas)
@@ -435,9 +441,6 @@ class PageXmlRenderer:
     def render_type(self, region_ds: RegionWithCoords) -> None:
         region = self.region_factory.create(region_ds)
         if region:
-            if self.features & Feature.ORDER and isinstance(region_ds, RegionType):
-                self.order.append(region.poly.centroid)
-
             if self.features.should_render(region_ds):
                 color = self.colors[region.region_type]
                 if self.features & Feature.WARNINGS and region.warnings:
