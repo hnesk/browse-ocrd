@@ -279,6 +279,7 @@ class Document:
         return image_paths
 
     def get_default_image_group(self, preferred_image_file_groups: Optional[List[str]] = None) -> Optional[str]:
+        # TODO: use image_file_groups as a dict (and add the weights) / make it accesilbe for selection from page_browser
         image_file_groups = []
         for file_group, mimetype in self.file_groups_and_mimetypes:
             weight = 0.0
@@ -372,9 +373,15 @@ class Document:
         return Page(page_id, file, pcgts, image_files, images)
 
     def _page_for_id_lazy(self, page_id: str, file_group: str = None) -> Optional['Page']:
+        log = getLogger('ocrd_browser.model.document.Document.page_for_id')
         if not page_id:
             return None
-        return LazyPage(self, page_id, file_group)
+        page = LazyPage(self, page_id, file_group)
+        if not page.file:
+            log.warning("No PAGE-XML and no image for page '{}' in fileGrp '{}'".format(page_id, file_group))
+            return None
+
+        return page
 
     # page_for_id = _page_for_id_eager
     page_for_id = _page_for_id_lazy
@@ -394,7 +401,7 @@ class Document:
     def resolve_image(self, image_file: OcrdFile) -> Image:
         with pushd_popd(self.workspace.directory):
             pil_image = Image.open(self.workspace.download_file(image_file).local_filename)
-            pil_image.load()
+            # pil_image.load()
             return pil_image
 
     @check_editable
