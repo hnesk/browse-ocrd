@@ -24,6 +24,7 @@ class Configurator(Gtk.Widget):
 
 
 class View:
+    # TODO: Views should announce which mimetype they can handle and be only available if it there is matching imetype in Document, also they should announce if they can handle a certein Page
     # noinspection PyTypeChecker
     def __init__(self, name: str, window: Gtk.Window):
         self.name: str = name
@@ -78,16 +79,19 @@ class View:
         return 'OCR-D-IMG'
 
     def page_activated(self, _sender: Gtk.Widget, page_id: str) -> None:
-        self.page_id = page_id
-        self.reload()
+        if page_id != self.page_id:
+            self.page_id = page_id
+            self.reload()
 
     def pages_selected(self, _sender: Gtk.Widget, page_ids: List[str]) -> None:
         pass
 
     def reload(self) -> None:
-        self.current = self.document.page_for_id(self.page_id, self.use_file_group)
-        for configurator in self.configurators.values():
-            configurator.set_page(self.current)
+        if self.page_id:
+            self.current = self.document.page_for_id(self.page_id, self.use_file_group)
+            if self.current:
+                for configurator in self.configurators.values():
+                    configurator.set_page(self.current)
 
         self.redraw()
 
@@ -273,8 +277,11 @@ class FileGroupModel(Gtk.ListStore):
 
     @staticmethod
     def page_filter(model: Gtk.TreeModel, it: Gtk.TreeIter, _data: None) -> bool:
-        # str casts for mypy
         return str(model[it][FileGroupComboBox.COLUMN_MIME]) == str(MIMETYPE_PAGE)
+
+    @staticmethod
+    def xml_filter(model: Gtk.TreeModel, it: Gtk.TreeIter, _data: None) -> bool:
+        return str(model[it][FileGroupComboBox.COLUMN_EXT]) == '.xml'
 
     @staticmethod
     def html_filter(model: Gtk.TreeModel, it: Gtk.TreeIter, _data: None) -> bool:
@@ -290,6 +297,7 @@ class FileGroupFilter(Enum):
     IMAGE = FileGroupModel.image_filter
     PAGE = FileGroupModel.page_filter
     HTML = FileGroupModel.html_filter
+    XML = FileGroupModel.xml_filter
     ALL = FileGroupModel.all_filter
 
 

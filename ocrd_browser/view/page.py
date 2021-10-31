@@ -1,4 +1,4 @@
-from gi.repository import Gtk, Gdk, GLib, GObject, Pango
+from gi.repository import Gtk, Gdk, GObject, Pango
 
 from typing import Any, Optional, Tuple, Dict, List, NamedTuple, FrozenSet
 
@@ -20,6 +20,7 @@ from .base import (
 )
 from ..model import LazyPage, Page, Document
 from ..model.page_xml_renderer import PageXmlRenderer, RegionMap, Feature, Region
+from ..util.gtk import WhenIdle
 
 
 class FeatureDescription:
@@ -37,6 +38,7 @@ class Transformation:
     """
     Encapsulates forward and inverse affine transform consisting of scaling and translation only
     """
+    # TODO: clip to image with page_image sizes
     def __init__(self, scale: float, tx: float, ty: float):
         self.scale = scale
         self.tx = tx
@@ -44,6 +46,7 @@ class Transformation:
 
     @classmethod
     def from_image(cls, page_image: Image.Image = Image, widget: Gtk.Image = None) -> Optional['Transformation']:
+        # TODO: move to PageXmlRenderer and pass page_image sizes for clipping
         if page_image is None or widget is None or widget.get_pixbuf() is None:
             return None
 
@@ -57,7 +60,7 @@ class Transformation:
         )
 
     def tranform_region(self, region: Region) -> Tuple[float, float, float, float]:
-        (l, t), (r, b) = self.inverse(*region.poly.bounds[0:2]), self.transform(*region.poly.bounds[2:4])
+        (l, t), (r, b) = self.inverse(*region.poly.bounds[0:2]), self.inverse(*region.poly.bounds[2:4])
         return l, t, r - l, b - t
 
     def transform(self, x: float, y: float) -> Tuple[float, float]:
@@ -71,7 +74,7 @@ class ImageVersion(NamedTuple):
     path: Path
     size: Tuple[int, int]
     features: FrozenSet[str] = frozenset()
-    conf: float = None
+    conf: Optional[float] = None
 
     def as_row(self) -> Tuple[str, str, str]:
         return ','.join(sorted(self.features)), self.path.stem, '{0:d}x{1:d}'.format(*self.size)
@@ -115,7 +118,7 @@ class ImageVersionSelector(Gtk.Box, Configurator):
         self.version_box.pack_start(renderer, False)
         self.version_box.add_attribute(renderer, "text", 2)
 
-        self.version_box.connect('changed', self.combo_box_changed)
+        self._change_handler = self.version_box.connect('changed', self.combo_box_changed)
 
     def set_value(self, value: str) -> None:
         self.value = value
@@ -133,19 +136,18 @@ class ImageVersionSelector(Gtk.Box, Configurator):
             for alt in alts:
                 versions.append(ImageVersion.from_alternative_image(self.document, alt))
 
-        self.versions.clear()
-        for version in versions:
-            self.versions.append(version.as_row())
-        if self.value is None:
-            self.version_box.set_active(0)
-        else:
-            self.version_box.set_active_id(self.value)
+        with self.version_box.handler_block(self._change_handler):
+            self.versions.clear()
+            for version in versions:
+                self.versions.append(version.as_row())
+            if self.value is None:
+                self.version_box.set_active(0)
+            else:
+                if self.value != self.version_box.get_active_id():
+                    self.version_box.set_active_id(self.value)
 
     def combo_box_changed(self, combo: Gtk.ComboBox) -> None:
-        model = combo.get_model()
-        if len(model) > 0 and combo.get_active() != -1:
-            row = combo.get_model()[combo.get_active()][:]
-            self.emit('changed', row[0])
+        self.emit('changed', self.version_box.get_active_id())
 
 
 class PageFeaturesSelector(Gtk.Box, Configurator):
@@ -289,11 +291,11 @@ class ViewPage(View):
         super(ViewPage, self).config_changed(name, value)
         print(name, value)
         if name == 'features' or name == 'image_version':
-            GLib.idle_add(self.redraw, priority=GLib.PRIORITY_DEFAULT_IDLE)
+            WhenIdle.call(self.redraw, priority=50)
         if name == 'scale':
-            GLib.idle_add(self.rescale, priority=GLib.PRIORITY_DEFAULT_IDLE)
+            WhenIdle.call(self.rescale)
         if name == 'file_group':
-            GLib.idle_add(self.reload, priority=GLib.PRIORITY_DEFAULT_IDLE)
+            WhenIdle.call(self.reload, priority=10)
 
     @property
     def use_file_group(self) -> str:
@@ -301,6 +303,7 @@ class ViewPage(View):
 
     def redraw(self) -> None:
         if self.current:
+            # TODO: store self.image_version as a frozenset
             all_classes = frozenset({'binarized', 'grayscale_normalized', 'deskewed', 'despeckled', 'cropped', 'rotated-90', 'rotated-180', 'rotated-270'})
             selected = frozenset(self.image_version.split(','))
             page_image, page_coords, _ = self.current.get_image(feature_selector=','.join(selected), feature_filter=','.join(all_classes.difference(selected)))
@@ -309,7 +312,7 @@ class ViewPage(View):
             self.page_image, self.region_map = renderer.get_result()
         else:
             self.page_image, self.region_map = None, None
-        GLib.idle_add(self.rescale, True, priority=GLib.PRIORITY_DEFAULT_IDLE)
+        WhenIdle.call(self.rescale, force=True)
 
     def rescale(self, force: bool = False) -> None:
         if self.page_image:
@@ -408,7 +411,7 @@ class ViewPage(View):
                 if i:
                     self.status_bar.pack_start(Gtk.Separator(visible=True, orientation=Gtk.Orientation.HORIZONTAL), False, False, 5)
 
-                label = Gtk.Label(visible=True, label=r.id, ellipsize=Pango.EllipsizeMode.MIDDLE, max_width_chars=15, tooltip_text=r.id)
+                label = Gtk.Label(visible=True, label=str(r), ellipsize=Pango.EllipsizeMode.MIDDLE, max_width_chars=20, tooltip_text=str(r))
                 self.status_bar.pack_start(label, False, False, 5)
         else:
             self.status_bar.pack_start(Gtk.Label(visible=True, label='---'), False, False, 2)

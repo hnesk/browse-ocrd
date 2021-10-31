@@ -91,8 +91,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.document = Document.load(uri, emitter=self.emit)
         self.page_list.set_document(self.document)
 
-        self.update_ui()
         self.view_manager.set_document(self.document)
+        self.update_ui()
 
         if len(self.document.page_ids):
             self.on_page_activated(None, self.document.page_ids[0])
