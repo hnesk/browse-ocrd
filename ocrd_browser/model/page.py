@@ -1,4 +1,4 @@
-from typing import List, Optional, Any, Tuple, Dict, cast
+from typing import List, Optional, Any, Tuple, Dict, Union, cast, Set
 
 from PIL.Image import Image
 from ocrd import Workspace
@@ -73,32 +73,43 @@ class LazyPage(Page):
 
     @property
     def image_files(self) -> List[OcrdFile]:
-        return cast(List[OcrdFile], self.document.files_for_page_id(self.id, self.file_group, mimetype="//image/.*"))
+        return self.get_files("//image/.*")
+
+    def get_files(self, mimetype: str = MIMETYPE_PAGE) -> List[OcrdFile]:
+        return cast(List[OcrdFile], self.document.files_for_page_id(self.id, self.file_group, mimetype=mimetype))
 
     @property
     def page_file(self) -> OcrdFile:
-        page_files = self.document.files_for_page_id(self.id, self.file_group, mimetype=MIMETYPE_PAGE)
+        page_files = self.get_files(MIMETYPE_PAGE)
         if len(page_files) > 0:
             return page_files[0]
 
     @property
-    def file(self) -> OcrdFile:
+    def file(self) -> Optional[OcrdFile]:
         if self.page_file:
             return self.page_file
         else:
             if len(self.image_files) > 0:
                 return next(iter(self.image_files))
+        return None
 
     @property
     def pc_gts(self) -> PcGtsType:
-        return self.document.page_for_file(self.file)
+        if self.page_file:
+            return self.document.page_for_file(self.page_file)
+        else:
+            image_files = self.image_files
+            if len(image_files) > 0:
+                return self.document.page_for_file(image_files[0])
 
-    def get_image(self, feature_selector: str = '', feature_filter: str = '') -> Tuple[Image, Dict[str, Any], OcrdExif]:
+    def get_image(self, feature_selector: Union[str, Set[str]] = '', feature_filter: Union[str, Set[str]] = '') -> Tuple[Image, Dict[str, Any], OcrdExif]:
+        feature_selector = feature_selector if isinstance(feature_selector, str) else ','.join(sorted(feature_selector))
+        feature_filter = feature_filter if isinstance(feature_filter, str) else ','.join(sorted(feature_filter))
         ws: Workspace = self.document.workspace
         try:
             page_image, page_coords, page_image_info = ws.image_from_page(self.page, self.id, transparency=True, feature_selector=feature_selector, feature_filter=feature_filter)
         except Exception:
-            page_image, page_coords, page_image_info = ws.image_from_page(self.page, self.id, transparency=True)
+            page_image, page_coords, page_image_info = None, None, None
 
         # print((page_coords, page_image_info))
         return page_image, page_coords, page_image_info
