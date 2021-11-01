@@ -65,7 +65,6 @@ class ViewImages(View):
         if name == 'scale':
             WhenIdle.call(self.rescale)
 
-
     def rebuild_pages(self) -> None:
         existing_pages = {child.get_name(): child for child in self.image_box.get_children()}
 

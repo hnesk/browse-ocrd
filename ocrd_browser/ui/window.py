@@ -118,7 +118,6 @@ class MainWindow(Gtk.ApplicationWindow):
 
     @GObject.Signal(arg_types=[object])
     def pages_selected(self, page_ids: List[str]) -> None:
-        print(page_ids)
         pass
 
     @GObject.Signal(arg_types=[str, object])

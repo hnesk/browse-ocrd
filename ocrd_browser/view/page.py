@@ -140,11 +140,12 @@ class ImageVersionSelector(Gtk.Box, Configurator):
             self.versions.clear()
             for version in versions:
                 self.versions.append(version.as_row())
-            if self.value is None:
-                self.version_box.set_active(0)
-            else:
-                if self.value != self.version_box.get_active_id():
-                    self.version_box.set_active_id(self.value)
+
+        if self.value is None:
+            self.version_box.set_active(0)
+        else:
+            if self.value != self.version_box.get_active_id():
+                self.version_box.set_active_id(self.value)
 
     def combo_box_changed(self, combo: Gtk.ComboBox) -> None:
         self.emit('changed', self.version_box.get_active_id())
@@ -289,28 +290,30 @@ class ViewPage(View):
 
     def config_changed(self, name: str, value: Any) -> None:
         super(ViewPage, self).config_changed(name, value)
-        print(name, value)
+        if name == 'file_group':
+            WhenIdle.call(self.reload, priority=10)
         if name == 'features' or name == 'image_version':
             WhenIdle.call(self.redraw, priority=50)
         if name == 'scale':
             WhenIdle.call(self.rescale)
-        if name == 'file_group':
-            WhenIdle.call(self.reload, priority=10)
 
     @property
     def use_file_group(self) -> str:
         return self.file_group[0]
 
     def redraw(self) -> None:
+        got_result = False
         if self.current:
             # TODO: store self.image_version as a frozenset
             all_classes = frozenset({'binarized', 'grayscale_normalized', 'deskewed', 'despeckled', 'cropped', 'rotated-90', 'rotated-180', 'rotated-270'})
             selected = frozenset(self.image_version.split(','))
             page_image, page_coords, _ = self.current.get_image(feature_selector=','.join(selected), feature_filter=','.join(all_classes.difference(selected)))
-            renderer = PageXmlRenderer(page_image, page_coords, self.current.id, self.features)
-            renderer.render_all(self.current.pc_gts)
-            self.page_image, self.region_map = renderer.get_result()
-        else:
+            if page_image:
+                renderer = PageXmlRenderer(page_image, page_coords, self.current.id, self.features)
+                renderer.render_all(self.current.pc_gts)
+                self.page_image, self.region_map = renderer.get_result()
+                got_result = True
+        if not got_result:
             self.page_image, self.region_map = None, None
         WhenIdle.call(self.rescale, force=True)
 
@@ -322,7 +325,7 @@ class ViewPage(View):
                 thumbnail = pil_scale(self.page_image, None, int(scale_config.get_exp() * self.page_image.height))
                 self.image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
         else:
-            self.image.set_from_stock('missing-image', Gtk.IconSize.DIALOG)
+            self.image.set_from_icon_name('missing-image', Gtk.IconSize.DIALOG)
         self.t = Transformation.from_image(self.page_image, self.image)
         self.highlight.queue_draw()
 
