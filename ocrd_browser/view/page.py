@@ -1,4 +1,4 @@
-from gi.repository import Gtk, Gdk, GObject, Pango
+from gi.repository import Gtk, Gdk, GObject, Pango, Gio
 
 from typing import Any, Optional, Tuple, Dict, List, NamedTuple, FrozenSet
 
@@ -266,16 +266,28 @@ class ViewPage(View):
 
         self.image = Gtk.Image(visible=True, icon_name='gtk-missing-image', icon_size=Gtk.IconSize.DIALOG)
 
-        self.highlight = Gtk.DrawingArea(visible=True, valign=Gtk.Align.FILL, halign=Gtk.Align.FILL)
+        self.highlight = Gtk.DrawingArea(visible=True, valign=Gtk.Align.FILL, halign=Gtk.Align.FILL, can_focus=True, has_focus=True, focus_on_click=True, is_focus=True)
+        self.highlight.add_events(Gdk.EventMask.SMOOTH_SCROLL_MASK | Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.POINTER_MOTION_MASK)
+        self.highlight.set_has_tooltip(True)
+        self.highlight.connect('query-tooltip', self._query_tooltip)
+        self.highlight.connect('scroll-event', self._on_scroll)
+        self.highlight.connect('button-press-event', self._on_button)
+        self.highlight.connect('motion-notify-event', self._on_mouse)
         self.highlight.connect('draw', self.draw_highlight)
 
-        overlay = Gtk.Overlay(visible=True, can_focus=True, has_focus=True, is_focus=True)
-        overlay.add_events(Gdk.EventMask.SMOOTH_SCROLL_MASK | Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.POINTER_MOTION_MASK)
-        overlay.set_has_tooltip(True)
-        overlay.connect('query-tooltip', self._query_tooltip)
-        overlay.connect('scroll-event', self._on_scroll)
-        overlay.connect('button-press-event', self._on_button)
-        overlay.connect('motion-notify-event', self._on_mouse)
+        action_group = Gio.SimpleActionGroup()
+        app: Gtk.Application = self.window.get_application()
+        zoom_in_action = Gio.SimpleAction(name='zoom_in')
+        zoom_in_action.connect('activate', self._on_zoom)
+        zoom_out_action = Gio.SimpleAction(name='zoom_out')
+        zoom_out_action.connect('activate', self._on_zoom)
+        action_group.add_action(zoom_in_action)
+        action_group.add_action(zoom_out_action)
+        app.set_accels_for_action('view.zoom_in', ['<Ctrl>plus'])
+        app.set_accels_for_action('view.zoom_out', ['<Ctrl>minus'])
+        self.highlight.insert_action_group("view", action_group)
+
+        overlay = Gtk.Overlay(visible=True)
         overlay.add(self.image)
         overlay.add_overlay(self.highlight)
 
@@ -296,6 +308,7 @@ class ViewPage(View):
             WhenIdle.call(self.redraw, priority=50)
         if name == 'scale':
             WhenIdle.call(self.rescale)
+        self.highlight.grab_focus()
 
     @property
     def use_file_group(self) -> str:
@@ -386,6 +399,11 @@ class ViewPage(View):
         self.t = Transformation.from_image(self.page_image, self.image)
         self.highlight.queue_draw()
 
+    def _on_zoom(self, action: Gio.SimpleAction, *args):
+        direction = -1 if action.get_name() == 'zoom_out' else 1
+        scale_config: ImageZoomSelector = self.configurators['scale']
+        scale_config.set_value(self.scale + scale_config.scale.get_adjustment().get_step_increment() * direction)
+
     def _query_tooltip(self, _image: Gtk.Image, x: int, y: int, _keyboard_mode: bool, tooltip: Gtk.Tooltip) -> bool:
         if self.t is None:
             return False
@@ -417,7 +435,7 @@ class ViewPage(View):
                 label = Gtk.Label(visible=True, label=str(r), ellipsize=Pango.EllipsizeMode.MIDDLE, max_width_chars=20, tooltip_text=str(r))
                 self.status_bar.pack_start(label, False, False, 5)
         else:
-            self.status_bar.pack_start(Gtk.Label(visible=True, label='---'), False, False, 2)
+            self.status_bar.pack_start(Gtk.Label(visible=True, label=' '), False, False, 2)
 
     def invalidate_region(self, r: Region) -> None:
         if r:

@@ -139,7 +139,6 @@ THE SOFTWARE.
           <object class="GtkMenuButton" id="view_menu_button">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="focus_on_click">False</property>
             <property name="receives_default">True</property>
             <property name="tooltip_text" translatable="yes">Create new views</property>
             <property name="draw_indicator">True</property>
@@ -164,7 +163,6 @@ THE SOFTWARE.
     <child>
       <object class="GtkPaned" id="panes">
         <property name="visible">True</property>
-        <property name="can_focus">True</property>
         <property name="position">255</property>
         <child>
           <object class="GtkBox">
@@ -174,7 +172,6 @@ THE SOFTWARE.
             <child>
               <object class="GtkScrolledWindow" id="page_list_scroller">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
                 <property name="hscrollbar_policy">never</property>
                 <property name="shadow_type">in</property>
                 <child>
@@ -308,9 +305,6 @@ THE SOFTWARE.
         <child>
           <object class="GtkBox" id="view_container">
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="can_default">True</property>
-            <property name="receives_default">True</property>
             <property name="homogeneous">True</property>
             <property name="name">view_container</property>
             <child>
