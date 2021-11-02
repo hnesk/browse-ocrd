@@ -279,7 +279,7 @@ class Document:
         return image_paths
 
     def get_default_image_group(self, preferred_image_file_groups: Optional[List[str]] = None) -> Optional[str]:
-        # TODO: use image_file_groups as a dict (and add the weights) / make it accesilbe for selection from page_browser
+        # TODO: use image_file_groups as a dict (and add the weights) / make it accessible for selection from page_browser
         image_file_groups = []
         for file_group, mimetype in self.file_groups_and_mimetypes:
             weight = 0.0
