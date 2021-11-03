@@ -1,4 +1,6 @@
-from gi.repository import Gtk, Gdk, GObject, Pango, Gio
+from math import log
+
+from gi.repository import Gtk, Gdk, GObject, Pango, Gio, GLib
 
 from typing import Any, Optional, Tuple, Dict, List, NamedTuple, FrozenSet
 
@@ -7,7 +9,8 @@ from PIL import Image
 from cairo import Context
 from xml.sax.saxutils import escape
 
-from ocrd_models.ocrd_page_generateds import AlternativeImageType
+from ocrd_models.ocrd_page import AlternativeImageType
+from shapely.geometry import Polygon
 
 from ocrd_browser.util.image import pil_to_pixbuf, pil_scale
 from ocrd_utils.constants import MIMETYPE_PAGE
@@ -20,7 +23,7 @@ from .base import (
 )
 from ..model import LazyPage, Page, Document
 from ..model.page_xml_renderer import PageXmlRenderer, RegionMap, Feature, Region
-from ..util.gtk import WhenIdle
+from ..util.gtk import WhenIdle, ActionRegistry
 
 
 class FeatureDescription:
@@ -34,40 +37,30 @@ class FeatureDescription:
         return len(page.xpath(self.xpath)) > 0
 
 
+def clamp(x: float, lower: float, upper: float) -> float:
+    return lower if x < lower else upper if x > upper else x
+
+
 class Transformation:
     """
     Encapsulates forward and inverse affine transform consisting of scaling and translation only
     """
-    # TODO: clip to image with page_image sizes
-    def __init__(self, scale: float, tx: float, ty: float):
+    def __init__(self, scale: float, tx: float, ty: float, cx: float, cy: float):
         self.scale = scale
         self.tx = tx
         self.ty = ty
+        self.cx = cx
+        self.cy = cy
 
-    @classmethod
-    def from_image(cls, page_image: Image.Image = Image, widget: Gtk.Image = None) -> Optional['Transformation']:
-        # TODO: move to PageXmlRenderer and pass page_image sizes for clipping
-        if page_image is None or widget is None or widget.get_pixbuf() is None:
-            return None
-
-        pb = widget.get_pixbuf()
-        size, _ = widget.get_allocated_size()
-
-        return Transformation(
-            page_image.width / pb.get_width(),
-            -(size.width - pb.get_width()) / 2,
-            -(size.height - pb.get_height()) / 2
-        )
-
-    def tranform_region(self, region: Region) -> Tuple[float, float, float, float]:
-        (l, t), (r, b) = self.inverse(*region.poly.bounds[0:2]), self.inverse(*region.poly.bounds[2:4])
+    def transform_region(self, poly: Polygon) -> Tuple[float, float, float, float]:
+        (l, t), (r, b) = self.inverse(*poly.bounds[0:2]), self.inverse(*poly.bounds[2:4])
         return l, t, r - l, b - t
 
     def transform(self, x: float, y: float) -> Tuple[float, float]:
-        return (x + self.tx) * self.scale, (y + self.ty) * self.scale
+        return clamp((x + self.tx) * self.scale, 0, self.cx), clamp((y + self.ty) * self.scale, 0, self.cy)
 
     def inverse(self, x: float, y: float) -> Tuple[float, float]:
-        return x / self.scale - self.tx, y / self.scale - self.ty
+        return clamp(x, 0, self.cx) / self.scale - self.tx, clamp(y, 0, self.cy) / self.scale - self.ty
 
 
 class ImageVersion(NamedTuple):
@@ -77,7 +70,7 @@ class ImageVersion(NamedTuple):
     conf: Optional[float] = None
 
     def as_row(self) -> Tuple[str, str, str]:
-        return ','.join(sorted(self.features)), self.path.stem, '{0:d}x{1:d}'.format(*self.size)
+        return ','.join(sorted(self.features)), self.path.stem, '{0:d}✕{1:d}'.format(*self.size)
 
     @classmethod
     def from_page(cls, doc: Document, page: Page) -> 'ImageVersion':
@@ -99,24 +92,23 @@ class ImageVersionSelector(Gtk.Box, Configurator):
     def __init__(self) -> None:
         super().__init__(visible=True, spacing=3)
         self.value = None
-        label = Gtk.Label(label='Image:', visible=True)
-        label = Gtk.Label(label='Image:', visible=True)
 
         self.versions = Gtk.ListStore(str, str, str)
         self.version_box = Gtk.ComboBox(visible=True, model=self.versions)
         self.version_box.set_id_column(0)
 
-        self.pack_start(label, False, True, 0)
+        # label = Gtk.Label(label='Image:', visible=True)
+        # self.pack_start(label, False, True, 0)
         self.pack_start(self.version_box, False, True, 0)
 
-        renderer = Gtk.CellRendererText()
-        renderer.props.ellipsize = Pango.EllipsizeMode.START
+        renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.START)
         self.version_box.pack_start(renderer, False)
         self.version_box.add_attribute(renderer, "text", 1)
+        self.set_tooltip_text('Image-Version')
 
-        renderer = Gtk.CellRendererText()
-        self.version_box.pack_start(renderer, False)
-        self.version_box.add_attribute(renderer, "text", 2)
+        # renderer = Gtk.CellRendererText()
+        # self.version_box.pack_start(renderer, False)
+        # self.version_box.add_attribute(renderer, "text", 2)
 
         self._change_handler = self.version_box.connect('changed', self.combo_box_changed)
 
@@ -241,8 +233,8 @@ class ViewPage(View):
         # Configurators
         self.file_group: Tuple[Optional[str], Optional[str]] = ('OCR-D-OCR-TESS-deu', MIMETYPE_PAGE)
         self.scale: float = -2.0
-        self.features: Feature = Feature.DEFAULT
         self.image_version: str = ''
+        self.features: Feature = Feature.DEFAULT
 
         # GTK
         self.image: Optional[Gtk.Image] = None
@@ -255,16 +247,28 @@ class ViewPage(View):
         self.t: Optional[Transformation] = None
         self.current_region: Region = None
         self.last_rescale: int = -100
+        self.viewport_size: Gdk.Rectangle
 
     def build(self) -> None:
         super(ViewPage, self).build()
 
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.PAGE))
-        self.add_configurator('image_version', ImageVersionSelector())
         self.add_configurator('scale', ImageZoomSelector(2.0, 0.05, -4.0, 2.0))
+        self.add_configurator('image_version', ImageVersionSelector())
         self.add_configurator('features', PageFeaturesSelector())
 
-        self.image = Gtk.Image(visible=True, icon_name='gtk-missing-image', icon_size=Gtk.IconSize.DIALOG)
+        actions = ActionRegistry()
+        actions.create(name='zoom', param_type=GLib.VariantType('i'), callback=self._on_zoom)
+        actions.create(name='zoom_to', param_type=GLib.VariantType('s'), callback=self._on_zoom_to)
+
+        app: Gtk.Application = self.window.get_application()
+        app.set_accels_for_action('view.zoom(1)', ['<Ctrl>plus'])
+        app.set_accels_for_action('view.zoom(-1)', ['<Ctrl>minus'])
+        app.set_accels_for_action('view.zoom_to::original', ['<Ctrl>0'])
+        app.set_accels_for_action('view.zoom_to::width', ['<Ctrl>numbersign'])
+        app.set_accels_for_action('view.zoom_to::page', ['<Ctrl><Alt>numbersign'])
+
+        self.image = Gtk.Image(visible=True, icon_name='gtk-missing-image', icon_size=Gtk.IconSize.DIALOG, valign=Gtk.Align.START)
 
         self.highlight = Gtk.DrawingArea(visible=True, valign=Gtk.Align.FILL, halign=Gtk.Align.FILL, can_focus=True, has_focus=True, focus_on_click=True, is_focus=True)
         self.highlight.add_events(Gdk.EventMask.SMOOTH_SCROLL_MASK | Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.POINTER_MOTION_MASK)
@@ -274,18 +278,7 @@ class ViewPage(View):
         self.highlight.connect('button-press-event', self._on_button)
         self.highlight.connect('motion-notify-event', self._on_mouse)
         self.highlight.connect('draw', self.draw_highlight)
-
-        action_group = Gio.SimpleActionGroup()
-        app: Gtk.Application = self.window.get_application()
-        zoom_in_action = Gio.SimpleAction(name='zoom_in')
-        zoom_in_action.connect('activate', self._on_zoom)
-        zoom_out_action = Gio.SimpleAction(name='zoom_out')
-        zoom_out_action.connect('activate', self._on_zoom)
-        action_group.add_action(zoom_in_action)
-        action_group.add_action(zoom_out_action)
-        app.set_accels_for_action('view.zoom_in', ['<Ctrl>plus'])
-        app.set_accels_for_action('view.zoom_out', ['<Ctrl>minus'])
-        self.highlight.insert_action_group("view", action_group)
+        self.highlight.insert_action_group("view", actions.for_widget)
 
         overlay = Gtk.Overlay(visible=True)
         overlay.add(self.image)
@@ -308,7 +301,6 @@ class ViewPage(View):
             WhenIdle.call(self.redraw, priority=50)
         if name == 'scale':
             WhenIdle.call(self.rescale)
-        self.highlight.grab_focus()
 
     @property
     def use_file_group(self) -> str:
@@ -328,6 +320,8 @@ class ViewPage(View):
                 got_result = True
         if not got_result:
             self.page_image, self.region_map = None, None
+        self.current_region = self.region_map.refetch(self.current_region)
+        self.update_transformation()
         WhenIdle.call(self.rescale, force=True)
 
     def rescale(self, force: bool = False) -> None:
@@ -339,19 +333,18 @@ class ViewPage(View):
                 self.image.set_from_pixbuf(pil_to_pixbuf(thumbnail))
         else:
             self.image.set_from_icon_name('missing-image', Gtk.IconSize.DIALOG)
-        self.t = Transformation.from_image(self.page_image, self.image)
-        self.highlight.queue_draw()
+        self.update_transformation()
 
     def _on_mouse(self, _widget: Gtk.Overlay, e: Gdk.EventButton) -> None:
         if not (self.t is None or self.region_map is None):
             tx, ty = self.t.transform(e.x, e.y)
             if self.region_map.find_region(tx, ty, ignore_regions=[]):
-                watch = Gdk.Cursor.new_from_name(self.container.get_display(), 'pointer')
-                self.container.get_window().set_cursor(watch)
+                cursor = Gdk.Cursor.new_from_name(self.container.get_display(), 'pointer')
+                self.container.get_window().set_cursor(cursor)
                 return
 
-        watch = Gdk.Cursor.new_from_name(self.container.get_display(), 'default')
-        self.container.get_window().set_cursor(watch)
+        cursor = Gdk.Cursor.new_from_name(self.container.get_display(), 'default')
+        self.container.get_window().set_cursor(cursor)
 
     def _on_button(self, _widget: Gtk.Overlay, e: Gdk.EventButton) -> bool:
         _widget.grab_focus()
@@ -360,7 +353,7 @@ class ViewPage(View):
             self.current_region = None
         else:
             tx, ty = self.t.transform(e.x, e.y)
-            self.current_region = self.region_map.find_region(tx, ty, ignore_regions=[])
+            self.current_region = self.region_map.find_region(tx, ty)
 
         if self.current_region is not old_region:
             self.invalidate_region(self.current_region)
@@ -383,6 +376,7 @@ class ViewPage(View):
         """
         Handles zoom in / zoom out on Ctrl+mouse wheel
         """
+        _widget.grab_focus()
         accel_mask = Gtk.accelerator_get_default_mod_mask()
         if event.state & accel_mask == Gdk.ModifierType.CONTROL_MASK:
             did_scroll, delta_x, delta_y = event.get_scroll_deltas()
@@ -393,16 +387,34 @@ class ViewPage(View):
         return False
 
     def _on_viewport_size_allocate(self, _sender: Gtk.Widget, rect: Gdk.Rectangle) -> None:
-        """
-        Nothing for now, needed when  we have "fit to width/height"
-        """
-        self.t = Transformation.from_image(self.page_image, self.image)
-        self.highlight.queue_draw()
+        self.viewport_size = rect
+        self.update_transformation()
 
-    def _on_zoom(self, action: Gio.SimpleAction, *args):
-        direction = -1 if action.get_name() == 'zoom_out' else 1
+    def _on_zoom(self, _action: Gio.SimpleAction, step_v: Optional[GLib.Variant] = None) -> None:
+        step = step_v.get_int32()
+        direction = Gtk.SpinType.STEP_FORWARD if step > 0 else Gtk.SpinType.STEP_BACKWARD
         scale_config: ImageZoomSelector = self.configurators['scale']
-        scale_config.set_value(self.scale + scale_config.scale.get_adjustment().get_step_increment() * direction)
+        scale_config.scale.spin(direction, abs(step) * scale_config.scale.get_adjustment().get_step_increment())
+        self.update_transformation()
+
+    def _on_zoom_to(self, _action: Gio.SimpleAction, to_v: Optional[GLib.Variant] = None) -> None:
+        to = to_v.get_string()
+        ratio = None
+        if to == 'original':
+            ratio = 1
+        elif to == 'width':
+            ratio = self.viewport_size.width / self.page_image.width
+        elif to == 'height':
+            ratio = self.viewport_size.height / self.page_image.height
+        elif to == 'page':
+            ratio = min(self.viewport_size.width / self.page_image.width, self.viewport_size.height / self.page_image.height)
+        elif to == 'viewport':
+            ratio = max(self.viewport_size.width / self.page_image.width, self.viewport_size.height / self.page_image.height)
+
+        if ratio:
+            scale_config: ImageZoomSelector = self.configurators['scale']
+            scale_config.scale.set_value(log(ratio * 0.99, scale_config.base))
+            self.update_transformation()
 
     def _query_tooltip(self, _image: Gtk.Image, x: int, y: int, _keyboard_mode: bool, tooltip: Gtk.Tooltip) -> bool:
         if self.t is None:
@@ -417,7 +429,7 @@ class ViewPage(View):
             content += '\n<tt><big>{}</big></tt>\n\n{}'.format(str(region), escape(region.text))
 
             if region.warnings:
-                content += '\n' + ('\n'.join(region.warnings))
+                content += '\n\n' + ('\n'.join(region.warnings))
 
         tooltip.set_markup(content)
 
@@ -439,15 +451,36 @@ class ViewPage(View):
 
     def invalidate_region(self, r: Region) -> None:
         if r:
-            x, y, w, h = self.t.tranform_region(r)
+            x, y, w, h = self.t.transform_region(r.poly.buffer(5))
             if w > 0 and h > 0:
                 self.highlight.queue_draw_area(x, y, w, h)
 
     def draw_highlight(self, _area: Gtk.DrawingArea, context: Context) -> None:
         if self.current_region and self.t:
-            context.set_source_rgba(0.75, 1, 0.5, 0.33)
+            poly: Polygon = self.current_region.poly
+            poly = poly.buffer(2, single_sided=True)
+            # TODO: 239, 134, 97, 0.7 taken from gtk.css, possible to get it from os????
+            context.set_source_rgba(239 / 255.0, 134 / 255.0, 97 / 255.0, 0.7)
+            context.set_line_width(clamp(self.configurators['scale'].get_exp() * 12, 0.5, 4))
             context.new_path()
-            for px, py in self.current_region.poly.exterior.coords:
-                context.line_to(*self.t.inverse(px, py))
+            # Nice idea, but didnt work with scrolling: context.set_matrix(Matrix(1.0/self.t.scale, 0, 0, 1.0/self.t.scale, -self.t.tx, -self.t.ty))
+            for coord in poly.exterior.coords:
+                context.line_to(*self.t.inverse(*coord))
             context.close_path()
-            context.fill()
+            context.stroke()
+
+    def update_transformation(self) -> None:
+        if self.page_image is None or self.image is None or self.image.get_pixbuf() is None:
+            return
+
+        pb = self.image.get_pixbuf()
+        size, _ = self.image.get_allocated_size()
+
+        self.t = Transformation(
+            self.page_image.width / pb.get_width(),
+            -(size.width - pb.get_width()) * 0.5,
+            -size.height * 0.0 + pb.get_height() * 0.0,
+            self.page_image.width,
+            self.page_image.height
+        )
+        self.highlight.queue_draw()

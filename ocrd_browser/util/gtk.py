@@ -2,25 +2,25 @@ from gi.repository import Gio, GLib, Gtk
 
 from typing import Callable, Dict, Optional, Set, Any
 
-ActionCallback = Optional[Callable[[Gio.SimpleAction, str], None]]
+ActionCallback = Optional[Callable[[Gio.SimpleAction, Any], None]]
 
 
-def print_event(*args, **kwargs):
+def print_event(*args: Any, **kwargs: Any) -> None:
     """
     Print out all arguments for event exploration, usage: gtk_widget.connect(gtk_event_name, print_event)
     """
-    def nice(e):
+    def nice(e: Any) -> Any:
         if isinstance(e, Gtk.Widget):
             return e.get_path().to_string()
         else:
             return e
 
-    print(list(map(nice,args)), kwargs)
+    print(list(map(nice, args)), kwargs)
 
 
 class ActionRegistry:
-    def __init__(self, for_widget: Gio.ActionMap):
-        self.for_widget = for_widget
+    def __init__(self, for_widget: Optional[Gio.ActionMap] = None):
+        self.for_widget = for_widget if for_widget else Gio.SimpleActionGroup()
         self.actions: Dict[str, Gio.SimpleAction] = {}
 
     def create(self, name: str, callback: ActionCallback = None,

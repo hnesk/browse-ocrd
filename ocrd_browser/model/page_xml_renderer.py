@@ -241,6 +241,13 @@ class RegionMap(RegionBase):
     def __init__(self) -> None:
         super().__init__()
         self.nodes_by_region: Dict[Region, RegionNode] = {}
+        self.region_by_id: Dict[str, Region] = {}
+
+    def refetch(self, r: Region) -> Optional[Region]:
+        return self.get(r.id) if r else None
+
+    def get(self, id_: str) -> Optional[Region]:
+        return self.region_by_id.get(id_, None)
 
     def append(self, node: RegionNode) -> None:
         """
@@ -249,6 +256,9 @@ class RegionMap(RegionBase):
         The Operations class will iterate in breadth-first order
         """
         self.nodes_by_region[node.region] = node
+        if node.region.id:
+            self.region_by_id[node.region.id] = node.region
+
         if node.region.parent in self.nodes_by_region:
             parent_region = self.nodes_by_region[node.region.parent]
             parent_region.append(node)

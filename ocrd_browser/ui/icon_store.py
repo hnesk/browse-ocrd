@@ -25,7 +25,7 @@ class LazyLoadingListStore(Gtk.ListStore):
     def start_loading(self) -> None:
         self.futures = {}
         self.submit_all()
-        GLib.idle_add(self._collect_workers().__next__, priority=GLib.PRIORITY_DEFAULT_IDLE)
+        GLib.idle_add(self._collect_workers().__next__, priority=GLib.PRIORITY_LOW)
 
     def submit_all(self) -> bool:
         pool = ThreadPoolExecutor()
@@ -80,5 +80,5 @@ class LazyLoadingListStore(Gtk.ListStore):
                     row[-1] = self.hash_row(row)
                 yield True
         # Futures are finished for now, check back every 50ms if there is something new
-        GLib.timeout_add(50, self._collect_workers().__next__, priority=GLib.PRIORITY_DEFAULT_IDLE)
+        GLib.timeout_add(50, self._collect_workers().__next__, priority=GLib.PRIORITY_LOW)
         yield False

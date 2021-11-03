@@ -5,6 +5,7 @@ from typing import List, Tuple, Any, Optional, Dict, cast
 from enum import Enum
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
 from ocrd_browser.model import Document, Page
+from ocrd_browser.util.gtk import WhenIdle
 
 
 class Configurator(Gtk.Widget):
@@ -93,7 +94,7 @@ class View:
                 for configurator in self.configurators.values():
                     configurator.set_page(self.current)
 
-        self.redraw()
+        WhenIdle.call(self.redraw)
 
     def redraw(self) -> None:
         pass
@@ -135,21 +136,20 @@ class PageQtySelector(Gtk.Box, Configurator):
 class ImageZoomSelector(Gtk.Box, Configurator):
 
     def __init__(self, base: float = 2, step: float = 0.1, min_: float = -4.0, max_: float = 2.0) -> None:
-        super().__init__(visible=True, spacing=3)
+        super().__init__(visible=True, spacing=2)
         self.value = None
-
-        label = Gtk.Label(label='Zoom:', visible=True)
 
         self.base = base
         self.scale = Gtk.SpinButton(visible=True, max_length=5, width_chars=5, max_width_chars=5, numeric=True,
                                     digits=2)
-        self.scale.set_tooltip_text('log{:+.2f} scale factor for viewing images'.format(base))
+        self.scale.set_tooltip_text('Zoom: log{:+.0f} scale factor for viewing images'.format(base))
         # noinspection PyCallByClass,PyArgumentList
         self.scale.set_adjustment(Gtk.Adjustment.new(0.0, min_, max_, step, 0, 0))
         self.scale.set_snap_to_ticks(False)
         self.scale.connect('value-changed', self.value_changed)
 
-        self.pack_start(label, False, True, 0)
+        # label = Gtk.Label(label='Zoom:', visible=True)
+        # self.pack_start(label, False, True, 0)
         self.pack_start(self.scale, False, True, 0)
 
     def get_exp(self) -> float:
@@ -173,13 +173,13 @@ class ImageZoomSelector(Gtk.Box, Configurator):
 class FileGroupSelector(Gtk.Box, Configurator):
 
     def __init__(self, filter_: Optional['FileGroupFilter'] = None, show_mime: bool = False, show_ext: bool = True):
-        super().__init__(visible=True, spacing=3)
+        super().__init__(visible=True, spacing=2)
         self.value = None
-        label = Gtk.Label(label='Group:', visible=True)
 
         self.groups = FileGroupComboBox(filter_, show_mime, show_ext)
 
-        self.pack_start(label, False, True, 0)
+        # label = Gtk.Label(label='Group:', visible=True)
+        # self.pack_start(label, False, True, 0)
         self.pack_start(self.groups, False, True, 0)
 
         self.groups.connect('changed', self.combo_box_changed)
@@ -216,7 +216,7 @@ class FileGroupComboBox(Gtk.ComboBox):
     COLUMN_EXT = 3
 
     def __init__(self, filter_: Optional['FileGroupFilter'] = None, show_mime: bool = False, show_ext: bool = True):
-        Gtk.ComboBox.__init__(self, visible=True)
+        Gtk.ComboBox.__init__(self, visible=True, has_tooltip=True, popup_fixed_width=False)
         self.set_model(Gtk.ListStore(str, str, str, str))
         self.filter = filter_
         self.set_id_column(self.COLUMN_ID)
@@ -227,8 +227,6 @@ class FileGroupComboBox(Gtk.ComboBox):
         if show_ext:
             self.add_renderer(self.COLUMN_EXT)
 
-        self.props.has_tooltip = True
-        self.props.popup_fixed_width = False
         self.connect('query-tooltip', self.set_tooltip)
 
     def set_tooltip(self, _widget: Gtk.Widget, _x: int, _y: int, _keyboard_mode: bool, tooltip: Gtk.Tooltip) -> bool:
@@ -236,7 +234,7 @@ class FileGroupComboBox(Gtk.ComboBox):
         if len(model) > 0:
             row = self.get_model()[self.get_active()][:]
             phs = {'fileGrp': row[self.COLUMN_GROUP], 'ext': row[self.COLUMN_EXT], 'mime': row[self.COLUMN_MIME]}
-            tooltip.set_text('{fileGrp} (Mime-Type: {mime})'.format(**phs))
+            tooltip.set_text('fileGrp: {fileGrp} (Mime-Type: {mime})'.format(**phs))
             return True
         return False
 
@@ -245,8 +243,7 @@ class FileGroupComboBox(Gtk.ComboBox):
         # self.set_active(0)
 
     def add_renderer(self, column: int, width: int = None) -> Gtk.CellRendererText:
-        renderer = Gtk.CellRendererText()
-        renderer.props.ellipsize = Pango.EllipsizeMode.MIDDLE
+        renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.MIDDLE)
         if width:
             renderer.props.width = width
         self.pack_start(renderer, False)

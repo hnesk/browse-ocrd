@@ -113,7 +113,6 @@ class LazyPage(Page):
             log.exception(e)
             page_image, page_coords, page_image_info = None, None, None
 
-        # print((page_coords, page_image_info))
         return page_image, page_coords, page_image_info
 
     """
