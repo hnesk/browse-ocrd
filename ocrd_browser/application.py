@@ -9,7 +9,6 @@ from ocrd_browser.view import ViewRegistry
 
 
 class OcrdBrowserApplication(Gtk.Application):
-    # TODO: implement focus for views and keyboard accelerators for views
     # TODO: Parse arguments (with Gtk or click) to open certain views by mets+page_id+view(view_configuration_dict) and deep filename e.g.
     # OCR-D-OCR-TESS-frk-SEG-LINE-tesseract-ocropy-DEWARP/OCR-D-OCR-TESS-frk-SEG-LINE-tesseract-ocropy-DEWARP_0001.xml ->
     # file_grp => OCR-D-OCR-TESS-frk-SEG-LINE-tesseract-ocropy-DEWARP /     <mets:fileGrp USE="OCR-D-OCR-TESS-frk-SEG-LINE-tesseract-ocropy-DEWARP"><mets:file MIMETYPE="application/vnd.prima.page+xml" ID="OCR-D-OCR-TESS-frk-SEG-LINE-tesseract-ocropy-DEWARP_0001"><mets:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="FILE" xlink:href="OCR-D-OCR-TESS-frk-SEG-LINE-tesseract-ocropy-DEWARP/OCR-D-OCR-TESS-frk-SEG-LINE-tesseract-ocropy-DEWARP_0001.xml"/></mets:file>
@@ -17,7 +16,7 @@ class OcrdBrowserApplication(Gtk.Application):
     # FILEID => OCR-D-OCR-TESS-frk-SEG-LINE-tesseract-ocropy-DEWARP_0001 /  <mets:fptr FILEID="OCR-D-OCR-TESS-frk-SEG-LINE-tesseract-ocropy-DEWARP_0001"/>
     # page.id => PHYS_0017 / <mets:div TYPE="page" ID="PHYS_0017">
     # mets.xml + page.id + view_by_mimetype(mimetype)(file_grp = (file_grp,mimetype))
-    # TODO: Test appliacation startup for all kinds of mets.xml (not necessarily OCR-D mets.xml) and views without crashes
+    # TODO: Test application startup for all kinds of mets.xml (not necessarily OCR-D mets.xml) and views without crashes
     def __init__(self) -> None:
         Gtk.Application.__init__(self, application_id='org.readmachine.ocrd-browser',
                                  flags=Gio.ApplicationFlags.HANDLES_OPEN)
@@ -38,6 +37,7 @@ class OcrdBrowserApplication(Gtk.Application):
     def load_css(self) -> None:
         css = Gtk.CssProvider()
         css.load_from_resource('/org/readmachine/ocrd-browser/css/theme.css')
+        # noinspection PyArgumentList
         Gtk.StyleContext().add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_USER)
         # css = Gtk.CssProvider()
         # css.load_from_path('/home/jk/PycharmProjects/ocrd-browser/gresources/css/test.css')

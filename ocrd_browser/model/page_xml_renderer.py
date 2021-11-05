@@ -21,7 +21,7 @@ from shapely.validation import explain_validity
 from shapely import prepared
 
 RegionWithCoords = Union[RegionType, TextLineType, WordType, GlyphType, GraphemeType, PrintSpaceType, BorderType]
-__all__ = ['PageXmlRenderer', 'RegionMap', 'Feature']
+__all__ = ['PageXmlRenderer', 'RegionMap', 'Feature', 'Region']
 
 CLASSES = {
     '': 'FFFFFF00',
@@ -119,8 +119,8 @@ class Region:
     """
     def __init__(self, region: RegionWithCoords) -> None:
         self.region = region
-        self._poly: Polygon = None
-        self._prep_poly: prepared.PreparedGeometry = None
+        self._poly: Optional[Polygon] = None
+        self._prep_poly: Optional[prepared.PreparedGeometry] = None
         self.warnings: List[str] = []
 
     @property
@@ -372,6 +372,7 @@ class RegionFactory:
     @staticmethod
     def make_valid(polygon: Polygon) -> Tuple[Polygon, float]:
         """Ensures shapely.geometry.Polygon object is valid by repeated simplification"""
+        tolerance = 1
         for split in range(1, len(polygon.exterior.coords) - 1):
             if polygon.is_valid or polygon.simplify(polygon.area).is_valid:
                 break
