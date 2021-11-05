@@ -229,7 +229,7 @@ class ViewPage(View):
         self.current: Optional[LazyPage] = None
 
         # Configurators
-        self.file_group: Tuple[Optional[str], Optional[str]] = ('OCR-D-OCR-TESS-deu', MIMETYPE_PAGE)
+        self.file_group: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
         self.scale: float = -2.0
         self.image_version: str = ''
         self.features: Feature = Feature.DEFAULT
