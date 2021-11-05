@@ -315,10 +315,10 @@ class ViewPage(View):
                 renderer = PageXmlRenderer(page_image, page_coords, self.current.id, self.features)
                 renderer.render_all(self.current.pc_gts)
                 self.page_image, self.region_map = renderer.get_result()
+                self.current_region = self.region_map.refetch(self.current_region)
                 got_result = True
         if not got_result:
             self.page_image, self.region_map = None, None
-        self.current_region = self.region_map.refetch(self.current_region)
         self.update_transformation()
         WhenIdle.call(self.rescale, force=True)
 
