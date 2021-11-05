@@ -1,8 +1,11 @@
+from math import log
+
 from gi.repository import Gtk, Pango, GObject
 
 from typing import List, Tuple, Any, Optional, Dict, cast
 
 from enum import Enum
+
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
 from ocrd_browser.model import Document, Page
 from ocrd_browser.util.gtk import WhenIdle
@@ -25,7 +28,7 @@ class Configurator(Gtk.Widget):
 
 
 class View:
-    # TODO: Views should announce which mimetype they can handle and be only available if it there is matching imetype in Document, also they should announce if they can handle a certein Page
+    # TODO: Views should announce which mimetype they can handle and be only available if it there is matching mimetype in Document, also they should announce if they can handle a certain Page
     # noinspection PyTypeChecker
     def __init__(self, name: str, window: Gtk.Window):
         self.name: str = name
@@ -169,6 +172,35 @@ class ImageZoomSelector(Gtk.Box, Configurator):
         self.scale.set_tooltip_text(
             '{:.2%} / log{:.2f} scale factor for viewing images'.format(self.get_exp(), self.base))
 
+    def zoom_by(self, steps: int) -> None:
+        """
+        Zooms in(`steps` > 0) or out(`steps` < 0) by `steps` steps
+        """
+        direction = Gtk.SpinType.STEP_FORWARD if steps > 0 else Gtk.SpinType.STEP_BACKWARD
+        self.scale.spin(direction, abs(steps) * self.scale.get_adjustment().get_step_increment())
+
+    def zoom_to(self, to: str, width_ratio: float, height_ratio: float) -> None:
+        """
+        Set zoom to one of
+            'original': Original Size
+            'width': Fit to width
+            'height': Fit to height
+            'page': Fit to show whole page
+            'viewport': Fit to use whole viewport
+        """
+        lookup = {
+            'original': lambda: 1,
+            'width': lambda: width_ratio,
+            'height': lambda: height_ratio,
+            'page': lambda: min(width_ratio, height_ratio),
+            'viewport': lambda: max(width_ratio, height_ratio)
+        }
+        if to in lookup:
+            ratio = lookup[to]()
+            self.set_value(log(ratio, self.base))
+        else:
+            raise ValueError('to was "{}", but needs to be one of {}'.format(to, ', '.join(lookup.keys())))
+
 
 class FileGroupSelector(Gtk.Box, Configurator):
 
@@ -305,6 +337,7 @@ class CloseButton(Gtk.Button):
         self.set_detailed_action_name('win.close_view("{}")'.format(view_name))
         self.set_relief(Gtk.ReliefStyle.NONE)
         self.set_always_show_image(True)
+        # noinspection PyArgumentList
         self.set_image(Gtk.Image.new_from_icon_name('window-close-symbolic', Gtk.IconSize.SMALL_TOOLBAR))
 
 
@@ -316,4 +349,5 @@ class SplitViewButton(Gtk.Button):
         self.set_detailed_action_name('win.split_view(("{}","empty", {}))'.format(view_name, 'true' if vertical else 'false'))
         self.set_relief(Gtk.ReliefStyle.NONE)
         self.set_always_show_image(True)
+        # noinspection PyArgumentList
         self.set_image(Gtk.Image.new_from_icon_name('split-{}'.format(direction), Gtk.IconSize.SMALL_TOOLBAR))

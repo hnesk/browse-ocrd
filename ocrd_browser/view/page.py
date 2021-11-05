@@ -1,5 +1,3 @@
-from math import log
-
 from gi.repository import Gtk, Gdk, GObject, Pango, Gio, GLib
 
 from typing import Any, Optional, Tuple, Dict, List, NamedTuple, FrozenSet
@@ -140,7 +138,7 @@ class ImageVersionSelector(Gtk.Box, Configurator):
                 self.version_box.set_active_id(self.value)
 
     def combo_box_changed(self, combo: Gtk.ComboBox) -> None:
-        self.emit('changed', self.version_box.get_active_id())
+        self.emit('changed', combo.get_active_id())
 
 
 class PageFeaturesSelector(Gtk.Box, Configurator):
@@ -228,7 +226,7 @@ class ViewPage(View):
 
     def __init__(self, name: str, window: Gtk.Window):
         super().__init__(name, window)
-        self.current: LazyPage = None
+        self.current: Optional[LazyPage] = None
 
         # Configurators
         self.file_group: Tuple[Optional[str], Optional[str]] = ('OCR-D-OCR-TESS-deu', MIMETYPE_PAGE)
@@ -245,7 +243,7 @@ class ViewPage(View):
         self.page_image: Optional[Image.Image] = None
         self.region_map: Optional[RegionMap] = None
         self.t: Optional[Transformation] = None
-        self.current_region: Region = None
+        self.current_region: Optional[Region] = None
         self.last_rescale: int = -100
         self.viewport_size: Gdk.Rectangle
 
@@ -258,12 +256,12 @@ class ViewPage(View):
         self.add_configurator('features', PageFeaturesSelector())
 
         actions = ActionRegistry()
-        actions.create(name='zoom', param_type=GLib.VariantType('i'), callback=self._on_zoom)
+        actions.create(name='zoom_by', param_type=GLib.VariantType('i'), callback=self._on_zoom_by)
         actions.create(name='zoom_to', param_type=GLib.VariantType('s'), callback=self._on_zoom_to)
 
         app: Gtk.Application = self.window.get_application()
-        app.set_accels_for_action('view.zoom(1)', ['<Ctrl>plus'])
-        app.set_accels_for_action('view.zoom(-1)', ['<Ctrl>minus'])
+        app.set_accels_for_action('view.zoom_by(1)', ['<Ctrl>plus'])
+        app.set_accels_for_action('view.zoom_by(-1)', ['<Ctrl>minus'])
         app.set_accels_for_action('view.zoom_to::original', ['<Ctrl>0'])
         app.set_accels_for_action('view.zoom_to::width', ['<Ctrl>numbersign'])
         app.set_accels_for_action('view.zoom_to::page', ['<Ctrl><Alt>numbersign'])
@@ -339,10 +337,12 @@ class ViewPage(View):
         if not (self.t is None or self.region_map is None):
             tx, ty = self.t.transform(e.x, e.y)
             if self.region_map.find_region(tx, ty, ignore_regions=[]):
+                # noinspection PyArgumentList
                 cursor = Gdk.Cursor.new_from_name(self.container.get_display(), 'pointer')
                 self.container.get_window().set_cursor(cursor)
                 return
 
+        # noinspection PyArgumentList
         cursor = Gdk.Cursor.new_from_name(self.container.get_display(), 'default')
         self.container.get_window().set_cursor(cursor)
 
@@ -390,31 +390,19 @@ class ViewPage(View):
         self.viewport_size = rect
         self.update_transformation()
 
-    def _on_zoom(self, _action: Gio.SimpleAction, step_v: Optional[GLib.Variant] = None) -> None:
-        step = step_v.get_int32()
-        direction = Gtk.SpinType.STEP_FORWARD if step > 0 else Gtk.SpinType.STEP_BACKWARD
+    def _on_zoom_by(self, _action: Gio.SimpleAction, steps_v: Optional[GLib.Variant] = None) -> None:
         scale_config: ImageZoomSelector = self.configurators['scale']
-        scale_config.scale.spin(direction, abs(step) * scale_config.scale.get_adjustment().get_step_increment())
+        scale_config.zoom_by(steps_v.get_int32())
         self.update_transformation()
 
     def _on_zoom_to(self, _action: Gio.SimpleAction, to_v: Optional[GLib.Variant] = None) -> None:
-        to = to_v.get_string()
-        ratio = None
-        if to == 'original':
-            ratio = 1
-        elif to == 'width':
-            ratio = self.viewport_size.width / self.page_image.width
-        elif to == 'height':
-            ratio = self.viewport_size.height / self.page_image.height
-        elif to == 'page':
-            ratio = min(self.viewport_size.width / self.page_image.width, self.viewport_size.height / self.page_image.height)
-        elif to == 'viewport':
-            ratio = max(self.viewport_size.width / self.page_image.width, self.viewport_size.height / self.page_image.height)
-
-        if ratio:
-            scale_config: ImageZoomSelector = self.configurators['scale']
-            scale_config.scale.set_value(log(ratio * 0.99, scale_config.base))
-            self.update_transformation()
+        scale_config: ImageZoomSelector = self.configurators['scale']
+        scale_config.zoom_to(
+            to_v.get_string(),
+            self.viewport_size.width / self.page_image.width,
+            self.viewport_size.height / self.page_image.height
+        )
+        self.update_transformation()
 
     def _query_tooltip(self, _image: Gtk.Image, x: int, y: int, _keyboard_mode: bool, tooltip: Gtk.Tooltip) -> bool:
         if self.t is None:
