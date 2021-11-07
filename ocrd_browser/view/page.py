@@ -334,13 +334,15 @@ class ViewPage(View):
         self.update_transformation()
 
     def _on_mouse(self, _widget: Gtk.Overlay, e: Gdk.EventButton) -> None:
-        if not (self.t is None or self.region_map is None):
-            tx, ty = self.t.transform(e.x, e.y)
-            if self.region_map.find_region(tx, ty, ignore_regions=[]):
-                # noinspection PyArgumentList
-                cursor = Gdk.Cursor.new_from_name(self.container.get_display(), 'pointer')
-                self.container.get_window().set_cursor(cursor)
-                return
+        if self.t is None or self.region_map is None:
+            return
+
+        tx, ty = self.t.transform(e.x, e.y)
+        if self.region_map.find_region(tx, ty, ignore_regions=[]):
+            # noinspection PyArgumentList
+            cursor = Gdk.Cursor.new_from_name(self.container.get_display(), 'pointer')
+            self.container.get_window().set_cursor(cursor)
+            return
 
         # noinspection PyArgumentList
         cursor = Gdk.Cursor.new_from_name(self.container.get_display(), 'default')
@@ -405,7 +407,7 @@ class ViewPage(View):
         self.update_transformation()
 
     def _query_tooltip(self, _image: Gtk.Image, x: int, y: int, _keyboard_mode: bool, tooltip: Gtk.Tooltip) -> bool:
-        if self.t is None:
+        if self.t is None or self.region_map is None:
             return False
 
         tx, ty = self.t.transform(x, y)
@@ -430,7 +432,7 @@ class ViewPage(View):
         if self.current_region:
             for i, r in enumerate(reversed(self.current_region.breadcrumbs())):
                 if i:
-                    self.status_bar.pack_start(Gtk.Separator(visible=True, orientation=Gtk.Orientation.HORIZONTAL), False, False, 5)
+                    self.status_bar.pack_start(Gtk.Separator(visible=True, orientation=Gtk.Orientation.HORIZONTAL), False, False, 0)
 
                 label = Gtk.Label(visible=True, label=str(r), ellipsize=Pango.EllipsizeMode.MIDDLE, max_width_chars=20, tooltip_text=str(r))
                 self.status_bar.pack_start(label, False, False, 5)
@@ -438,18 +440,20 @@ class ViewPage(View):
             self.status_bar.pack_start(Gtk.Label(visible=True, label=' '), False, False, 2)
 
     def invalidate_region(self, r: Region) -> None:
-        if r:
-            x, y, w, h = self.t.transform_region(r.poly.buffer(5))
-            if w > 0 and h > 0:
-                self.highlight.queue_draw_area(x, y, w, h)
+        if self.t is None or r is None:
+            return
+
+        x, y, w, h = self.t.transform_region(r.poly.buffer(5))
+        if w > 0 and h > 0:
+            self.highlight.queue_draw_area(x, y, w, h)
 
     def draw_highlight(self, _area: Gtk.DrawingArea, context: Context) -> None:
         if self.current_region and self.t:
             poly: Polygon = self.current_region.poly
-            poly = poly.buffer(2, single_sided=True)
+            poly = poly.buffer(1, single_sided=True)
             # TODO: 239, 134, 97, 0.7 taken from gtk.css, possible to get it from os????
             context.set_source_rgba(239 / 255.0, 134 / 255.0, 97 / 255.0, 0.7)
-            context.set_line_width(clamp(self.configurators['scale'].get_exp() * 12, 0.5, 4))
+            context.set_line_width(clamp(self.configurators['scale'].get_exp() * 12, 0.5, 5))
             context.new_path()
             # Nice idea, but didnt work with scrolling: context.set_matrix(Matrix(1.0/self.t.scale, 0, 0, 1.0/self.t.scale, -self.t.tx, -self.t.ty))
             for coord in poly.exterior.coords:
