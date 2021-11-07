@@ -25,7 +25,7 @@ class LazyLoadingListStore(Gtk.ListStore):
     def start_loading(self) -> None:
         self.futures = {}
         self.submit_all()
-        GLib.idle_add(self._collect_workers().__next__, priority=GLib.PRIORITY_LOW)
+        GLib.timeout_add(10, self._collect_workers().__next__, priority=GLib.PRIORITY_LOW)
 
     def submit_all(self) -> bool:
         pool = ThreadPoolExecutor()
