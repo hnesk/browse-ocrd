@@ -57,6 +57,24 @@ class Page:
 
     @property
     def xml_root(self) -> Element:
+        if self.pc_gts.gds_elementtree_node_ is None:
+            from ocrd_models.constants import NAMESPACES
+            from ocrd_models.ocrd_page_generateds import parsexmlstring_
+            from io import StringIO
+            sio = StringIO()
+
+            self.pc_gts.export(
+                outfile=sio,
+                level=0,
+                name_='PcGts',
+                namespaceprefix_='pc:',
+                namespacedef_='xmlns:pc="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="%s %s/pagecontent.xsd"' % (
+                    NAMESPACES['page'],
+                    NAMESPACES['page'],
+                    NAMESPACES['page']
+                ))
+            self.pc_gts.gds_elementtree_node_ = parsexmlstring_(sio.getvalue())  # pylint: disable=undefined-variable
+
         return self.pc_gts.gds_elementtree_node_
 
 
@@ -64,6 +82,7 @@ class LazyPage(Page):
     def __init__(self, document: Any, id_: str, file_group: str):
         self.document = document
         self._id = id_
+        self._pc_gts = None
         self.file_group = file_group
 
     @property
@@ -94,12 +113,14 @@ class LazyPage(Page):
 
     @property
     def pc_gts(self) -> PcGtsType:
-        if self.page_file:
-            return self.document.page_for_file(self.page_file)
-        else:
-            image_files = self.image_files
-            if len(image_files) > 0:
-                return self.document.page_for_file(image_files[0])
+        if self._pc_gts is None:
+            if self.page_file:
+                self._pc_gts = self.document.page_for_file(self.page_file)
+            else:
+                image_files = self.image_files
+                if len(image_files) > 0:
+                    self._pc_gts = self.document.page_for_file(image_files[0])
+        return self._pc_gts
 
     def get_image(self, feature_selector: Union[str, Set[str]] = '', feature_filter: Union[str, Set[str]] = '') -> Tuple[Image, Dict[str, Any], OcrdExif]:
         log = getLogger('ocrd_browser.model.page.LazyPage.get_image')
