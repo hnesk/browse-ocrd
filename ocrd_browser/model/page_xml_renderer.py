@@ -3,7 +3,7 @@ Page-XML rendering object
 
 This is heavily based on ocrd_segment.extract_pages (https://github.com/OCR-D/ocrd_segment/blob/master/ocrd_segment/extract_pages.py)
 """
-from math import sin, cos, radians
+from math import sin, cos, radians, inf
 from enum import IntFlag
 from typing import Optional, Dict, Any, Union, List, Iterator, Tuple, Type, cast
 from collections import defaultdict
@@ -325,7 +325,7 @@ class RegionFactory:
     def __init__(self, coords: Dict[str, Any], page_id: str = '<unknown>', logger: Logger = None):
         self.coords = coords
         self.page_id = page_id
-        self.logger = logger or getLogger(self.__class__.__name__)
+        self.logger = logger or getLogger(self.__class__.__module__ + '.' + self.__class__.__name__)
 
     def create(self, region_ds: RegionWithCoords) -> Optional[Region]:
         if not region_ds:
@@ -354,7 +354,7 @@ class RegionFactory:
         if poly.length < 4:
             warnings.append(str('has too few points'))
 
-        if poly.is_empty:
+        if poly.is_empty or not poly.area > 0:
             self.logger.error('Page "%s" @ %s %s', self.page_id, str(region), 'is empty')
             return None
 
@@ -384,7 +384,9 @@ class RegionFactory:
                 break
             # simplification may require a larger tolerance
             polygon = polygon.simplify(tolerance)
-        return polygon, tolerance / polygon.area
+
+        a = polygon.area
+        return polygon, tolerance / a if a > 0 else inf
 
 
 class PageXmlRenderer:
@@ -399,6 +401,7 @@ class PageXmlRenderer:
             self.canvas = Image.new(mode='RGBA', size=canvas.size, color='#FFFFFF00')
 
         self.region_factory = RegionFactory(coords, page_id, logger)
+        print(coords)
 
         self.colors: Dict[str, str] = defaultdict(lambda: 'FF0000FF')
         self.colors.update(colors or CLASSES)
@@ -450,9 +453,9 @@ class PageXmlRenderer:
         draw.line([(p1[0] + lf * right[0], p1[1] + lf * right[1]), p1], fill=color, width=line_width)
 
     def render_type(self, region_ds: RegionWithCoords) -> None:
-        region = self.region_factory.create(region_ds)
-        if region:
-            if self.features.should_render(region_ds):
+        if self.features.should_render(region_ds):
+            region = self.region_factory.create(region_ds)
+            if region:
                 color = self.colors[region.region_type]
                 if self.features & Feature.WARNINGS and region.warnings:
                     op = PolygonOperation(region, '#FF00003E', '#FF000076')
@@ -460,8 +463,8 @@ class PageXmlRenderer:
                     op = PolygonOperation(region, '#' + color[:6] + '1E', '#' + color[:6] + '96')
                 self.operations.append(op)
 
-            if isinstance(region.region, TextRegionType):
-                self.render_text_region(region.region)
+        if isinstance(region_ds, TextRegionType):
+            self.render_text_region(region_ds)
 
     def render_text_region(self, text_region: TextRegionType) -> None:
         line: TextLineType
