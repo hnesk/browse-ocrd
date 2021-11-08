@@ -29,7 +29,7 @@ class ViewXml(View):
 
     def build(self) -> None:
         super().build()
-        self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.PAGE))
+        self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.XML))
         button = Gtk.Button.new_with_label('PageViewer')
         button.connect('clicked', self.open_jpageviewer)
         button.set_visible(True)

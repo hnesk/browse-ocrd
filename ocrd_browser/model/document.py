@@ -1,12 +1,12 @@
 import atexit
 import errno
 import os
-import re
 import shutil
 from functools import wraps
 
 from ocrd import Workspace, Resolver
-from ocrd_browser.model import Page
+from ocrd_browser.model.page import Page, LazyPage
+from ocrd_browser.util.file_groups import best_file_group
 from ocrd_browser.util.image import add_dpi_to_png_buffer
 from ocrd_browser.util.streams import SilencedStreams
 from ocrd_modelfactory import page_from_file
@@ -279,28 +279,8 @@ class Document:
         return image_paths
 
     def get_default_image_group(self, preferred_image_file_groups: Optional[List[str]] = None) -> Optional[str]:
-        image_file_groups = []
-        for file_group, mimetype in self.file_groups_and_mimetypes:
-            weight = 0.0
-            if mimetype.split('/')[0] == 'image':
-                # prefer images
-                weight += 0.5
-            if preferred_image_file_groups:
-                for i, preferred_image_file_group in enumerate(preferred_image_file_groups):
-                    if re.fullmatch(preferred_image_file_group, file_group):
-                        # prefer matches earlier in the list
-                        weight += (len(preferred_image_file_groups) - i)
-                        break
-            # prefer shorter `file_group`s
-            weight -= len(file_group) * 0.00001
-            image_file_groups.append((file_group, weight))
-        # Sort by weight
-        image_file_groups = sorted(image_file_groups, key=lambda e: e[1], reverse=True)
-
-        if len(image_file_groups) > 0:
-            return image_file_groups[0][0]
-        else:
-            return None
+        best_group = best_file_group(self.file_groups_and_mimetypes, preferred_image_file_groups, [r'image/.*'], cutoff=0)
+        return best_group[0] if best_group else None
 
     def get_unused_page_id(self, template_page_id: str = 'PAGE_{page_nr}') -> Tuple[str, int]:
         """
@@ -335,7 +315,7 @@ class Document:
         index = index - index % page_qty
         return self.page_ids[index:index + page_qty]
 
-    def page_for_id(self, page_id: str, file_group: str = None) -> Optional['Page']:
+    def _page_for_id_eager(self, page_id: str, file_group: str = None) -> Optional['Page']:
         """
         Find the Page object for page_id and file_group, including any PAGE-XML file and image files.
 
@@ -371,6 +351,20 @@ class Document:
 
         return Page(page_id, file, pcgts, image_files, images)
 
+    def _page_for_id_lazy(self, page_id: str, file_group: str = None) -> Optional['Page']:
+        log = getLogger('ocrd_browser.model.document.Document.page_for_id')
+        if not page_id:
+            return None
+        page = LazyPage(self, page_id, file_group)
+        if not page.file:
+            log.warning("No PAGE-XML and no image for page '{}' in fileGrp '{}'".format(page_id, file_group))
+            return None
+
+        return page
+
+    # page_for_id = _page_for_id_eager
+    page_for_id = _page_for_id_lazy
+
     def files_for_page_id(self, page_id: str, file_group: str = None, mimetype: str = None) -> List[OcrdFile]:
         with pushd_popd(self.workspace.directory):
             files: List[OcrdFile] = self.workspace.mets.find_files(fileGrp=file_group, pageId=page_id,
@@ -379,15 +373,14 @@ class Document:
             return files
 
     def page_for_file(self, page_file: OcrdFile) -> PcGtsType:
-        with pushd_popd(self.workspace.directory):
-            # Silence Warning: Value "ocrd-cis-word-alignment" ... does not match xsd enumeration restriction on TextDataTypeSimpleType
-            with SilencedStreams(False, True):
-                return page_from_file(page_file)
+        # cd and silence Warning: Value "ocrd-cis-word-alignment" ... does not match xsd enumeration restriction on TextDataTypeSimpleType
+        with pushd_popd(self.workspace.directory), SilencedStreams(False, True):
+            return page_from_file(page_file)
 
     def resolve_image(self, image_file: OcrdFile) -> Image:
         with pushd_popd(self.workspace.directory):
             pil_image = Image.open(self.workspace.download_file(image_file).local_filename)
-            pil_image.load()
+            # pil_image.load()
             return pil_image
 
     @check_editable

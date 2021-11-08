@@ -7,6 +7,7 @@
     <file compressed="true" preprocess="to-pixdata">icons/page-missing.png</file>
     <file compressed="true" preprocess="xml-stripblanks">icons/split-horizontal.svg</file>
     <file compressed="true" preprocess="xml-stripblanks">icons/split-vertical.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks">icons/icon-feature-border.svg</file>
     <file compressed="true" preprocess="xml-stripblanks">gtk/menus.ui</file>
     <file compressed="true">css/theme.css</file>
   </gresource>

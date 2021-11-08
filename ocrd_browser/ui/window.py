@@ -2,7 +2,7 @@ from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib, Gdk
 from ocrd_models import OcrdFile
 
 from ocrd_browser.model import Document
-from ocrd_browser.view import ViewRegistry, ViewImages
+from ocrd_browser.view import ViewRegistry, ViewPage
 from ocrd_browser.util.gtk import ActionRegistry
 from .dialogs import SaveDialog, SaveChangesDialog
 from .page_browser import PagePreviewList
@@ -60,7 +60,8 @@ class MainWindow(Gtk.ApplicationWindow):
             menu_item.set_detailed_action_name('win.create_view("{}")'.format(id_))
             self.view_menu_box.pack_start(menu_item, True, True, 0)
 
-        self.view_manager.set_root_view(ViewImages)
+        self.view_manager.set_root_view(ViewPage)
+        # self.view_manager.split(None, ViewPage, False)
 
         self.update_ui()
 
@@ -90,8 +91,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.document = Document.load(uri, emitter=self.emit)
         self.page_list.set_document(self.document)
 
-        self.update_ui()
         self.view_manager.set_document(self.document)
+        self.update_ui()
 
         if len(self.document.page_ids):
             self.on_page_activated(None, self.document.page_ids[0])
@@ -117,7 +118,6 @@ class MainWindow(Gtk.ApplicationWindow):
 
     @GObject.Signal(arg_types=[object])
     def pages_selected(self, page_ids: List[str]) -> None:
-        print(page_ids)
         pass
 
     @GObject.Signal(arg_types=[str, object])
@@ -203,7 +203,11 @@ class MainWindow(Gtk.ApplicationWindow):
         self.view_manager.replace(replace_view, new_view_type)
 
     def on_close_view(self, _action: Gio.SimpleAction, view_name: GLib.Variant) -> None:
-        self.view_manager.close(view_name.get_string())
+        try:
+            self.view_manager.close(view_name.get_string())
+        except ValueError:
+            # Tried to remove last view
+            pass
 
     def on_split_view(self, _action: Gio.SimpleAction, arguments: GLib.Variant) -> None:
         (split_view, new_view_name, horizontal) = arguments

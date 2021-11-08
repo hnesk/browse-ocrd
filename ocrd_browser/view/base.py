@@ -1,10 +1,14 @@
+from math import log
+
 from gi.repository import Gtk, Pango, GObject
 
 from typing import List, Tuple, Any, Optional, Dict, cast
 
 from enum import Enum
+
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
 from ocrd_browser.model import Document, Page
+from ocrd_browser.util.gtk import WhenIdle
 
 
 class Configurator(Gtk.Widget):
@@ -16,11 +20,15 @@ class Configurator(Gtk.Widget):
     def set_document(self, document: Document) -> None:
         self.document = document
 
+    def set_page(self, page: Page) -> None:
+        pass
+
     def set_value(self, value: Any) -> None:
         raise NotImplementedError('You have to override set_value')
 
 
 class View:
+    # TODO: Views should announce which mimetype they can handle and be only available if it there is matching mimetype in Document, also they should announce if they can handle a certain Page
     # noinspection PyTypeChecker
     def __init__(self, name: str, window: Gtk.Window):
         self.name: str = name
@@ -75,15 +83,21 @@ class View:
         return 'OCR-D-IMG'
 
     def page_activated(self, _sender: Gtk.Widget, page_id: str) -> None:
-        self.page_id = page_id
-        self.reload()
+        if page_id != self.page_id:
+            self.page_id = page_id
+            self.reload()
 
     def pages_selected(self, _sender: Gtk.Widget, page_ids: List[str]) -> None:
         pass
 
     def reload(self) -> None:
-        self.current = self.document.page_for_id(self.page_id, self.use_file_group)
-        self.redraw()
+        if self.page_id:
+            self.current = self.document.page_for_id(self.page_id, self.use_file_group)
+            if self.current:
+                for configurator in self.configurators.values():
+                    configurator.set_page(self.current)
+
+        WhenIdle.call(self.redraw)
 
     def redraw(self) -> None:
         pass
@@ -125,21 +139,20 @@ class PageQtySelector(Gtk.Box, Configurator):
 class ImageZoomSelector(Gtk.Box, Configurator):
 
     def __init__(self, base: float = 2, step: float = 0.1, min_: float = -4.0, max_: float = 2.0) -> None:
-        super().__init__(visible=True, spacing=3)
+        super().__init__(visible=True, spacing=2)
         self.value = None
-
-        label = Gtk.Label(label='Zoom:', visible=True)
 
         self.base = base
         self.scale = Gtk.SpinButton(visible=True, max_length=5, width_chars=5, max_width_chars=5, numeric=True,
                                     digits=2)
-        self.scale.set_tooltip_text('log{:+.2f} scale factor for viewing images'.format(base))
+        self.scale.set_tooltip_text('Zoom: log{:+.0f} scale factor for viewing images'.format(base))
         # noinspection PyCallByClass,PyArgumentList
         self.scale.set_adjustment(Gtk.Adjustment.new(0.0, min_, max_, step, 0, 0))
         self.scale.set_snap_to_ticks(False)
         self.scale.connect('value-changed', self.value_changed)
 
-        self.pack_start(label, False, True, 0)
+        # label = Gtk.Label(label='Zoom:', visible=True)
+        # self.pack_start(label, False, True, 0)
         self.pack_start(self.scale, False, True, 0)
 
     def get_exp(self) -> float:
@@ -159,17 +172,46 @@ class ImageZoomSelector(Gtk.Box, Configurator):
         self.scale.set_tooltip_text(
             '{:.2%} / log{:.2f} scale factor for viewing images'.format(self.get_exp(), self.base))
 
+    def zoom_by(self, steps: int) -> None:
+        """
+        Zooms in(`steps` > 0) or out(`steps` < 0) by `steps` steps
+        """
+        direction = Gtk.SpinType.STEP_FORWARD if steps > 0 else Gtk.SpinType.STEP_BACKWARD
+        self.scale.spin(direction, abs(steps) * self.scale.get_adjustment().get_step_increment())
+
+    def zoom_to(self, to: str, width_ratio: float, height_ratio: float) -> None:
+        """
+        Set zoom to one of
+            'original': Original Size
+            'width': Fit to width
+            'height': Fit to height
+            'page': Fit to show whole page
+            'viewport': Fit to use whole viewport
+        """
+        lookup = {
+            'original': lambda: 1,
+            'width': lambda: width_ratio,
+            'height': lambda: height_ratio,
+            'page': lambda: min(width_ratio, height_ratio),
+            'viewport': lambda: max(width_ratio, height_ratio)
+        }
+        if to in lookup:
+            ratio = lookup[to]()
+            self.set_value(log(ratio, self.base))
+        else:
+            raise ValueError('to was "{}", but needs to be one of {}'.format(to, ', '.join(lookup.keys())))
+
 
 class FileGroupSelector(Gtk.Box, Configurator):
 
     def __init__(self, filter_: Optional['FileGroupFilter'] = None, show_mime: bool = False, show_ext: bool = True):
-        super().__init__(visible=True, spacing=3)
+        super().__init__(visible=True, spacing=2)
         self.value = None
-        label = Gtk.Label(label='Group:', visible=True)
 
         self.groups = FileGroupComboBox(filter_, show_mime, show_ext)
 
-        self.pack_start(label, False, True, 0)
+        # label = Gtk.Label(label='Group:', visible=True)
+        # self.pack_start(label, False, True, 0)
         self.pack_start(self.groups, False, True, 0)
 
         self.groups.connect('changed', self.combo_box_changed)
@@ -206,7 +248,7 @@ class FileGroupComboBox(Gtk.ComboBox):
     COLUMN_EXT = 3
 
     def __init__(self, filter_: Optional['FileGroupFilter'] = None, show_mime: bool = False, show_ext: bool = True):
-        Gtk.ComboBox.__init__(self, visible=True)
+        Gtk.ComboBox.__init__(self, visible=True, has_tooltip=True, popup_fixed_width=False)
         self.set_model(Gtk.ListStore(str, str, str, str))
         self.filter = filter_
         self.set_id_column(self.COLUMN_ID)
@@ -217,8 +259,6 @@ class FileGroupComboBox(Gtk.ComboBox):
         if show_ext:
             self.add_renderer(self.COLUMN_EXT)
 
-        self.props.has_tooltip = True
-        self.props.popup_fixed_width = False
         self.connect('query-tooltip', self.set_tooltip)
 
     def set_tooltip(self, _widget: Gtk.Widget, _x: int, _y: int, _keyboard_mode: bool, tooltip: Gtk.Tooltip) -> bool:
@@ -226,7 +266,7 @@ class FileGroupComboBox(Gtk.ComboBox):
         if len(model) > 0:
             row = self.get_model()[self.get_active()][:]
             phs = {'fileGrp': row[self.COLUMN_GROUP], 'ext': row[self.COLUMN_EXT], 'mime': row[self.COLUMN_MIME]}
-            tooltip.set_text('{fileGrp} (Mime-Type: {mime})'.format(**phs))
+            tooltip.set_text('fileGrp: {fileGrp} (Mime-Type: {mime})'.format(**phs))
             return True
         return False
 
@@ -235,8 +275,7 @@ class FileGroupComboBox(Gtk.ComboBox):
         # self.set_active(0)
 
     def add_renderer(self, column: int, width: int = None) -> Gtk.CellRendererText:
-        renderer = Gtk.CellRendererText()
-        renderer.props.ellipsize = Pango.EllipsizeMode.MIDDLE
+        renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.MIDDLE)
         if width:
             renderer.props.width = width
         self.pack_start(renderer, False)
@@ -267,8 +306,11 @@ class FileGroupModel(Gtk.ListStore):
 
     @staticmethod
     def page_filter(model: Gtk.TreeModel, it: Gtk.TreeIter, _data: None) -> bool:
-        # str casts for mypy
         return str(model[it][FileGroupComboBox.COLUMN_MIME]) == str(MIMETYPE_PAGE)
+
+    @staticmethod
+    def xml_filter(model: Gtk.TreeModel, it: Gtk.TreeIter, _data: None) -> bool:
+        return str(model[it][FileGroupComboBox.COLUMN_EXT]) == '.xml'
 
     @staticmethod
     def html_filter(model: Gtk.TreeModel, it: Gtk.TreeIter, _data: None) -> bool:
@@ -284,6 +326,7 @@ class FileGroupFilter(Enum):
     IMAGE = FileGroupModel.image_filter
     PAGE = FileGroupModel.page_filter
     HTML = FileGroupModel.html_filter
+    XML = FileGroupModel.xml_filter
     ALL = FileGroupModel.all_filter
 
 
@@ -294,6 +337,7 @@ class CloseButton(Gtk.Button):
         self.set_detailed_action_name('win.close_view("{}")'.format(view_name))
         self.set_relief(Gtk.ReliefStyle.NONE)
         self.set_always_show_image(True)
+        # noinspection PyArgumentList
         self.set_image(Gtk.Image.new_from_icon_name('window-close-symbolic', Gtk.IconSize.SMALL_TOOLBAR))
 
 
@@ -305,4 +349,5 @@ class SplitViewButton(Gtk.Button):
         self.set_detailed_action_name('win.split_view(("{}","empty", {}))'.format(view_name, 'true' if vertical else 'false'))
         self.set_relief(Gtk.ReliefStyle.NONE)
         self.set_always_show_image(True)
+        # noinspection PyArgumentList
         self.set_image(Gtk.Image.new_from_icon_name('split-{}'.format(direction), Gtk.IconSize.SMALL_TOOLBAR))

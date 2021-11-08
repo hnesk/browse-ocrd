@@ -6,6 +6,7 @@ from .text import ViewText
 from .xml import ViewXml
 from .empty import ViewEmpty
 from .diff import ViewDiff
+from .page import ViewPage
 
 
-__all__ = ['View', 'ViewRegistry', 'ViewImages', 'ViewText', 'ViewXml', 'ViewHtml', 'ViewEmpty', 'ViewDiff']
+__all__ = ['View', 'ViewRegistry', 'ViewImages', 'ViewText', 'ViewXml', 'ViewHtml', 'ViewEmpty', 'ViewDiff', 'ViewPage']

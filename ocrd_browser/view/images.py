@@ -1,4 +1,4 @@
-from gi.repository import Gtk, Gdk, GLib
+from gi.repository import Gtk, Gdk
 
 from typing import Any, List, Optional, Tuple
 
@@ -13,6 +13,7 @@ from .base import (
     ImageZoomSelector
 )
 from ..model import Page
+from ..util.gtk import WhenIdle
 
 
 class ViewImages(View):
@@ -58,11 +59,11 @@ class ViewImages(View):
     def config_changed(self, name: str, value: Any) -> None:
         super(ViewImages, self).config_changed(name, value)
         if name == 'page_qty':
-            GLib.idle_add(self.rebuild_pages, priority=GLib.PRIORITY_DEFAULT_IDLE)
-        if name == 'scale':
-            GLib.idle_add(self.rescale, priority=GLib.PRIORITY_DEFAULT_IDLE)
+            WhenIdle.call(self.rebuild_pages, priority=1)
         if name == 'file_group':
-            GLib.idle_add(self.reload, priority=GLib.PRIORITY_DEFAULT_IDLE)
+            WhenIdle.call(self.reload, priority=10)
+        if name == 'scale':
+            WhenIdle.call(self.rescale)
 
     def rebuild_pages(self) -> None:
         existing_pages = {child.get_name(): child for child in self.image_box.get_children()}
@@ -81,11 +82,11 @@ class ViewImages(View):
         for child in existing_pages.values():
             child.destroy()
 
-        GLib.idle_add(self.reload, priority=GLib.PRIORITY_DEFAULT_IDLE)
+        WhenIdle.call(self.reload, priority=10)
 
     def page_activated(self, _sender: Gtk.Widget, page_id: str) -> None:
         self.page_id = page_id
-        GLib.idle_add(self.reload, priority=GLib.PRIORITY_DEFAULT_IDLE)
+        WhenIdle.call(self.reload)
 
     @property
     def use_file_group(self) -> str:
@@ -97,7 +98,7 @@ class ViewImages(View):
             self.pages = []
             for display_id in display_ids:
                 self.pages.append(self.document.page_for_id(display_id, self.use_file_group))
-        GLib.idle_add(self.redraw, priority=GLib.PRIORITY_DEFAULT_IDLE)
+        WhenIdle.call(self.redraw)
 
     def redraw(self) -> None:
         if self.pages:
@@ -128,10 +129,10 @@ class ViewImages(View):
                             else:
                                 image.set_tooltip_text(img_file.local_filename)
                     else:
-                        image.set_from_stock('missing-image', Gtk.IconSize.DIALOG)
+                        image.set_from_icon_name('missing-image', Gtk.IconSize.DIALOG)
                 for child in existing_images.values():
                     child.destroy()
-            GLib.idle_add(self.rescale, True, priority=GLib.PRIORITY_DEFAULT_IDLE)
+            WhenIdle.call(self.rescale, force=True)
 
     def rescale(self, force: bool = False) -> None:
         if self.pages:
