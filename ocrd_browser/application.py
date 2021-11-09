@@ -29,6 +29,13 @@ class OcrdBrowserApplication(Gtk.Application):
         self.actions.create('open')
         self.actions.create('about')
         self.actions.create('quit')
+
+        self.set_accels_for_action('view.zoom_by(1)', ['<Ctrl>plus'])
+        self.set_accels_for_action('view.zoom_by(-1)', ['<Ctrl>minus'])
+        self.set_accels_for_action('view.zoom_to::original', ['<Ctrl>0'])
+        self.set_accels_for_action('view.zoom_to::width', ['<Ctrl>numbersign'])
+        self.set_accels_for_action('view.zoom_to::page', ['<Ctrl><Alt>numbersign'])
+
         for entry_point in pkg_resources.iter_entry_points('ocrd_browser_ext'):
             (entry_point.load())(self)
 

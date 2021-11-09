@@ -259,13 +259,6 @@ class ViewPage(View):
         actions.create(name='zoom_by', param_type=GLib.VariantType('i'), callback=self._on_zoom_by)
         actions.create(name='zoom_to', param_type=GLib.VariantType('s'), callback=self._on_zoom_to)
 
-        app: Gtk.Application = self.window.get_application()
-        app.set_accels_for_action('view.zoom_by(1)', ['<Ctrl>plus'])
-        app.set_accels_for_action('view.zoom_by(-1)', ['<Ctrl>minus'])
-        app.set_accels_for_action('view.zoom_to::original', ['<Ctrl>0'])
-        app.set_accels_for_action('view.zoom_to::width', ['<Ctrl>numbersign'])
-        app.set_accels_for_action('view.zoom_to::page', ['<Ctrl><Alt>numbersign'])
-
         self.image = Gtk.Image(visible=True, icon_name='gtk-missing-image', icon_size=Gtk.IconSize.DIALOG, valign=Gtk.Align.START)
 
         self.highlight = Gtk.DrawingArea(visible=True, valign=Gtk.Align.FILL, halign=Gtk.Align.FILL, can_focus=True, has_focus=True, focus_on_click=True, is_focus=True)
