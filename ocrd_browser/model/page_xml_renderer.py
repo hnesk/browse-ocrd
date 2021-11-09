@@ -401,7 +401,6 @@ class PageXmlRenderer:
             self.canvas = Image.new(mode='RGBA', size=canvas.size, color='#FFFFFF00')
 
         self.region_factory = RegionFactory(coords, page_id, logger)
-        print(coords)
 
         self.colors: Dict[str, str] = defaultdict(lambda: 'FF0000FF')
         self.colors.update(colors or CLASSES)
