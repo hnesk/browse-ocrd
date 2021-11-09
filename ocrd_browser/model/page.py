@@ -83,24 +83,33 @@ class LazyPage(Page):
         self.document = document
         self._id = id_
         self._pc_gts = None
+        self._images = None
+        self._image_files = None
+        self._page_file = None
         self.file_group = file_group
 
     @property
     def images(self) -> List[Image]:
-        return [self.document.resolve_image(f) for f in self.image_files]
+        if self._images is None:
+            self._images = [self.document.resolve_image(f) for f in self.image_files]
+        return self._images
 
     @property
     def image_files(self) -> List[OcrdFile]:
-        return self.get_files("//image/.*")
+        if self._image_files is None:
+            self._image_files = self.get_files("//image/.*")
+        return self._image_files
 
     def get_files(self, mimetype: str = MIMETYPE_PAGE) -> List[OcrdFile]:
         return cast(List[OcrdFile], self.document.files_for_page_id(self.id, self.file_group, mimetype=mimetype))
 
     @property
     def page_file(self) -> OcrdFile:
-        page_files = self.get_files(MIMETYPE_PAGE)
-        if len(page_files) > 0:
-            return page_files[0]
+        if self._page_file is None:
+            page_files = self.get_files(MIMETYPE_PAGE)
+            if len(page_files) > 0:
+                self._page_file = page_files[0]
+        return self._page_file
 
     @property
     def file(self) -> Optional[OcrdFile]:
