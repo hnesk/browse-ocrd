@@ -6,29 +6,56 @@ An extensible viewer for [OCR-D](https://ocr-d.de/) [mets.xml](https://ocr-d.de/
 
 ## Screenshot
 
-![OCRD Browser with two image and one xml view](docs/screenshot.png)
+![OCRD Browser with Page and Xml view](docs/screenshot.png)
 
-## Installation on Ubuntu 18.04
-
-```
-sudo make deps-ubuntu
-pip install browse-ocrd
-```
-
-
-## Usage
-```
-browse-ocrd ./path/to/mets.xml # or open interactively
-```
 
 ## Features
 
 - Browse fileGrps and pages, arranging views next to each other for comparison
-- Show original or derived images (`AlternativeImage` on any level of the structural hierarchy)
-- Show multiple images at once for different pages (horizontally) or different segments (vertically), zooming freely
-- Show raw [PAGE-XML](https://ocr-d.de/en/spec/page) with syntax highlighting, open with [PageViewer](https://github.com/PRImA-Research-Lab/prima-page-viewer)
-- Show concatenated [PAGE-XML](https://ocr-d.de/en/spec/page) text annotation
-- Show rendered HTML comparison from [dinglehopper](https://github.com/qurator-spk/dinglehopper) evaluations
+- PageView: Show original or derived page images with [PAGE-XML](https://ocr-d.de/en/spec/page) annotations overlay, similar to [PageViewer](https://github.com/PRImA-Research-Lab/prima-page-viewer)
+- ImageView: Show original or derived images (`AlternativeImage` on any level of the structural hierarchy)
+- ImageView: Show multiple images at once for different pages (horizontally) or different segments (vertically), zooming freely
+- XmlView: Show raw [PAGE-XML](https://ocr-d.de/en/spec/page) with syntax highlighting, open with [PageViewer](https://github.com/PRImA-Research-Lab/prima-page-viewer)
+- TextView: Show concatenated [PAGE-XML](https://ocr-d.de/en/spec/page) text annotation
+- DiffView: Show a simple diff comparison between text annotations from different fileGrps  
+- HtmlView: Show rendered HTML comparison from [dinglehopper](https://github.com/qurator-spk/dinglehopper) evaluations
+
+
+## Installation 
+
+In any case you need a venv with a current pip version (>=20), preferably your existing ocrd-venv:
+
+<details>
+  <summary>Create a current pip venv:</summary>
+
+```bash
+sudo apt install python3-pip python3-venv 
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip setuptools wheel
+```
+</details>
+
+
+### From source
+```bash
+git clone https://github.com/hnesk/browse-ocrd.git 
+cd browse-ocrd
+sudo make deps-ubuntu
+make install
+```
+
+### Via pip 
+
+```bash
+sudo apt install libcairo2-dev libgirepository1.0-dev
+pip install browse-ocrd
+```
+ 
+## Usage
+```
+browse-ocrd ./path/to/mets.xml # or open interactively
+```
 
 ## Configuration
 

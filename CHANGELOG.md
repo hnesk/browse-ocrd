@@ -1,8 +1,24 @@
-Change Log
-==========
+# Change Log
 
 
-<!-- ## Unreleased (../../compare/v0.4.3...master) -->
+## [Unreleased](../../compare/v0.4.3...master) 
+
+New Features:
+* [Added a PageView](../../pull/30) ([#15](../../issues/15) / [#28](../../issues/28)) \
+  Shows page image overlayed with [PAGE-XML](https://ocr-d.de/en/spec/page) annotations, similar to PRImA-[PageViewer](https://github.com/PRImA-Research-Lab/prima-page-viewer)
+  * Selectable `<Page>` or any `<AlternativeImage>` image as a base   
+  * Selectable features as overlay: border, printSpace, region order, regions, lines, words, glyphs, warnings
+  * Warnings: Display regions with problematic coordinates in red
+  * Tooltip with current coordinates, region, text annotations
+
+* ImageView:
+  * zoom keyboard shortcuts `<CTRL>+`/`<CTRL>-`/`<CTRL>0`/`<CTRL>#`/`<CTRL><ALT>#`
+
+Changed:
+* Performance / responsiveness improvements 
+  * Events get queued 
+  * Introduction of `LazyPage` a lazy loading Page proxy
+
 
 ## [0.4.3](../../compare/v0.4.2...v0.4.3) - 2021-07-22 
 
