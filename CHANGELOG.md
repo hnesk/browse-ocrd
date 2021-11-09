@@ -1,7 +1,8 @@
 # Change Log
 
+<!-- ## [Unreleased](../../compare/v0.5...master) --> 
 
-## [Unreleased](../../compare/v0.4.3...master) 
+## [0.5](../../compare/v0.4.3...v0.5) - 2021-07-22
 
 New Features:
 * [Added a PageView](../../pull/30) ([#15](../../issues/15) / [#28](../../issues/28)) \
@@ -17,7 +18,7 @@ New Features:
 Changed:
 * Performance / responsiveness improvements 
   * Events get queued 
-  * Introduction of `LazyPage` a lazy loading Page proxy
+  * Introduction of `LazyPage` a lazy loading page proxy
 
 
 ## [0.4.3](../../compare/v0.4.2...v0.4.3) - 2021-07-22 
