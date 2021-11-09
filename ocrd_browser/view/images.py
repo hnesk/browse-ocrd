@@ -60,8 +60,6 @@ class ViewImages(View):
         actions.create(name='zoom_to', param_type=GLib.VariantType('s'), callback=self._on_zoom_to)
         eventbox.insert_action_group("view", actions.for_widget)
 
-
-
         self.rebuild_pages()
 
     def config_changed(self, name: str, value: Any) -> None:
@@ -160,6 +158,7 @@ class ViewImages(View):
 
     def on_button(self, _widget: Gtk.EventBox, event: Gdk.EventButton) -> bool:
         _widget.grab_focus()
+        return False
 
     def on_scroll(self, _widget: Gtk.EventBox, event: Gdk.EventScroll) -> bool:
         _widget.grab_focus()
@@ -173,18 +172,14 @@ class ViewImages(View):
                 return True
         return False
 
-
     def _on_viewport_size_allocate(self, _sender: Gtk.Widget, rect: Gdk.Rectangle) -> None:
         self.viewport_size = rect
 
     def _on_zoom_by(self, _action: Gio.SimpleAction, steps_v: Optional[GLib.Variant] = None) -> None:
-        print(self.__class__)
         scale_config: ImageZoomSelector = self.configurators['scale']
         scale_config.zoom_by(steps_v.get_int32())
 
     def _on_zoom_to(self, _action: Gio.SimpleAction, to_v: Optional[GLib.Variant] = None) -> None:
-        print(self.__class__)
-
         scale_config: ImageZoomSelector = self.configurators['scale']
         all_width = 0
         all_height = 0
@@ -202,4 +197,3 @@ class ViewImages(View):
             self.viewport_size.width / all_width,
             self.viewport_size.height / all_height
         )
-
