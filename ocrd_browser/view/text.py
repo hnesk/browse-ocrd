@@ -1,4 +1,4 @@
-from gi.repository import GObject, GtkSource, Gtk, Gdk
+from gi.repository import GObject, GtkSource, Gtk, Gdk, Pango
 
 from typing import Optional, Tuple, Any
 
@@ -55,23 +55,25 @@ class ViewText(View):
         if event.state & accel_mask == Gdk.ModifierType.CONTROL_MASK:
             did_scroll, delta_x, delta_y = event.get_scroll_deltas()
             if did_scroll and abs(delta_y) > 0:
-                self.zoom(delta_y > 0)
+                self.zoom(delta_y)
                 return True
         return False
 
-    def zoom(self, direction: bool = True) -> None:
+    def zoom(self, direction: float = 0.0) -> None:
         style = self.text_view.get_style_context()
+        #layout = self.text_view.get_pango_context()
         font = style.get_font(style.get_state())
+        #font = layout.get_font_description().copy()
         size = font.get_size()
-        if direction:
-            size *= 1.2
-        else:
-            size /= 1.2
-        font.set_size(size)
+        size *= (1.2 ** direction)
+        if 1 * Pango.SCALE > size or size > 100 * Pango.SCALE:
+            return
+        font.set_size(int(size))
         # gives a different figure: print(style.get_property('font-size', style.get_state()))
         # says it does not have that property: print(style.set_property('font-size', 20)
         # deprecated, but works:
-        self.text_view.modify_font(font)
+        self.text_view.override_font(font)
+        #layout.set_font_description(font)
 
     def redraw(self) -> None:
         if self.current:
