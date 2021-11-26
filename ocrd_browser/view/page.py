@@ -442,7 +442,7 @@ class ViewPage(View):
                     'rows',
                     'columns',
                     'colour',
-                    ]:
+            ]:
                 if hasattr(region.region, attribute) and getattr(region.region, attribute):
                     content += '\n<tt>@{}=</tt>{}'.format(attribute, getattr(region.region, attribute))
             if hasattr(region.region, 'TextStyle') and getattr(region.region, 'TextStyle'):
@@ -468,11 +468,11 @@ class ViewPage(View):
                         'strikethrough',
                         'smallCaps',
                         'letterSpaced',
-                        ]:
+                ]:
                     if getattr(style, attribute):
                         content += '\n<tt>@{}=</tt>{}'.format(attribute, getattr(style, attribute))
             if region.warnings:
-                content += '\n\n' + ('\n'.join(region.warnings))
+                content += '\n\nWarnings:' + ('\n '.join(region.warnings))
 
         tooltip.set_markup(content)
 
