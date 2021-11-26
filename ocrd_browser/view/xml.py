@@ -22,6 +22,7 @@ class ViewXml(View):
     def __init__(self, name: str, window: Gtk.Window):
         super().__init__(name, window)
         self.file_group: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
+        self.font_size: Optional[int] = None
         # noinspection PyTypeChecker
         self.text_view: GtkSource.View = None
         # noinspection PyTypeChecker
@@ -39,18 +40,12 @@ class ViewXml(View):
         style_manager = GtkSource.StyleSchemeManager()
 
         self.text_view = GtkSource.View(visible=True, vexpand=False, editable=False, monospace=True,
-                                        show_line_numbers=True,
-                                        width_request=400)
+                                        show_line_numbers=True, width_request=400)
         self.buffer = self.text_view.get_buffer()
         self.buffer.set_language(lang_manager.get_language('xml'))
         self.buffer.set_style_scheme(style_manager.get_scheme('tango'))
-
-        eventbox = Gtk.EventBox(visible=True)
-        eventbox.add_events(Gdk.EventMask.SMOOTH_SCROLL_MASK)
-        eventbox.connect('scroll-event', self.on_scroll)
-        eventbox.add(self.text_view)
-
-        self.scroller.add(eventbox)
+        self.text_view.connect('scroll-event', self.on_scroll)
+        self.scroller.add(self.text_view)
 
     @property
     def use_file_group(self) -> str:
@@ -64,7 +59,7 @@ class ViewXml(View):
         if self.current and self.current.file:
             Launcher().launch('PageViewer', self.document, self.current.file)
 
-    def on_scroll(self, _widget: Gtk.EventBox, event: Gdk.EventScroll) -> bool:
+    def on_scroll(self, _widget: GtkSource.View, event: Gdk.EventScroll) -> bool:
         # Handles zoom in / zoom out on Ctrl+mouse wheel
         accel_mask = Gtk.accelerator_get_default_mod_mask()
         if event.state & accel_mask == Gdk.ModifierType.CONTROL_MASK:
@@ -75,16 +70,22 @@ class ViewXml(View):
         return False
 
     def zoom(self, direction: float = 0.0) -> None:
-        style = self.text_view.get_style_context()
-        font = style.get_font(style.get_state())
-        size = font.get_size()
+        """
+        Zoom in or out by direction
+        :param direction: amount to zoom
+
+        TODO: make it DRY, currently copy-pasted in ViewText, ViewXml and ViewDiff (maybe as a hidden Configurator)
+        """
+        style: Gtk.StyleContext = self.text_view.get_style_context()
+        font: Pango.FontDescription = style.get_font(style.get_state())
+        if self.font_size is None:
+            self.font_size = font.get_size()
+        size = self.font_size
         size *= (1.2 ** direction)
         if 1 * Pango.SCALE > size or size > 100 * Pango.SCALE:
             return
-        font.set_size(int(size))
-        # gives a different figure: print(style.get_property('font-size', style.get_state()))
-        # says it does not have that property: print(style.set_property('font-size', 20)
-        # deprecated, but works:
+        self.font_size = int(size)
+        font.set_size(size)
         self.text_view.override_font(font)
 
     def redraw(self) -> None:
