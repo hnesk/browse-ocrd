@@ -1,6 +1,6 @@
 from difflib import SequenceMatcher
 
-from gi.repository import GObject, GtkSource, Gtk
+from gi.repository import GObject, GtkSource, Gtk, Gdk, Pango
 
 from typing import Optional, Tuple, Any, NamedTuple, List
 
@@ -42,7 +42,7 @@ def diff_strings(text1: str, text2: str) -> TaggedText:
     parts = TaggedText()
     try:
         if sm.quick_ratio() < 0.5 and len(text1) > 5:
-            parts.append('ERROR: Texts differ too much (similarity {:2%})to compute an actual alignment and comparison.'.format(sm.ratio()), 'deleted')
+            parts.append('ERROR: Texts differ too much (similarity {:2%}) to compute an actual alignment and comparison.'.format(sm.ratio()), 'deleted')
         else:
             for op, s1, e1, s2, e2 in sm.get_opcodes():
                 t1, t2 = text1[s1:e1], text2[s2:e2]
@@ -78,6 +78,8 @@ class ViewDiff(View):
         super().__init__(name, window)
         self.file_group: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
         self.file_group2: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
+        self.font_size: Optional[int] = None
+
         self.current2: Page = None
 
         # noinspection PyTypeChecker
@@ -93,7 +95,7 @@ class ViewDiff(View):
         self.text_view = GtkSource.View(visible=True, vexpand=False, editable=False,
                                         monospace=False, show_line_numbers=True, width_request=400)
         self.buffer = self.text_view.get_buffer()
-
+        self.text_view.connect('scroll-event', self.on_scroll)
         self.scroller.add(self.text_view)
 
     @property
@@ -107,6 +109,35 @@ class ViewDiff(View):
     def config_changed(self, name: str, value: Any) -> None:
         super().config_changed(name, value)
         self.reload()
+
+    def on_scroll(self, _widget: GtkSource.View, event: Gdk.EventScroll) -> bool:
+        # Handles zoom in / zoom out on Ctrl+mouse wheel
+        accel_mask = Gtk.accelerator_get_default_mod_mask()
+        if event.state & accel_mask == Gdk.ModifierType.CONTROL_MASK:
+            did_scroll, delta_x, delta_y = event.get_scroll_deltas()
+            if did_scroll and abs(delta_y) > 0:
+                self.zoom(delta_y)
+                return True
+        return False
+
+    def zoom(self, direction: float = 0.0) -> None:
+        """
+        Zoom in or out
+        :param direction: amount to zoom
+
+        TODO: make it DRY, currently copy-pasted in ViewText, ViewXml and ViewDiff (maybe as a hidden Configurator)
+        """
+        style: Gtk.StyleContext = self.text_view.get_style_context()
+        font: Pango.FontDescription = style.get_font(style.get_state())
+        if self.font_size is None:
+            self.font_size = font.get_size()
+        size = self.font_size
+        size *= (1.2 ** direction)
+        if 1 * Pango.SCALE > size or size > 100 * Pango.SCALE:
+            return
+        self.font_size = int(size)
+        font.set_size(size)
+        self.text_view.override_font(font)
 
     def redraw(self) -> None:
         if self.current:

@@ -409,10 +409,70 @@ class ViewPage(View):
 
         content = '<tt>{:d}, {:d}</tt>'.format(int(tx), int(ty))
         if region:
-            content += '\n<tt><big>{}</big></tt>\n\n{}'.format(str(region), escape(region.text))
+            content += '\n<tt><big>{}</big></tt>\n\n{}\n'.format(str(region), escape(region.text))
 
+            if region.region_subtype:
+                content += '\n<tt>@type:</tt> {}'.format(region.region_subtype)
+            for attribute in [
+                    'custom',
+                    'comments',
+                    'production',
+                    'orientation',
+                    'leading',
+                    'indented',
+                    'continuation',
+                    'readingDirection',
+                    'readingOrientation',
+                    'textLineOrder',
+                    'primaryLanguage',
+                    'secondaryLanguage',
+                    'language',
+                    'primaryScript',
+                    'secondaryScript',
+                    'script',
+                    'ligature',
+                    'symbol',
+                    'colourDepth',
+                    'bgColour',
+                    'embText',
+                    'penColour',
+                    'numColours',
+                    'lineColour',
+                    'lineSeparators',
+                    'rows',
+                    'columns',
+                    'colour',
+            ]:
+                if hasattr(region.region, attribute) and getattr(region.region, attribute):
+                    content += '\n<tt>@{}=</tt>{}'.format(attribute, getattr(region.region, attribute))
+            if hasattr(region.region, 'TextStyle') and getattr(region.region, 'TextStyle'):
+                style = getattr(region.region, 'TextStyle')
+                for attribute in [
+                        'textColour',
+                        'bgColour',
+                        'textColourRgb',
+                        'bgColourRgb',
+                        'reverseVideo',
+                        'fontSize',
+                        'xHeight',
+                        'kerning',
+                        'fontFamily',
+                        'serif',
+                        'monospace',
+                        'bold',
+                        'italic',
+                        'underlined',
+                        'underlineStyle',
+                        'subscript',
+                        'superscript',
+                        'strikethrough',
+                        'smallCaps',
+                        'letterSpaced',
+                ]:
+                    if getattr(style, attribute):
+                        content += '\n<tt>@{}=</tt>{}'.format(attribute, getattr(style, attribute))
             if region.warnings:
-                content += '\n\n' + ('\n'.join(region.warnings))
+                content += '\n\nWarnings:' + ('\n '.join(region.warnings))
 
         tooltip.set_markup(content)
 

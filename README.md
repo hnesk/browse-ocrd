@@ -21,7 +21,7 @@ An extensible viewer for [OCR-D](https://ocr-d.de/) [mets.xml](https://ocr-d.de/
 - HtmlView: Show rendered HTML comparison from [dinglehopper](https://github.com/qurator-spk/dinglehopper) evaluations
 
 
-## Installation 
+## Installation (tested on Ubuntu 18.04/20.04) 
 
 In any case you need a venv with a current pip version (>=20), preferably your existing ocrd-venv:
 
