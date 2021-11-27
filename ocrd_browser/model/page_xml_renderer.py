@@ -3,6 +3,7 @@ Page-XML rendering object
 
 This is heavily based on ocrd_segment.extract_pages (https://github.com/OCR-D/ocrd_segment/blob/master/ocrd_segment/extract_pages.py)
 """
+import numpy as np
 from math import sin, cos, radians, inf
 from enum import IntFlag
 from typing import Optional, Dict, Any, Union, List, Iterator, Tuple, Type, cast
@@ -14,9 +15,9 @@ from functools import lru_cache as memoized
 from PIL import ImageDraw, Image
 
 from ocrd_models.ocrd_page import PcGtsType, PageType, BorderType, PrintSpaceType, RegionType, TextRegionType, TextLineType, WordType, GlyphType, GraphemeType, ChartRegionType, GraphicRegionType
-from ocrd_utils import coordinates_of_segment, getLogger
+from ocrd_utils import coordinates_of_segment, getLogger, polygon_from_points, transform_coordinates
 
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, Point, LineString
 from shapely.validation import explain_validity
 from shapely import prepared
 
@@ -28,6 +29,7 @@ CLASSES = {
     'Glyph': '2E8B08FF',
     'Word': 'B22222FF',
     'TextLine': '32CD32FF',
+    'Baseline': '22DD227F',
     'Border': 'FFFFFFFF',
     'PrintSpace': 'CCCCCCFF',
     'TableRegion': '8B4513FF',
@@ -94,8 +96,9 @@ class Feature(IntFlag):
     GLYPHS = 128
     GRAPHEMES = 256
     WARNINGS = 512
+    BASELINES = 1024
 
-    DEFAULT = 1 | 2 | 16 | 32
+    DEFAULT = 1 | 2 | 16 | 32 | 1024
 
     def should_render(self, region_ds: RegionWithCoords) -> bool:
         lookup = {
@@ -267,25 +270,36 @@ class RegionMap(RegionBase):
 
 
 class Operation:
-    def __init__(self, region: Region, fill: str, outline: str):
-        self.region = region
-        self.fill = fill
-        self.outline = outline
+    def __init__(self, color: str, depth: int):
+        self.color = color
+        self.depth = depth
 
     def paint(self, draw: ImageDraw.Draw, regions: RegionMap) -> None:
         pass
 
-    @property
-    def depth(self) -> int:
-        return self.region.depth()
-
 
 class PolygonOperation(Operation):
 
+    def __init__(self, region: Region, fill: str, outline: str):
+        super().__init__(outline, region.depth() * 10)
+        self.region = region
+        self.fill = fill
+
     def paint(self, draw: ImageDraw.Draw, regions: RegionMap) -> None:
         xy = list(map(tuple, self.region.poly.exterior.coords[:-1]))
-        draw.polygon(xy, self.fill, self.outline)
+        draw.polygon(xy, self.fill, self.color)
         regions.append(RegionNode(self.region))
+
+
+class LineStringOperation(Operation):
+    def __init__(self, linestring: LineString, color: str, width: int = 4):
+        super().__init__(color, 45)  # Depth 45 is betweeen 40(TextLine) and 50(Word)
+        self.linestring = linestring
+        self.width = width
+
+    def paint(self, draw: ImageDraw.Draw, regions: RegionMap) -> None:
+        xy = list(map(tuple, self.linestring.coords))
+        draw.line(xy, self.color, self.width)
 
 
 class Operations:
@@ -369,6 +383,24 @@ class RegionFactory:
 
         return region
 
+    def create_baseline(self, text_line: TextLineType) -> Optional[LineString]:
+        if text_line.get_Baseline() is None or text_line.get_Baseline().points is None:
+            return None
+
+        points = np.array(polygon_from_points(text_line.get_Baseline().points))
+        points = transform_coordinates(points, self.coords['transform'])
+        try:
+            line = LineString(np.round(points).astype(np.int32))
+        except ValueError as err:
+            self.logger.error('Page "%s" @ %s/Baseline %s', self.page_id, str(text_line.id), str(err))
+            return None
+
+        if not line.is_valid:
+            self.logger.error('Page "%s" @ %s/Baseline %s', self.page_id, str(text_line.id), str(explain_validity(line)))
+            return None
+
+        return line
+
     @staticmethod
     def make_valid(polygon: Polygon) -> Tuple[Polygon, float]:
         """Ensures shapely.geometry.Polygon object is valid by repeated simplification"""
@@ -398,7 +430,7 @@ class PageXmlRenderer:
         if self.features & Feature.IMAGE:
             self.canvas = canvas.convert('RGBA')
         else:
-            self.canvas = Image.new(mode='RGBA', size=canvas.size, color='#FFFFFF00')
+            self.canvas = Image.new(mode='RGBA', size=canvas.size, color='#FFFFFFFF')
 
         self.region_factory = RegionFactory(coords, page_id, logger)
 
@@ -452,13 +484,18 @@ class PageXmlRenderer:
         draw.line([(p1[0] + lf * right[0], p1[1] + lf * right[1]), p1], fill=color, width=line_width)
 
     def render_type(self, region_ds: RegionWithCoords) -> None:
+        if self.features & Feature.BASELINES and isinstance(region_ds, TextLineType):
+            linestring = self.region_factory.create_baseline(region_ds)
+            if linestring:
+                self.operations.append(LineStringOperation(linestring, '#' + self.colors['Baseline']))
+
         if self.features.should_render(region_ds):
             region = self.region_factory.create(region_ds)
             if region:
-                color = self.colors[region.region_type]
                 if self.features & Feature.WARNINGS and region.warnings:
                     op = PolygonOperation(region, '#FF00003E', '#FF000076')
                 else:
+                    color = self.colors[region.region_type]
                     op = PolygonOperation(region, '#' + color[:6] + '1E', '#' + color[:6] + '96')
                 self.operations.append(op)
 

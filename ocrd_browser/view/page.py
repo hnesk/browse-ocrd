@@ -150,6 +150,7 @@ class PageFeaturesSelector(Gtk.Box, Configurator):
         Feature.ORDER: FeatureDescription('↯', 'order', '/page:PcGts/page:Page/page:ReadingOrder/*'),
         Feature.REGIONS: FeatureDescription('⬓', 'regions', '/page:PcGts/page:Page/*[not(local-name(.) = "Border" or local-name(.) = "PrintSpace")]/page:Coords'),
         Feature.LINES: FeatureDescription('𝌆', 'lines', '/page:PcGts/page:Page/*//page:TextLine/page:Coords'),
+        Feature.BASELINES: FeatureDescription('–', 'baselines', '/page:PcGts/page:Page/*//page:TextLine/page:Baseline'),
         Feature.WORDS: FeatureDescription('𝌶', 'words', '/page:PcGts/page:Page/*//page:TextLine/page:Word/page:Coords'),
         Feature.GLYPHS: FeatureDescription('𝍖', 'glyphs', '/page:PcGts/page:Page/*//page:TextLine/page:Word/page:Glyph/page:Coords'),
         # Feature.GRAPHEMES: FeatureDescription('#', 'graphemes', '/page:PcGts/page:Page/*//page:TextLine/page:Word/page:Glyph/page:Graphemes/*/page:Coords')
