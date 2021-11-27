@@ -302,6 +302,32 @@ class LineStringOperation(Operation):
         draw.line(xy, self.color, self.width)
 
 
+class ArrowOperation(Operation):
+    def __init__(self, p0: Point, p1: Point, size: float = 30.0, width: int = 3, color: str = '#FF0000FF'):
+        super().__init__(color, 200)  # Depth 200 is on top of everything
+        self.p0 = p0.coords[0]
+        self.p1 = p1.coords[0]
+        self.size = size
+        self.width = width
+
+    def paint(self, draw: ImageDraw.Draw, regions: RegionMap) -> None:
+        angle = radians(180.0 - 30)  # 30 degrees
+        c, s = cos(angle), sin(angle)
+        d = self.p1[0] - self.p0[0], self.p1[1] - self.p0[1]
+        left = d[0] * c - d[1] * s, d[0] * s + d[1] * c
+        right = d[0] * c + d[1] * s, -d[0] * s + d[1] * c
+        lf = self.size / (d[0] ** 2 + d[1] ** 2) ** 0.5
+
+        # Draw arrow shaft
+        draw.line([self.p0, self.p1], fill=self.color, width=self.width)
+        # Draw dot
+        draw.ellipse((self.p1[0] - 5, self.p1[1] - 5, self.p1[0] + 5, self.p1[1] + 5), fill=self.color)
+        # Draw left arrow wing
+        draw.line([(self.p1[0] + lf * left[0], self.p1[1] + lf * left[1]), self.p1], fill=self.color, width=self.width)
+        # Draw right arrow wing
+        draw.line([(self.p1[0] + lf * right[0], self.p1[1] + lf * right[1]), self.p1], fill=self.color, width=self.width)
+
+
 class Operations:
     """
     Operations is a depth-sorted List of Operation objects
@@ -438,7 +464,6 @@ class PageXmlRenderer:
         self.colors.update(colors or CLASSES)
 
         self.operations = Operations()
-        self.order: List[Point] = []
 
     def render_all(self, pc_gts: PcGtsType) -> None:
         page: PageType = pc_gts.get_Page()
@@ -448,40 +473,17 @@ class PageXmlRenderer:
             self.render_type(region_ds)
 
         if self.features & Feature.ORDER:
+            last_point: Optional[Point] = None
             for region_ds in page.get_AllRegions(classes=['Text'], order='reading-order'):
                 region = self.region_factory.create(region_ds)
-                self.order.append(region.poly.centroid)
+                new_point = region.poly.representative_point()
+                if last_point:
+                    self.operations.append(ArrowOperation(last_point, new_point, color='#FF0000CF'))
+                last_point = new_point
 
     def get_result(self) -> Tuple[Image.Image, RegionMap]:
         canvas, regions = self.operations.paint(self.canvas.copy())
-        self.draw_order(canvas)
         return canvas, regions
-
-    def draw_order(self, canvas: Image.Image) -> None:
-        if self.order and len(self.order) > 1:
-            last_point = None
-            draw = ImageDraw.Draw(canvas)
-            for p in self.order:
-                point = p.coords[0]
-                if last_point:
-                    self.draw_arrow(draw, last_point, point)  # type: ignore[unreachable]
-                last_point = point
-
-            self.order = []
-
-    @staticmethod
-    def draw_arrow(draw: ImageDraw.Draw, p0: Tuple[float, float], p1: Tuple[float, float], color: str = '#FF0000FF', arrow_size: float = 30.0, angle_deg: float = 30.0, line_width: int = 3) -> None:
-        angle = radians(180.0 - angle_deg)
-        c, s = cos(angle), sin(angle)
-        d = p1[0] - p0[0], p1[1] - p0[1]
-        left = d[0] * c - d[1] * s, d[0] * s + d[1] * c
-        right = d[0] * c + d[1] * s, -d[0] * s + d[1] * c
-        lf = arrow_size / (d[0] ** 2 + d[1] ** 2) ** 0.5
-
-        draw.line([p0, p1], fill=color, width=line_width)
-        draw.ellipse((p1[0] - 5, p1[1] - 5, p1[0] + 5, p1[1] + 5), fill=color)
-        draw.line([(p1[0] + lf * left[0], p1[1] + lf * left[1]), p1], fill=color, width=line_width)
-        draw.line([(p1[0] + lf * right[0], p1[1] + lf * right[1]), p1], fill=color, width=line_width)
 
     def render_type(self, region_ds: RegionWithCoords) -> None:
         if self.features & Feature.BASELINES and isinstance(region_ds, TextLineType):
