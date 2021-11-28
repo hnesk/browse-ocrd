@@ -3,6 +3,7 @@ Page-XML rendering object
 
 This is heavily based on ocrd_segment.extract_pages (https://github.com/OCR-D/ocrd_segment/blob/master/ocrd_segment/extract_pages.py)
 """
+import PIL.ImageFont
 import numpy as np
 from math import sin, cos, radians, inf
 from enum import IntFlag
@@ -12,7 +13,7 @@ from logging import Logger
 
 from functools import lru_cache as memoized
 
-from PIL import ImageDraw, Image
+from PIL import ImageDraw, Image, ImageFont
 
 from ocrd_models.ocrd_page import PcGtsType, PageType, BorderType, PrintSpaceType, RegionType, TextRegionType, TextLineType, WordType, GlyphType, GraphemeType, ChartRegionType, GraphicRegionType
 from ocrd_utils import coordinates_of_segment, getLogger, polygon_from_points, transform_coordinates
@@ -270,6 +271,10 @@ class RegionMap(RegionBase):
 
 
 class Operation:
+    """
+    Base class for a rendering Operation in a certain depth (or layer)
+    An Operation will render itself and/or add itself to the RegionMap in paint()
+    """
     def __init__(self, color: str, depth: int):
         self.color = color
         self.depth = depth
@@ -326,6 +331,38 @@ class ArrowOperation(Operation):
         draw.line([(self.p1[0] + lf * left[0], self.p1[1] + lf * left[1]), self.p1], fill=self.color, width=self.width)
         # Draw right arrow wing
         draw.line([(self.p1[0] + lf * right[0], self.p1[1] + lf * right[1]), self.p1], fill=self.color, width=self.width)
+
+
+class TextOperation(Operation):
+
+    font_cache: Dict[Tuple[str, int], ImageFont.FreeTypeFont] = {}
+
+    @classmethod
+    def font(cls, file: str, size: int) -> ImageFont.FreeTypeFont:
+        if (file, size) not in cls.font_cache:
+            cls.font_cache[(file, size)] = ImageFont.truetype(file, size=size, layout_engine=PIL.ImageFont.LAYOUT_RAQM)
+        return cls.font_cache[(file, size)]
+
+    def __init__(self, region: Region, color: str):
+        super().__init__(color, 55)  # Depth 45 is betweeen 40(TextLine) and 50(Word)
+        self.region = region
+
+    def paint(self, draw: ImageDraw.Draw, regions: RegionMap) -> None:
+        sx, sy, ex, ey = self.region.poly.bounds
+        font_size = 30
+        factor = 0
+        tries = 0
+
+        while abs(factor - 1) > 0.05 and tries < 5:
+            font = self.font('/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf', font_size)
+            w, h = draw.textsize(self.region.text, font=font)
+            # TODO super random compromise betweeen fit to width and fit to height
+            factor = 0.7 * (ex - sx) / w + 0.3 * (ey - sy) / h
+            font_size = int(font_size * factor)
+            tries += 1
+
+        print(font_size, self.region.text, tries)
+        draw.text((sx, sy), self.region.text, fill=self.color, font=font, anchor="lt")
 
 
 class Operations:
@@ -494,6 +531,9 @@ class PageXmlRenderer:
         if self.features.should_render(region_ds):
             region = self.region_factory.create(region_ds)
             if region:
+                # if isinstance(region_ds, WordType):
+                #    self.operations.append(TextOperation(region, '#000000FF'))
+
                 if self.features & Feature.WARNINGS and region.warnings:
                     op = PolygonOperation(region, '#FF00003E', '#FF000076')
                 else:
