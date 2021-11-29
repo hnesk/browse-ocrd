@@ -361,7 +361,6 @@ class TextOperation(Operation):
             font_size = int(font_size * factor)
             tries += 1
 
-        print(font_size, self.region.text, tries)
         draw.text((sx, sy), self.region.text, fill=self.color, font=font, anchor="lt")
 
 
