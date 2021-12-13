@@ -487,7 +487,7 @@ class PageXmlRenderer:
 
     def __init__(self, canvas: Image.Image, coords: Dict[str, Any], page_id: str = '<unknown>',
                  features: Optional[Feature] = None, colors: Optional[Dict[str, str]] = None, logger: Logger = None):
-        self.features = features or Feature.DEFAULT
+        self.features = Feature.DEFAULT if features is None else features
 
         if self.features & Feature.IMAGE:
             self.canvas = canvas.convert('RGBA')
