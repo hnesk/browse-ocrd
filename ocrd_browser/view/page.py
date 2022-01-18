@@ -124,7 +124,8 @@ class ImageVersionSelector(Gtk.Box, Configurator):
             versions.append(ImageVersion.from_page(self.document, page))
             alts: List[AlternativeImageType] = page.page.get_AlternativeImage()
             for alt in alts:
-                versions.append(ImageVersion.from_alternative_image(self.document, alt))
+                if self.document.path(alt.filename).exists():
+                    versions.append(ImageVersion.from_alternative_image(self.document, alt))
 
         with self.version_box.handler_block(self._change_handler):
             self.versions.clear()
