@@ -123,9 +123,14 @@ class Region:
     """
     def __init__(self, region: RegionWithCoords) -> None:
         self.region = region
+        self._conf: Optional[float] = region.Coords.conf
         self._poly: Optional[Polygon] = None
         self._prep_poly: Optional[prepared.PreparedGeometry] = None
         self.warnings: List[str] = []
+
+    @property
+    def conf(self) -> float:
+        return self._conf
 
     @property
     def poly(self) -> Polygon:
