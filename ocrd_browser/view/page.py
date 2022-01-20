@@ -417,6 +417,8 @@ class ViewPage(View):
         if region:
             content += '\n<tt><big>{}</big></tt>\n\n{}\n'.format(str(region), escape(region.text))
 
+            if region.conf:
+                content += '\n<tt>@conf=</tt>{}'.format(region.conf)'
             if region.region_subtype:
                 content += '\n<tt>@type:</tt> {}'.format(region.region_subtype)
             for attribute in [
