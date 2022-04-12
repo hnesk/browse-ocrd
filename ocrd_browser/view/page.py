@@ -256,6 +256,10 @@ class ViewPage(View):
         self.add_configurator('scale', ImageZoomSelector(2.0, 0.05, -4.0, 2.0))
         self.add_configurator('image_version', ImageVersionSelector())
         self.add_configurator('features', PageFeaturesSelector())
+        button = Gtk.Button.new_with_label('*')
+        button.connect('clicked', self.open_screenshotdialog)
+        button.set_visible(True)
+        self.action_bar.pack_start(button)
 
         actions = ActionRegistry()
         actions.create(name='zoom_by', param_type=GLib.VariantType('i'), callback=self._on_zoom_by)
@@ -531,3 +535,30 @@ class ViewPage(View):
             self.page_image.height
         )
         self.highlight.queue_draw()
+
+    def open_screenshotdialog(self, button: Gtk.Button) -> None:
+        if self.page_image is None:
+            return
+
+        dialog = Gtk.FileChooserDialog(title="Save image under...",
+                                       parent=self.window,
+                                       action=Gtk.FileChooserAction.SAVE)
+        dialog.add_buttons(Gtk.STOCK_CANCEL,
+                           Gtk.ResponseType.CANCEL,
+                           Gtk.STOCK_SAVE,
+                           Gtk.ResponseType.OK)
+        filter_png = Gtk.FileFilter()
+        filter_png.set_name("PNG image files")
+        filter_png.add_mime_type("image/png")
+        dialog.add_filter(filter_png)
+        dialog.set_current_name("untitled.png")
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            filename = dialog.get_filename()
+        elif response == Gtk.ResponseType.CANCEL:
+            filename = ''
+
+        dialog.destroy()
+        if filename:
+            self.page_image.save(filename)
