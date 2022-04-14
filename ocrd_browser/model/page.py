@@ -53,7 +53,8 @@ class Page:
         return self.pc_gts.get_Metadata()
 
     def xpath(self, xpath: str) -> List[Element]:
-        return cast(List[Element], self.xml_root.xpath(xpath, namespaces=NAMESPACES))
+        page_namespace = {'page': ns for ns in self.xml_root.nsmap.values() if ns.startswith('http://schema.primaresearch.org/PAGE/gts/pagecontent/')}
+        return cast(List[Element], self.xml_root.xpath(xpath, namespaces=dict(NAMESPACES, **page_namespace)))
 
     @property
     def xml_root(self) -> Element:
