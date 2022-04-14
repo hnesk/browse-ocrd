@@ -124,7 +124,8 @@ class ImageVersionSelector(Gtk.Box, Configurator):
             versions.append(ImageVersion.from_page(self.document, page))
             alts: List[AlternativeImageType] = page.page.get_AlternativeImage()
             for alt in alts:
-                versions.append(ImageVersion.from_alternative_image(self.document, alt))
+                if self.document.path(alt.filename).exists():
+                    versions.append(ImageVersion.from_alternative_image(self.document, alt))
 
         with self.version_box.handler_block(self._change_handler):
             self.versions.clear()
@@ -255,6 +256,10 @@ class ViewPage(View):
         self.add_configurator('scale', ImageZoomSelector(2.0, 0.05, -4.0, 2.0))
         self.add_configurator('image_version', ImageVersionSelector())
         self.add_configurator('features', PageFeaturesSelector())
+        icon = Gtk.Image.new_from_icon_name('camera-photo', Gtk.IconSize.SMALL_TOOLBAR)
+        button = Gtk.Button(image=icon, visible=True, always_show_image=True, tooltip_text='Saves a screenshot of the current view')
+        button.connect('clicked', self.open_screenshotdialog)
+        self.action_bar.pack_start(button)
 
         actions = ActionRegistry()
         actions.create(name='zoom_by', param_type=GLib.VariantType('i'), callback=self._on_zoom_by)
@@ -530,3 +535,30 @@ class ViewPage(View):
             self.page_image.height
         )
         self.highlight.queue_draw()
+
+    def open_screenshotdialog(self, button: Gtk.Button) -> None:
+        if self.page_image is None:
+            return
+
+        dialog = Gtk.FileChooserDialog(title="Save image under...",
+                                       parent=self.window,
+                                       action=Gtk.FileChooserAction.SAVE)
+        dialog.add_buttons(Gtk.STOCK_CANCEL,
+                           Gtk.ResponseType.CANCEL,
+                           Gtk.STOCK_SAVE,
+                           Gtk.ResponseType.OK)
+        filter_png = Gtk.FileFilter()
+        filter_png.set_name("PNG image files")
+        filter_png.add_mime_type("image/png")
+        dialog.add_filter(filter_png)
+        dialog.set_current_name("untitled.png")
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            filename = dialog.get_filename()
+        else:
+            filename = ''
+
+        dialog.destroy()
+        if filename:
+            self.page_image.save(filename)
