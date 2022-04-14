@@ -58,7 +58,6 @@ class Page:
     @property
     def xml_root(self) -> Element:
         if self.pc_gts.gds_elementtree_node_ is None:
-            from ocrd_models.constants import NAMESPACES
             from ocrd_models.ocrd_page_generateds import parsexmlstring_
             from io import StringIO
             sio = StringIO()
