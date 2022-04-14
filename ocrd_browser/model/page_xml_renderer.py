@@ -123,14 +123,21 @@ class Region:
     """
     def __init__(self, region: RegionWithCoords) -> None:
         self.region = region
-        self._conf: Optional[float] = region.Coords.conf
         self._poly: Optional[Polygon] = None
         self._prep_poly: Optional[prepared.PreparedGeometry] = None
         self.warnings: List[str] = []
 
     @property
-    def conf(self) -> float:
-        return self._conf
+    def coords_conf(self) -> Optional[float]:
+        return self.region.Coords.conf if hasattr(self.region, 'Coords') else None
+
+    @property
+    def text_conf(self) -> Optional[float]:
+        if isinstance(self.region, (TextRegionType, TextLineType, WordType, GlyphType)):
+            if self.region.get_TextEquiv() and self.region.get_TextEquiv()[0].conf:
+                return self.region.get_TextEquiv()[0].conf
+        return None
+
 
     @property
     def poly(self) -> Polygon:
