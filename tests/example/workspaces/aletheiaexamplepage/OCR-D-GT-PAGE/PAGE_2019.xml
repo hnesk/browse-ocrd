@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<PcGts xmlns="http://schema.primaresearch.org/PAGE/gts/pagecontent/2018-07-15" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schema.primaresearch.org/PAGE/gts/pagecontent/2018-07-15 http://schema.primaresearch.org/PAGE/gts/pagecontent/2018-07-15/pagecontent.xsd" pcGtsId="pc-aletheiaexamplepage-2018">
+<PcGts xmlns="http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15 http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15/pagecontent.xsd" pcGtsId="pc-aletheiaexamplepage-2019">
 	<Metadata>
 	<Creator>PRImA Research Lab</Creator>
 	<Created>2015-07-17T15:27:13</Created>
 	<LastChange>2018-07-19T07:29:57</LastChange>
 	<Comments>Example Page</Comments></Metadata>
-	<Page imageFilename="OCR-D-GT-IMG/PAGE_2018.jpg" imageWidth="3508" imageHeight="4961">
-	<AlternativeImage filename="OCR-D-GT-IMG-BIN/PAGE_2018.tif" comments="B/W"/>
+	<Page imageFilename="OCR-D-GT-IMG/PAGE_2019.jpg" imageWidth="3508" imageHeight="4961">
+	<AlternativeImage filename="OCR-D-GT-IMG-BIN/PAGE_2019.tif" comments="B/W"/>
 	<Border>
 	<Coords points="25,25 25,4895 3483,4895 3483,25"/></Border>
 	<ReadingOrder>

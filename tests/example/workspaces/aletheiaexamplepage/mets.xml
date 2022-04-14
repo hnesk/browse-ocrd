@@ -23,6 +23,9 @@
       <mets:file ID="PAGE_2018_XML" MIMETYPE="application/vnd.prima.page+xml">
         <mets:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="FILE" xlink:href="OCR-D-GT-PAGE/PAGE_2018.xml"/>
       </mets:file>
+      <mets:file ID="PAGE_2019_XML" MIMETYPE="application/vnd.prima.page+xml">
+        <mets:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="FILE" xlink:href="OCR-D-GT-PAGE/PAGE_2019.xml"/>
+      </mets:file>
     </mets:fileGrp>
     <mets:fileGrp USE="OCR-D-GT-IMG">
       <mets:file ID="PAGE_2017_IMG" MIMETYPE="image/jpeg">
@@ -31,6 +34,9 @@
       <mets:file ID="PAGE_2018_IMG" MIMETYPE="image/jpeg">
         <mets:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="FILE" xlink:href="OCR-D-GT-IMG/PAGE_2018.jpg"/>
       </mets:file>
+      <mets:file ID="PAGE_2019_IMG" MIMETYPE="image/jpeg">
+        <mets:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="FILE" xlink:href="OCR-D-GT-IMG/PAGE_2019.jpg"/>
+      </mets:file>
     </mets:fileGrp>
     <mets:fileGrp USE="OCR-D-GT-IMG-BIN">
       <mets:file ID="PAGE_2017_BIN" MIMETYPE="image/tiff">
@@ -38,6 +44,9 @@
       </mets:file>
       <mets:file ID="PAGE_2018_BIN" MIMETYPE="image/tiff">
         <mets:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="FILE" xlink:href="OCR-D-GT-IMG-BIN/PAGE_2018.tif"/>
+      </mets:file>
+      <mets:file ID="PAGE_2019_BIN" MIMETYPE="image/tiff">
+        <mets:FLocat LOCTYPE="OTHER" OTHERLOCTYPE="FILE" xlink:href="OCR-D-GT-IMG-BIN/PAGE_2019.tif"/>
       </mets:file>
     </mets:fileGrp>
   </mets:fileSec>
@@ -53,6 +62,12 @@
         <mets:fptr FILEID="PAGE_2018_IMG"/>
         <mets:fptr FILEID="PAGE_2018_BIN"/>
       </mets:div>
+      <mets:div TYPE="page" ID="PAGE_2019">
+        <mets:fptr FILEID="PAGE_2019_XML"/>
+        <mets:fptr FILEID="PAGE_2019_IMG"/>
+        <mets:fptr FILEID="PAGE_2019_BIN"/>
+      </mets:div>
+
     </mets:div>
   </mets:structMap>
 </mets:mets>
