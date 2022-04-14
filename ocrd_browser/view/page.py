@@ -256,9 +256,9 @@ class ViewPage(View):
         self.add_configurator('scale', ImageZoomSelector(2.0, 0.05, -4.0, 2.0))
         self.add_configurator('image_version', ImageVersionSelector())
         self.add_configurator('features', PageFeaturesSelector())
-        button = Gtk.Button.new_with_label('*')
+        icon = Gtk.Image.new_from_icon_name('camera-photo', Gtk.IconSize.SMALL_TOOLBAR)
+        button = Gtk.Button(image=icon, visible=True, always_show_image=True, tooltip_text='Saves a screenshot of the current view')
         button.connect('clicked', self.open_screenshotdialog)
-        button.set_visible(True)
         self.action_bar.pack_start(button)
 
         actions = ActionRegistry()
