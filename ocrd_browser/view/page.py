@@ -556,7 +556,7 @@ class ViewPage(View):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             filename = dialog.get_filename()
-        elif response == Gtk.ResponseType.CANCEL:
+        else:
             filename = ''
 
         dialog.destroy()
