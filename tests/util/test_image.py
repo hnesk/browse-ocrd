@@ -31,7 +31,7 @@ def _image_modes():
 class ImageUtilTestCase(TestCase):
 
     def test_pil_to_pixbuf_is_faster_via_opencv(self):
-        # self.skipTest('Slow test')
+        self.skipTest('Slow test')
         files = [
             ASSETS_PATH / 'kant_aufklaerung_1784-binarized/data/OCR-D-IMG/OCR-D-IMG_0017.tif',
             ASSETS_PATH / 'kant_aufklaerung_1784-binarized/data/OCR-D-IMG-1BIT/OCR-D-IMG-1BIT_0017.png',
