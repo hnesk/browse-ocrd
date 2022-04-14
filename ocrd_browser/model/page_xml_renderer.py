@@ -128,6 +128,17 @@ class Region:
         self.warnings: List[str] = []
 
     @property
+    def coords_conf(self) -> Optional[float]:
+        return cast(float, self.region.Coords.conf) if hasattr(self.region, 'Coords') else None
+
+    @property
+    def text_conf(self) -> Optional[float]:
+        if isinstance(self.region, (TextRegionType, TextLineType, WordType, GlyphType)):
+            if self.region.get_TextEquiv() and self.region.get_TextEquiv()[0].conf:
+                return cast(float, self.region.get_TextEquiv()[0].conf)
+        return None
+
+    @property
     def poly(self) -> Polygon:
         return self._poly
 
@@ -487,7 +498,7 @@ class PageXmlRenderer:
 
     def __init__(self, canvas: Image.Image, coords: Dict[str, Any], page_id: str = '<unknown>',
                  features: Optional[Feature] = None, colors: Optional[Dict[str, str]] = None, logger: Logger = None):
-        self.features = Feature.DEFAULT if features is None else features
+        self.features = features or Feature.DEFAULT
 
         if self.features & Feature.IMAGE:
             self.canvas = canvas.convert('RGBA')
