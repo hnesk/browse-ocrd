@@ -22,7 +22,7 @@ from collections import OrderedDict
 from pathlib import Path
 from tempfile import mkdtemp
 from datetime import datetime
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 # noinspection PyProtectedMember
 from lxml.etree import ElementBase as Element, _ElementTree as ElementTree
 
@@ -72,9 +72,9 @@ class Document:
         """
         if not mets_url:
             return cls.create(emitter=emitter)
-        mets_url = cls._strip_local(mets_url)
+        mets_path = cls._to_path(mets_url)
 
-        workspace = Resolver().workspace_from_url(mets_url, download=False)
+        workspace = Resolver().workspace_from_url(str(mets_path), download=False)
         doc = cls(workspace, emitter=emitter, original_url=mets_url)
         doc._empty = False
         return doc
@@ -110,7 +110,7 @@ class Document:
 
     def save_as(self, mets_url: Union[Path, str], backup_directory: Union[bool, Path, str] = True) -> None:
         log = getLogger('ocrd_browser.model.document.Document.save_as')
-        mets_path = Path(self._strip_local(mets_url, disallow_remote=True))
+        mets_path = self._to_path(mets_url)
 
         workspace_directory = mets_path.parent
         if workspace_directory.exists():
@@ -496,10 +496,18 @@ class Document:
     def _strip_local(mets_url: Union[Path, str], disallow_remote: bool = True) -> str:
         result = urlparse(str(mets_url))
         if result.scheme == 'file' or result.scheme == '':
-            mets_url = result.path
+            mets_url = unquote(result.path)
         elif disallow_remote:
             raise ValueError('invalid url {}'.format(mets_url))
         return str(mets_url)
+
+    @staticmethod
+    def _to_path(mets_url: Union[Path, str]) -> Path:
+        result = urlparse(str(mets_url))
+        if not (result.scheme == 'file' or result.scheme == ''):
+            raise ValueError('invalid local path/url {}'.format(mets_url))
+        return Path(unquote(result.path))
+
 
     @staticmethod
     def _derive_backup_directory(workspace_directory: Path, now: datetime = None) -> Path:

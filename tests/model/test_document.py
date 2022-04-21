@@ -1,7 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from tests import TestCase, ASSETS_PATH
+from tests import TestCase, ASSETS_PATH, TEST_BASE_PATH
 from ocrd_browser.model import Document, Page
 from datetime import datetime
 from ocrd_models.ocrd_page import PcGtsType
@@ -104,7 +104,7 @@ class DocumentTestCase(TestCase):
 
     def test_save(self):
         doc = Document.clone(self.path)
-        with TemporaryDirectory(prefix='browse-ocrd-tests') as directory:
+        with TemporaryDirectory(prefix='browse-ocrd tests') as directory:
             saved_mets = directory + '/mets.xml'
             doc.save_as(saved_mets)
             saved = Document.load(saved_mets)
@@ -172,3 +172,13 @@ class DocumentTestCase(TestCase):
     def test_modify_when_editable(self):
         doc = Document.clone(self.path)
         doc.reorder(['PHYS_0020', 'PHYS_0017'])
+
+    def test_path_with_spaces(self):
+        path = TEST_BASE_PATH / 'example/workspaces/heavy quoting/mets.xml'
+        uri = path.as_uri()
+        doc = Document.load(uri)
+        page = doc.page_for_id('PHYS_0017', 'OCR-D-GT-PAGE')
+        image = doc.workspace.image_from_page(page.page, 'PHYS_0017')
+        # Assert no exceptions happened and a sensible return value
+        self.assertGreater(image[0].height, 100)
+
