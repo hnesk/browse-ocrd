@@ -181,4 +181,3 @@ class DocumentTestCase(TestCase):
         image = doc.workspace.image_from_page(page.page, 'PHYS_0017')
         # Assert no exceptions happened and a sensible return value
         self.assertGreater(image[0].height, 100)
-

@@ -75,7 +75,7 @@ class Document:
         mets_path = cls._to_path(mets_url)
 
         workspace = Resolver().workspace_from_url(str(mets_path), download=False)
-        doc = cls(workspace, emitter=emitter, original_url=mets_url)
+        doc = cls(workspace, emitter=emitter, original_url=str(mets_url))
         doc._empty = False
         return doc
 
@@ -507,7 +507,6 @@ class Document:
         if not (result.scheme == 'file' or result.scheme == ''):
             raise ValueError('invalid local path/url {}'.format(mets_url))
         return Path(unquote(result.path))
-
 
     @staticmethod
     def _derive_backup_directory(workspace_directory: Path, now: datetime = None) -> Path:
