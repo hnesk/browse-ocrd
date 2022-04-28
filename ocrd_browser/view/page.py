@@ -61,14 +61,44 @@ class Transformation:
         return clamp(x, 0, self.cx) / self.scale - self.tx, clamp(y, 0, self.cy) / self.scale - self.ty
 
 
+class ImageFeatures:
+    FEATURES = {
+        'binarized': 'B',
+        'grayscale_normalized': 'N',
+        'deskewed': 'S',
+        'despeckled': 'P',
+        'dewarped': 'W',
+        'cropped': 'C',
+        'rotated-90': '',
+        'rotated-180': '',
+        'rotated-270': '',
+    }
+
+    @classmethod
+    def allowed(cls) -> FrozenSet[str]:
+        return frozenset(cls.FEATURES.keys())
+
+    @classmethod
+    def from_string(cls, string: str) -> FrozenSet[str]:
+        return frozenset(str(string).split(',')).intersection(cls.allowed())
+
+    @classmethod
+    def negate(cls, st: FrozenSet[str]) -> FrozenSet[str]:
+        return cls.allowed().difference(st.intersection(cls.allowed()))
+
+    @classmethod
+    def short(cls, st: FrozenSet[str]) -> str:
+        return ''.join([cls.FEATURES[i] for i in st if i in cls.FEATURES])
+
+
 class ImageVersion(NamedTuple):
     path: Path
     size: Tuple[int, int]
     features: FrozenSet[str] = frozenset()
     conf: Optional[float] = None
 
-    def as_row(self) -> Tuple[str, str, str]:
-        return ','.join(sorted(self.features)), self.path.stem, '{0:d}✕{1:d}'.format(*self.size)
+    def as_row(self) -> Tuple[str, str, str, str]:
+        return ','.join(sorted(self.features)), self.path.stem, '{0:d}✕{1:d}'.format(*self.size), ImageFeatures.short(self.features)
 
     @classmethod
     def from_page(cls, doc: Document, page: Page) -> 'ImageVersion':
@@ -91,7 +121,7 @@ class ImageVersionSelector(Gtk.Box, Configurator):
         super().__init__(visible=True, spacing=3)
         self.value = None
 
-        self.versions = Gtk.ListStore(str, str, str)
+        self.versions = Gtk.ListStore(str, str, str, str)
         self.version_box = Gtk.ComboBox(visible=True, model=self.versions)
         self.version_box.set_id_column(0)
 
@@ -104,11 +134,22 @@ class ImageVersionSelector(Gtk.Box, Configurator):
         self.version_box.add_attribute(renderer, "text", 1)
         self.set_tooltip_text('Image-Version')
 
-        # renderer = Gtk.CellRendererText()
-        # self.version_box.pack_start(renderer, False)
-        # self.version_box.add_attribute(renderer, "text", 2)
+        renderer = Gtk.CellRendererText()
+        self.version_box.pack_start(renderer, False)
+        self.version_box.add_attribute(renderer, "text", 3)
 
         self._change_handler = self.version_box.connect('changed', self.combo_box_changed)
+
+        self.connect('query-tooltip', self.set_tooltip)
+
+    def set_tooltip(self, _widget: Gtk.Widget, _x: int, _y: int, _keyboard_mode: bool, tooltip: Gtk.Tooltip) -> bool:
+        model = self.versions
+        if len(model) > 0:
+            row = model[self.version_box.get_active()][:]
+            phs = {'features': row[0], 'stem': row[1], 'size': row[2]}
+            tooltip.set_text('{stem} ({size}): {features}'.format(**phs))
+            return True
+        return False
 
     def set_value(self, value: str) -> None:
         self.value = value
@@ -307,9 +348,8 @@ class ViewPage(View):
         got_result = False
         if self.current:
             # TODO: store self.image_version as a frozenset
-            all_classes = frozenset({'binarized', 'grayscale_normalized', 'deskewed', 'despeckled', 'cropped', 'rotated-90', 'rotated-180', 'rotated-270'})
-            selected = frozenset(self.image_version.split(','))
-            page_image, page_coords, _ = self.current.get_image(feature_selector=','.join(selected), feature_filter=','.join(all_classes.difference(selected)))
+            selected = ImageFeatures.from_string(self.image_version)
+            page_image, page_coords, _ = self.current.get_image(feature_selector=','.join(selected), feature_filter=','.join(ImageFeatures.negate(selected)))
             if page_image:
                 renderer = PageXmlRenderer(page_image, page_coords, self.current.id, self.features)
                 renderer.render_all(self.current.pc_gts)
