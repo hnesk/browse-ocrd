@@ -19,7 +19,7 @@ from .base import (
     ImageZoomSelector,
     Configurator
 )
-from ..model import LazyPage, Page, Document
+from ..model import LazyPage, Page, Document, IMAGE_FROM_PAGE_FILENAME_SUPPORT
 from ..model.page_xml_renderer import PageXmlRenderer, RegionMap, Feature, Region
 from ..util.gtk import WhenIdle, ActionRegistry
 
@@ -97,33 +97,40 @@ class ImageVersion(NamedTuple):
     features: FrozenSet[str] = frozenset()
     conf: Optional[float] = None
 
-    def as_row(self) -> Tuple[str, str, str, str]:
-        return ','.join(sorted(self.features)), self.path.stem, '{0:d}✕{1:d}'.format(*self.size), ImageFeatures.short(self.features)
+    def as_row(self) -> Tuple[str, str, str, str, str]:
+        return ','.join(sorted(self.features)), '{0:d}✕{1:d}'.format(*self.size), ImageFeatures.short(self.features), str(self.path), self.path.parent.name
 
     @classmethod
-    def from_page(cls, doc: Document, page: Page) -> 'ImageVersion':
-        return cls(doc.path(page.page.imageFilename), (page.page.imageWidth, page.page.imageHeight), frozenset(), None)
-
-    @classmethod
-    def from_alternative_image(cls, doc: Document, alt: AlternativeImageType) -> 'ImageVersion':
-        path = doc.path(alt.filename)
-        return cls(
-            path,
-            Image.open(path).size,
-            frozenset(str(alt.comments).split(',')),
-            float(alt.conf) if alt.conf is not None else None
-        )
+    def list_from_page(cls, doc: Document, page: Page) -> List['ImageVersion']:
+        versions = []
+        if page:
+            path = doc.path(page.page.imageFilename)
+            if path.exists():
+                versions.append(cls(path.relative_to(doc.directory), (page.page.imageWidth, page.page.imageHeight), frozenset(), None))
+            alts: List[AlternativeImageType] = page.page.get_AlternativeImage()
+            for alt in alts:
+                path = doc.path(alt.filename)
+                if path.exists():
+                    versions.append(cls(path.relative_to(doc.directory), Image.open(path).size, frozenset(str(alt.comments).split(',')), float(alt.conf) if alt.conf is not None else None))
+        return versions
 
 
 class ImageVersionSelector(Gtk.Box, Configurator):
+
+    COLUMN_FEATURES = 0
+    COLUMN_SIZE = 1
+    COLUMN_SHORT_FEATURES = 2
+    COLUMN_PATH = 3
+    COLUMN_FILE_GROUP = 4
 
     def __init__(self) -> None:
         super().__init__(visible=True, spacing=3)
         self.value = None
 
-        self.versions = Gtk.ListStore(str, str, str, str)
+        self.versions = Gtk.ListStore(str, str, str, str, str)
         self.version_box = Gtk.ComboBox(visible=True, model=self.versions)
-        self.version_box.set_id_column(0)
+
+        self.version_box.set_id_column(self.COLUMN_PATH)
 
         # label = Gtk.Label(label='Image:', visible=True)
         # self.pack_start(label, False, True, 0)
@@ -131,12 +138,12 @@ class ImageVersionSelector(Gtk.Box, Configurator):
 
         renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.START)
         self.version_box.pack_start(renderer, False)
-        self.version_box.add_attribute(renderer, "text", 1)
+        self.version_box.add_attribute(renderer, "text", self.COLUMN_FILE_GROUP)
         self.set_tooltip_text('Image-Version')
 
         renderer = Gtk.CellRendererText()
         self.version_box.pack_start(renderer, False)
-        self.version_box.add_attribute(renderer, "text", 3)
+        self.version_box.add_attribute(renderer, "text", self.COLUMN_SHORT_FEATURES)
 
         self._change_handler = self.version_box.connect('changed', self.combo_box_changed)
 
@@ -146,41 +153,51 @@ class ImageVersionSelector(Gtk.Box, Configurator):
         model = self.versions
         if len(model) > 0:
             row = model[self.version_box.get_active()][:]
-            phs = {'features': row[0], 'stem': row[1], 'size': row[2]}
-            tooltip.set_text('{stem} ({size}): {features}'.format(**phs))
+            phs = {
+                'features': row[self.COLUMN_FEATURES],
+                'size': row[self.COLUMN_SIZE],
+                'short_features': row[self.COLUMN_SHORT_FEATURES],
+                'path': row[self.COLUMN_PATH],
+                'file_group': row[self.COLUMN_FILE_GROUP],
+            }
+            tooltip.set_text('{path}\t {size}\t{features}'.format(**phs))
             return True
         return False
 
-    def set_value(self, value: str) -> None:
+    def set_value(self, value: Tuple[str, str]) -> None:
         self.value = value
-        self.version_box.set_active_id(value)
+        if value and value[0]:
+            self.version_box.set_active_id(value[0])
 
-    @GObject.Signal(arg_types=[str])
-    def changed(self, image: str) -> None:
-        self.value = image
+    @GObject.Signal()
+    def changed(self, path: str, features: str) -> None:
+        self.value = (path, features)
 
     def set_page(self, page: Page) -> None:
-        versions = []
-        if page:
-            versions.append(ImageVersion.from_page(self.document, page))
-            alts: List[AlternativeImageType] = page.page.get_AlternativeImage()
-            for alt in alts:
-                if self.document.path(alt.filename).exists():
-                    versions.append(ImageVersion.from_alternative_image(self.document, alt))
+        previous_selected = None, None
+        if self.version_box.get_active() != -1:
+            row = self.versions[self.version_box.get_active()]
+            previous_selected = row[self.COLUMN_FILE_GROUP], row[self.COLUMN_FEATURES]
 
         with self.version_box.handler_block(self._change_handler):
             self.versions.clear()
-            for version in versions:
+            for version in ImageVersion.list_from_page(self.document, page):
                 self.versions.append(version.as_row())
 
-        if self.value is None:
+        if self.value is None or self.value[0] is None:
             self.version_box.set_active(0)
         else:
-            if self.value != self.version_box.get_active_id():
-                self.version_box.set_active_id(self.value)
+            if self.value[0] != self.version_box.get_active_id():
+                for v in self.versions:
+                    if v[self.COLUMN_FILE_GROUP] == previous_selected[0] and v[self.COLUMN_FEATURES] == previous_selected[1]:
+                        self.version_box.set_active_id(v[self.COLUMN_PATH])
+                        return
+            self.version_box.set_active_id(self.value[0])
 
     def combo_box_changed(self, combo: Gtk.ComboBox) -> None:
-        self.emit('changed', combo.get_active_id())
+        if len(self.versions) > 0:
+            row = self.versions[combo.get_active()][:]
+            self.emit('changed', row[self.COLUMN_PATH], row[self.COLUMN_FEATURES])
 
 
 class PageFeaturesSelector(Gtk.Box, Configurator):
@@ -274,7 +291,7 @@ class ViewPage(View):
         # Configurators
         self.file_group: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
         self.scale: float = -2.0
-        self.image_version: str = ''
+        self.image_version: Tuple[Optional[str], str] = (None, '')
         self.features: Feature = Feature.DEFAULT
 
         # GTK
@@ -347,9 +364,14 @@ class ViewPage(View):
     def redraw(self) -> None:
         got_result = False
         if self.current:
-            # TODO: store self.image_version as a frozenset
-            selected = ImageFeatures.from_string(self.image_version)
-            page_image, page_coords, _ = self.current.get_image(feature_selector=','.join(selected), feature_filter=','.join(ImageFeatures.negate(selected)))
+            selected_features = ImageFeatures.from_string(self.image_version[1])
+            parameters = {
+                'feature_selector': ','.join(selected_features),
+                'feature_filter': ','.join(ImageFeatures.negate(selected_features))
+            }
+            if IMAGE_FROM_PAGE_FILENAME_SUPPORT:
+                parameters['filename'] = self.image_version[0]
+            page_image, page_coords, _ = self.current.get_image(**parameters)
             if page_image:
                 renderer = PageXmlRenderer(page_image, page_coords, self.current.id, self.features)
                 renderer.render_all(self.current.pc_gts)
