@@ -1,8 +1,26 @@
 # Change Log
 
-<!-- ## [Unreleased](../../compare/v0.5...master) --> 
 
-## [0.5](../../compare/v0.4.3...v0.5) - 2021-07-22
+<!-- 
+## [Unreleased](../../compare/v0.5.1...master)
+-->
+
+
+## [0.5.1](../../compare/v0.5...v0.5.1) - 2022-05-10
+
+New Features:
+ * PageView: add baselines if available  [#34](../../issues/34)
+ * PageView: add screenshot button  [#41](../../pull/41), thanks @bertsky
+ * PageView: show @conf in tooltip [#39](../../pull/39), thanks @bertsky
+ * Text/Xml/Diff view: Allow zooming with CTRL+mousewheel [#33](../../pull/33), thanks @bertsky
+
+Fixed:
+ * PageView: component menu not editable with older PAGE-XML Namespaces [#35](../../issues/35)
+ * support path names with spaces [#40](../../issues/40)
+ * ViewPage: ignore AlternativeImage if not retrievable [#37](../../issues/37)
+
+
+## [0.5](../../compare/v0.4.3...v0.5) - 2021-11-09
 
 New Features:
 * [Added a PageView](../../pull/30) ([#15](../../issues/15) / [#28](../../issues/28)) \
