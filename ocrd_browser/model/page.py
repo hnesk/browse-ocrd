@@ -5,9 +5,12 @@ from ocrd import Workspace
 from ocrd_models import OcrdFile, OcrdExif
 from ocrd_models.ocrd_page import PcGtsType, PageType, MetadataType
 from ocrd_models.constants import NAMESPACES
-from ocrd_utils import MIMETYPE_PAGE, getLogger, pushd_popd
+from ocrd_utils import MIMETYPE_PAGE, getLogger, pushd_popd, VERSION as OCRD_VERSION
 
 from lxml.etree import ElementBase as Element
+from inspect import signature
+
+IMAGE_FROM_PAGE_FILENAME_SUPPORT = 'filename' in signature(Workspace.image_from_page).parameters
 
 
 class Page:
@@ -131,14 +134,24 @@ class LazyPage(Page):
                     self._pc_gts = self.document.page_for_file(image_files[0])
         return self._pc_gts
 
-    def get_image(self, feature_selector: Union[str, Set[str]] = '', feature_filter: Union[str, Set[str]] = '') -> Tuple[Image, Dict[str, Any], OcrdExif]:
+    def get_image(self, feature_selector: Union[str, Set[str]] = '', feature_filter: Union[str, Set[str]] = '', filename: str = '') -> Tuple[Image, Dict[str, Any], OcrdExif]:
         log = getLogger('ocrd_browser.model.page.LazyPage.get_image')
-        feature_selector = feature_selector if isinstance(feature_selector, str) else ','.join(sorted(feature_selector))
-        feature_filter = feature_filter if isinstance(feature_filter, str) else ','.join(sorted(feature_filter))
+
         ws: Workspace = self.document.workspace
+        kwargs = {
+            'transparency': True,
+            'feature_selector': feature_selector if isinstance(feature_selector, str) else ','.join(sorted(feature_selector)),
+            'feature_filter': feature_filter if isinstance(feature_filter, str) else ','.join(sorted(feature_filter))
+        }
+        if filename:
+            if IMAGE_FROM_PAGE_FILENAME_SUPPORT:
+                kwargs['filename'] = filename
+            else:
+                raise RuntimeError('Parameter filename not supported in ocrd version {}, at least 2.33.0 needed'.format(OCRD_VERSION))
+
         try:
             with pushd_popd(ws.directory):
-                page_image, page_coords, page_image_info = ws.image_from_page(self.page, self.id, transparency=True, feature_selector=feature_selector, feature_filter=feature_filter)
+                page_image, page_coords, page_image_info = ws.image_from_page(self.page, self.id, **kwargs)
         except Exception as e:
             log.exception(e)
             page_image, page_coords, page_image_info = None, None, None
