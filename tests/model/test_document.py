@@ -179,3 +179,12 @@ class DocumentTestCase(TestCase):
         image = doc.workspace.image_from_page(page.page, 'PHYS_0017')
         # Assert no exceptions happened and a sensible return value
         self.assertGreater(image[0].height, 100)
+
+    def test_missing_image(self):
+        path = TEST_BASE_PATH / 'example/workspaces/kant_aufklaerung_1784_missing_image/mets.xml'
+        uri = path.as_uri()
+        doc = Document.load(uri)
+        page = doc.page_for_id('PHYS_0017', 'OCR-D-GT-PAGE')
+        image, info, exif = page.get_image(feature_selector='', feature_filter='binarized')
+        # Assert no exceptions happened and no image returned
+        self.assertIsNone(image)
