@@ -1,6 +1,7 @@
 import shlex
 import subprocess
 import unittest
+from ocrd_utils import setOverrideLogLevel
 from pathlib import Path
 from typing import Union
 
@@ -45,6 +46,7 @@ class LauncherTestCase(TestCase):
         self.file = self.doc.files_for_page_id('PHYS_0017', 'OCR-D-GT-PAGE')[0]
 
     def test_launch_missing(self):
+        setOverrideLogLevel('ERROR', True)
         with self.assertLogs('ocrd_browser.util.launcher.Launcher.launch', level='ERROR') as log_watch:
             process = self.launcher.launch('missingtool', self.doc, self.file)
         self.assertIsNone(process)
@@ -53,6 +55,7 @@ class LauncherTestCase(TestCase):
             'Tool "missingtool" not found in your config, to fix place the following section in your ocrd-browser.conf',
             log_watch.records[0].getMessage()
         )
+        setOverrideLogLevel('OFF', True)
 
     def test_launch_tool(self):
         tool = _Tool('Echotest', 'echo -n {file.path.relative}')
