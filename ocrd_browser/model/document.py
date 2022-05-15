@@ -15,8 +15,8 @@ from ocrd_models.ocrd_page_generateds import PcGtsType
 from ocrd_models.constants import NAMESPACES as NS
 from ocrd_utils import pushd_popd
 from ocrd_utils.constants import MIME_TO_EXT, MIMETYPE_PAGE
+from ocrd_utils import getLogger
 
-from logging import getLogger
 from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any, Dict
 from collections import OrderedDict
 from pathlib import Path

@@ -12,10 +12,11 @@ or
 in your Gtk using test file in the first line
 """
 # pylint: disable=unused-import
+import logging
 from unittest import TestCase # noqa F401
 import gi
 from pathlib import Path
-from ocrd_utils import initLogging
+from ocrd_utils import initLogging, setOverrideLogLevel
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkPixbuf', '2.0')
@@ -27,6 +28,7 @@ except ValueError:
 gi.require_version('WebKit2', '4.0')
 
 initLogging()
+setOverrideLogLevel(logging.ERROR, True)
 
 TEST_BASE_PATH = (Path(__file__).parent).absolute()
 ASSETS_PATH = (TEST_BASE_PATH / 'assets').absolute()
