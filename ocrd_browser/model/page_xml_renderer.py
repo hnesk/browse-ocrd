@@ -521,7 +521,7 @@ class PageXmlRenderer:
 
         if self.features & Feature.ORDER:
             last_point: Optional[Point] = None
-            for region_ds in page.get_AllRegions(classes=['Text'], order='reading-order'):
+            for region_ds in page.get_AllRegions(order='reading-order-only'):
                 region = self.region_factory.create(region_ds)
                 new_point = region.poly.representative_point()
                 if last_point:
