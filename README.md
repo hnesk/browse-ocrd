@@ -1,9 +1,23 @@
+[![Unit tests](https://github.com/hnesk/browse-ocrd/workflows/Unit%20tests/badge.svg?branch=master)](https://github.com/hnesk/browse-ocrd/actions/workflows/unittest.yml)
+
 # OCR-D Browser
 
 An extensible viewer for [OCR-D](https://ocr-d.de/) [mets.xml](https://ocr-d.de/en/spec/mets) files
 
-[![Unit tests](https://github.com/hnesk/browse-ocrd/workflows/Unit%20tests/badge.svg?branch=master)](https://github.com/hnesk/browse-ocrd/actions/workflows/unittest.yml)
-
+ * [Screenshot](#screenshot)
+ * [Features](#features)
+ * [Installation](#installation)
+    * [Native](#native-tested-on-ubuntu-18042004)
+       * [From source](#from-source)
+       * [Via pip](#via-pip)
+    * [Docker](#docker)
+ * [Usage](#usage)
+    * [Native GUI](#native-gui)
+    * [Docker service](#docker-service)
+ * [Configuration](#configuration)
+    * [Configuration file locations](#configuration-file-locations)
+    * [Configuration file syntax](#configuration-file-syntax)
+ 
 ## Screenshot
 
 ![OCRD Browser with Page and Xml view](docs/screenshot.png)
@@ -20,10 +34,13 @@ An extensible viewer for [OCR-D](https://ocr-d.de/) [mets.xml](https://ocr-d.de/
 - DiffView: Show a simple diff comparison between text annotations from different fileGrps  
 - HtmlView: Show rendered HTML comparison from [dinglehopper](https://github.com/qurator-spk/dinglehopper) evaluations
 
+## Installation
 
-## Installation (tested on Ubuntu 18.04/20.04) 
+### Native (tested on Ubuntu 18.04/20.04) 
 
-In any case you need a venv with a current pip version (>=20), preferably your existing ocrd-venv:
+The native installation requires [GTK 3](https://www.gtk.org/).
+
+In any case you need a [virtual environment](https://packaging.python.org/tutorials/installing-packages/#creating-virtual-environments) with a current `pip` version (>=20), preferably your existing OCR-D venv:
 
 <details>
   <summary>Create a current pip venv:</summary>
@@ -37,7 +54,7 @@ pip install --upgrade pip setuptools wheel
 </details>
 
 
-### From source
+#### From source
 ```bash
 git clone https://github.com/hnesk/browse-ocrd.git 
 cd browse-ocrd
@@ -45,17 +62,44 @@ sudo make deps-ubuntu
 make install
 ```
 
-### Via pip 
+#### Via pip
 
 ```bash
 sudo apt install libcairo2-dev libgirepository1.0-dev
 pip install browse-ocrd
 ```
- 
+
+### Docker
+
+If you have installed [Docker](https://docs.docker.com/get-docker/), you can build OCR-D Browser as a **web service**:
+
+    docker build -t ocrd_browser .
+
+Or use a prebuilt image from Dockerhub:
+
+    docker pull bertsky/ocrd_browser
+
+
 ## Usage
+
+### Native GUI
+Start the app with the filesystem path to the METS file of your [OCR-D workspace](https://ocr-d.de/en/spec/glossary#workspace):
 ```
-browse-ocrd ./path/to/mets.xml # or open interactively
+browse-ocrd ./path/to/mets.xml
 ```
+
+You can still open another METS file from the UI though.
+
+### Docker service
+
+When running the webservice, you need to pass a directory `DATADIR` which (recursively) contains all the workspaces you want to serve.
+The top entrypoint `http://localhost/` will show an index page with a link `http://localhost/browse/...` for each workspace path.
+Each link will run `browse-ocrd` at that workspace in the background, and then redirect your browser to the internal [Broadway server](https://docs.gtk.org/gtk3/broadway.html), which renders the app in the web browser.
+
+To start up, just do:
+
+    docker run -it --rm -v DATADIR:/data -p 8085:8085 -p 8080:8080 ocrd_browser
+
 
 ## Configuration
 
