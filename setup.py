@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import fastentrypoints
 import codecs
 import subprocess
 

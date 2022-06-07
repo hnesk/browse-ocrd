@@ -3,11 +3,12 @@ Page-XML rendering object
 
 This is heavily based on ocrd_segment.extract_pages (https://github.com/OCR-D/ocrd_segment/blob/master/ocrd_segment/extract_pages.py)
 """
+from __future__ import annotations
+from typing import Optional, Dict, Any, Union, List, Iterator, Tuple, Type, cast
 import PIL.ImageFont
 import numpy as np
 from math import sin, cos, radians, inf
 from enum import IntFlag
-from typing import Optional, Dict, Any, Union, List, Iterator, Tuple, Type, cast
 from collections import defaultdict
 from logging import Logger
 
@@ -212,9 +213,9 @@ class Region:
 
 class RegionBase:
     def __init__(self) -> None:
-        self.children: List['RegionNode'] = []
+        self.children: List[RegionNode] = []
 
-    def append(self, node: 'RegionNode') -> None:
+    def append(self, node: RegionNode) -> None:
         self.children.append(node)
 
     def find_region(self, x: float, y: float, ignore_regions: Optional[List[Type[RegionWithCoords]]] = None) -> Optional[Region]:
@@ -379,7 +380,7 @@ class Operations:
     """
     Operations is a depth-sorted List of Operation objects
 
-    Each depth can be plotted on its own image-layer and will be blended blended with Image.alpha_composite, so
+    Each depth can be plotted on its own image-layer and will be blended with Image.alpha_composite, so
     Image.alpha_composite will only be called once per layer instead of once per operation
     """
 
