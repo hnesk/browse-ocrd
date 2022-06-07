@@ -4,7 +4,7 @@ from typing import List, Optional, Any, Tuple, Dict, Union, cast, Set, TYPE_CHEC
 from PIL.Image import Image
 from lxml.etree import ElementBase as Element
 from inspect import signature
-from deprecate import deprecated
+from deprecated import deprecated
 
 from ocrd import Workspace, OcrdFile, OcrdExif
 from ocrd_utils import MIMETYPE_PAGE, getLogger, pushd_popd, VERSION as OCRD_VERSION
@@ -21,11 +21,11 @@ class Page:
     def __init__(self, document: Document, id_: str, file_group: str):
         self.document = document
         self._id = id_
-        self._pc_gts = None
-        self._images = None
-        self._image_files = None
-        self._page_file = None
         self.file_group = file_group
+        self._pc_gts: Optional[PcGtsType] = None
+        self._images: Optional[List[Image]] = None
+        self._image_files: Optional[List[OcrdFile]] = None
+        self._page_file: Optional[OcrdFile] = None
 
     @property
     def images(self) -> List[Image]:
@@ -50,8 +50,8 @@ class Page:
                 self._page_file = page_files[0]
         return self._page_file
 
-    @deprecated(target=None, deprecated_in='0.5.2', remove_in='1.0')
-    @property
+    @property  # type: ignore[misc]
+    @deprecated(reason="Makes no sense anymore, what is **the** file of a page? Use get_files() or page_file / image_files instead")
     def file(self) -> Optional[OcrdFile]:
         """
         TODO: Makes no sense anymore, what is **the** file of a page?

@@ -315,7 +315,7 @@ class Document:
         index = index - index % page_qty
         return self.page_ids[index:index + page_qty]
 
-    def page_for_id(self, page_id: str, file_group: str = None) -> Optional['Page']:
+    def page_for_id(self, page_id: str, file_group: str) -> Optional['Page']:
         log = getLogger('ocrd_browser.model.document.Document.page_for_id')
         if not page_id:
             return None
