@@ -77,7 +77,7 @@ If you have installed [Docker](https://docs.docker.com/get-docker/), you can bui
 
 Or use a prebuilt image from Dockerhub:
 
-    docker pull bertsky/ocrd_browser
+    docker pull hnesk/ocrd_browser
 
 
 ## Usage
