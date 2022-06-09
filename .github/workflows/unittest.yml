@@ -3,6 +3,7 @@
 name: Unit tests
 on:
   workflow_dispatch:
+  workflow_call:
   push:
     branches: [ master, debug-github-ci ]
   pull_request:
