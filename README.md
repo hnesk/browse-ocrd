@@ -1,4 +1,5 @@
 [![Unit tests](https://github.com/hnesk/browse-ocrd/workflows/Unit%20tests/badge.svg?branch=master)](https://github.com/hnesk/browse-ocrd/actions/workflows/unittest.yml)
+[![Docker build](https://github.com/hnesk/browse-ocrd/actions/workflows/dockerhub.yml/badge.svg)](https://github.com/hnesk/browse-ocrd/actions/workflows/dockerhub.yml)
 
 # OCR-D Browser
 
