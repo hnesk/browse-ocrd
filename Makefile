@@ -6,9 +6,10 @@ PIP = pip3
 LOG_LEVEL = INFO
 PYTHONIOENCODING=utf8
 SHARE_DIR=~/.local/share
+DOCKER_TAG = ocrd_browser
 
 deps-ubuntu:
-	apt install -o Acquire::Retries=3 -y libcairo2-dev libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev gir1.2-webkit2-4.0 python3-dev pkg-config cmake
+	apt-get install -o Acquire::Retries=3 --no-install-recommends -y libcairo2-dev libgtk-3-bin libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev gir1.2-webkit2-4.0 python3-dev pkg-config cmake
 
 deps-dev:
 	$(PIP) install -r requirements-dev.txt
@@ -73,6 +74,15 @@ tests/assets: repo/assets
 	mkdir -p $@
 	cp -r -t $@ repo/assets/data/*
 
+docker-build:
+	docker build --tag $(DOCKER_TAG) .
+
+docker-run: DATADIR ?= $(CURDIR)
+docker-run:
+	docker run -it --rm -v $(DATADIR):/data -p 8085:8085 -p 8080:8080 $(DOCKER_TAG)
+
+docker-up:
+	docker-compose up -d
 
 .PHONY: assets-clean
 # Remove symlinks in test/assets

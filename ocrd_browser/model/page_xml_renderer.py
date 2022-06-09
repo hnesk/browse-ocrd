@@ -15,7 +15,7 @@ from functools import lru_cache as memoized
 
 from PIL import ImageDraw, Image, ImageFont
 
-from ocrd_models.ocrd_page import PcGtsType, PageType, BorderType, PrintSpaceType, RegionType, TextRegionType, TextLineType, WordType, GlyphType, GraphemeType, ChartRegionType, GraphicRegionType, SeparatorRegionType, TableRegionType
+from ocrd_models.ocrd_page import PcGtsType, PageType, BorderType, PrintSpaceType, RegionType, TextRegionType, TextLineType, WordType, GlyphType, GraphemeType, ChartRegionType, GraphicRegionType, SeparatorRegionType
 from ocrd_utils import coordinates_of_segment, getLogger, polygon_from_points, transform_coordinates
 
 from shapely.geometry import Polygon, Point, LineString
@@ -516,7 +516,8 @@ class PageXmlRenderer:
         page: PageType = pc_gts.get_Page()
         self.render_type(page.get_PrintSpace())
         self.render_type(page.get_Border())
-        def region_priority(region):
+
+        def region_priority(region: RegionType) -> int:
             # often, regions overlap; since we don't alpha-composite,
             # we should provide a useful default priority of what is
             # rendered last (and thus unoccluded); document order is
