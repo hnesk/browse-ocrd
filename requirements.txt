@@ -8,3 +8,4 @@ wheel
 setuptools
 lxml
 Shapely
+Deprecated

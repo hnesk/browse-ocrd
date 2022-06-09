@@ -1,5 +1,5 @@
 from tests import TestCase, TEST_BASE_PATH, ASSETS_PATH
-from ocrd_browser.model import Document, LazyPage, IMAGE_FROM_PAGE_FILENAME_SUPPORT
+from ocrd_browser.model import Document, IMAGE_FROM_PAGE_FILENAME_SUPPORT
 
 
 class PageTestCase(TestCase):
@@ -12,7 +12,7 @@ class PageTestCase(TestCase):
             self.assertGreater(len(xpath_result), 0)
 
     def test_can_call_get_image_if_supported(self):
-        page: LazyPage = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-binarized/data/mets.xml').page_for_id('P_0017', 'OCR-D-GT-WORD')
+        page = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-binarized/data/mets.xml').page_for_id('P_0017', 'OCR-D-GT-WORD')
         if IMAGE_FROM_PAGE_FILENAME_SUPPORT:
             image_by_feature, _, _ = page.get_image(feature_selector={'binarized'}, feature_filter={'cropped'})
             image_by_filename, _, _ = page.get_image(filename='OCR-D-IMG-BIN/BIN_0017.png', feature_filter={'cropped'})
@@ -26,7 +26,7 @@ class PageTestCase(TestCase):
 
     def test_missing_image(self):
         doc = Document.load((TEST_BASE_PATH / 'example/workspaces/kant_aufklaerung_1784_missing_image/mets.xml').as_uri())
-        page: LazyPage = doc.page_for_id('PHYS_0017', 'OCR-D-GT-PAGE')
+        page = doc.page_for_id('PHYS_0017', 'OCR-D-GT-PAGE')
         image, info, exif = page.get_image(feature_selector='', feature_filter='binarized')
         # Assert no exceptions happened but image is None
         self.assertIsNone(image)

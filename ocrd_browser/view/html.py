@@ -4,7 +4,6 @@ from typing import Optional, Tuple, Any
 
 from ocrd_browser.view import View
 from ocrd_browser.view.base import FileGroupSelector, FileGroupFilter
-from ocrd_browser.model import Page
 
 GObject.type_register(WebKit2.WebView)
 
@@ -38,14 +37,14 @@ class ViewHtml(View):
         super().config_changed(name, value)
         self.reload()
 
-    def reload(self) -> None:
-        files = self.document.files_for_page_id(self.page_id, self.use_file_group, mimetype='text/html')
-        if files:
-            self.current = Page(self.page_id, files[0], None, [], [])
-        self.redraw()
-
     def redraw(self) -> None:
-        if self.current:
-            self.web_view.set_tooltip_text(self.page_id)
-            self.web_view.load_uri('file://' + str(self.document.path(self.current.file.local_filename)))
-            self.web_view.show()
+        if not self.current:
+            return
+
+        html_files = self.current.get_files('text/html')
+        if not html_files:
+            return
+
+        self.web_view.set_tooltip_text(self.page_id)
+        self.web_view.load_uri('file://' + str(self.document.path(html_files[0].local_filename)))
+        self.web_view.show()

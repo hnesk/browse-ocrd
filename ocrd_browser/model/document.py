@@ -5,7 +5,7 @@ import shutil
 from functools import wraps
 
 from ocrd import Workspace, Resolver
-from ocrd_browser.model.page import Page, LazyPage
+from ocrd_browser.model.page import Page
 from ocrd_browser.util.file_groups import best_file_group
 from ocrd_browser.util.image import add_dpi_to_png_buffer
 from ocrd_browser.util.streams import SilencedStreams
@@ -14,7 +14,7 @@ from ocrd_models import OcrdFile
 from ocrd_models.ocrd_page_generateds import PcGtsType
 from ocrd_models.constants import NAMESPACES as NS
 from ocrd_utils import pushd_popd
-from ocrd_utils.constants import MIME_TO_EXT, MIMETYPE_PAGE
+from ocrd_utils.constants import MIME_TO_EXT
 from ocrd_utils import getLogger
 
 from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any, Dict
@@ -315,55 +315,16 @@ class Document:
         index = index - index % page_qty
         return self.page_ids[index:index + page_qty]
 
-    def _page_for_id_eager(self, page_id: str, file_group: str = None) -> Optional['Page']:
-        """
-        Find the Page object for page_id and file_group, including any PAGE-XML file and image files.
-
-        If no images can be found, extract the image for the page from the PAGE-XML by page_from_file.
-
-        If no PAGE-XML can be found, get all single image files and construct a PAGE-XML by page_from_image.
-
-        If neither PAGE-XML nor images can be found, give up.
-
-        This is modelled after Processor.input_files https://github.com/OCR-D/core/pull/556/
-        """
+    def page_for_id(self, page_id: str, file_group: str = None) -> Optional['Page']:
         log = getLogger('ocrd_browser.model.document.Document.page_for_id')
         if not page_id:
             return None
-        page_files = self.files_for_page_id(page_id, file_group, mimetype=MIMETYPE_PAGE)
-        image_files = self.files_for_page_id(page_id, file_group, mimetype="//image/.*")
-        images = [self.resolve_image(f) for f in image_files]
-        if not page_files and not image_files:
-            log.warning("No PAGE-XML and no image for page '{}' in fileGrp '{}'".format(page_id, file_group))
-            return None
-        file = next(iter(page_files + image_files))
-        pcgts = self.page_for_file(file)
-        if not pcgts.get_Page().get_imageFilename():
-            log.warning("PAGE-XML with empty image path for page '{}' in fileGrp '{}'".format(
-                page_id, file_group))
-        elif not image_files:
-            image, _, _ = self.workspace.image_from_page(pcgts.get_Page(), page_id)
-            image_files = [file]
-            images = [image]
-        elif not page_files and len(image_files) > 1:
-            log.warning(
-                "No PAGE-XML but {} images for page '{}' in fileGrp '{}'".format(len(image_files), page_id, file_group))
-
-        return Page(page_id, file, pcgts, image_files, images)
-
-    def _page_for_id_lazy(self, page_id: str, file_group: str = None) -> Optional['Page']:
-        log = getLogger('ocrd_browser.model.document.Document.page_for_id')
-        if not page_id:
-            return None
-        page = LazyPage(self, page_id, file_group)
+        page = Page(self, page_id, file_group)
         if not page.file:
             log.warning("No PAGE-XML and no image for page '{}' in fileGrp '{}'".format(page_id, file_group))
             return None
 
         return page
-
-    # page_for_id = _page_for_id_eager
-    page_for_id = _page_for_id_lazy
 
     def files_for_page_id(self, page_id: str, file_group: str = None, mimetype: str = None) -> List[OcrdFile]:
         with pushd_popd(self.workspace.directory):

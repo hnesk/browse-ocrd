@@ -19,7 +19,7 @@ from .base import (
     ImageZoomSelector,
     Configurator
 )
-from ..model import LazyPage, Page, Document, IMAGE_FROM_PAGE_FILENAME_SUPPORT
+from ..model import Page, Document, IMAGE_FROM_PAGE_FILENAME_SUPPORT
 from ..model.page_xml_renderer import PageXmlRenderer, RegionMap, Feature, Region
 from ..util.gtk import WhenIdle, ActionRegistry
 
@@ -286,7 +286,7 @@ class ViewPage(View):
 
     def __init__(self, name: str, window: Gtk.Window):
         super().__init__(name, window)
-        self.current: Optional[LazyPage] = None
+        self.current: Optional[Page] = None
 
         # Configurators
         self.file_group: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
