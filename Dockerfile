@@ -8,6 +8,8 @@ RUN apt-get update \
     && pip3 install browse-ocrd --use-feature=2020-resolver \
     && rm /Makefile
 
+MAINTAINER https://github.com/hnesk/browse-ocrd/issues
+
 ENV GDK_BACKEND broadway
 ENV BROADWAY_DISPLAY :5
 
