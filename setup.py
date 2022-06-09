@@ -2,8 +2,7 @@
 import codecs
 import subprocess
 
-import setuptools
-from setuptools import setup
+from setuptools import setup, find_packages
 from ocrd_browser import __version__
 
 install_requires = open('requirements.txt').read().split('\n')
@@ -28,7 +27,7 @@ setup(
     long_description=codecs.open('README.md', encoding='utf-8').read(),
     long_description_content_type='text/markdown',
     url="https://github.com/hnesk/browse-ocrd",
-    packages=setuptools.find_packages(exclude=('tests')),
+    packages=find_packages(exclude=('tests', 'repo', 'venv', 'build')),
     install_requires=install_requires,
     include_package_data=True,
     setup_requires=['wheel'],

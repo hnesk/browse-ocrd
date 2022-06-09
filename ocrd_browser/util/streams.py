@@ -1,8 +1,11 @@
-import os
-from types import TracebackType
-from typing import TextIO, Optional, Type
+from __future__ import annotations
+from typing import TextIO, Optional, Type, TYPE_CHECKING
 
 import sys
+import os
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 
 class RedirectedStdStreams:
@@ -43,11 +46,13 @@ class SilencedStreams(RedirectedStdStreams):
     def __init__(self, silence_stdout: bool = True, silence_stderr: bool = True):
         self.silence_stdout = silence_stdout
         self.silence_stderr = silence_stderr
-        self._stdout = open(os.devnull, 'w') if self.silence_stdout else sys.stdout
-        self._stderr = open(os.devnull, 'w') if self.silence_stderr else sys.stderr
+        super().__init__(
+            open(os.devnull, 'w') if self.silence_stdout else sys.stdout,
+            open(os.devnull, 'w') if self.silence_stderr else sys.stderr
+        )
 
     def __exit__(self, t: Optional[Type[BaseException]], e: Optional[BaseException], tb: TracebackType) -> None:
-        super(SilencedStreams, self).__exit__(t, e, tb)
+        super().__exit__(t, e, tb)
         if self.silence_stdout:
             self._stdout.close()
         if self.silence_stderr:

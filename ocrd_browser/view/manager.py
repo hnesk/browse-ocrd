@@ -112,7 +112,6 @@ class ViewManager:
             win.disconnect_by_func(view.pages_selected)
         except Exception as e:
             print(e)
-            pass
 
     def connect(self, win: Gtk.Window, view: View) -> None:
         win.connect('page_activated', view.page_activated)

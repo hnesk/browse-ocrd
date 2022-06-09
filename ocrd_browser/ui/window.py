@@ -111,7 +111,6 @@ class MainWindow(Gtk.ApplicationWindow):
         index = self.document.page_ids.index(page_id)
         self.current_page_label.set_text('{}/{}'.format(index + 1, len(self.document.page_ids)))
         self.update_ui()
-        pass
 
     def on_pages_selected(self, _sender: Optional[Gtk.Widget], page_ids: List[str]) -> None:
         self.emit('pages_selected', page_ids)
