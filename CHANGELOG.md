@@ -2,9 +2,25 @@
 
 
 <!-- 
-## [Unreleased](../../compare/v0.5.1...master)
+## [Unreleased](../../compare/v0.5.2...master)
 -->
 
+## [0.5.2](../../compare/v0.5.1...v0.5.2) - 2022-06-10
+
+New Features:
+ * Automatically build a docker image at [`hnesk/ocrd_browser`](https://hub.docker.com/r/hnesk/ocrd_browser), thanks @bertsky 
+
+Fixed:
+ * PageView: improve reading order and region rendering order #44 [#44](../../issues/44)
+ * Use `ocrd_utils.getLogger` instead `logging.getLogger` 
+
+Changed:
+ * Performance improvements 
+   * use [fastentrypoints](https://github.com/ninjaaron/fast-entry_points)
+   * use annotations
+   * reduce imports with `if TYPE_CHECKING` 
+ * Use [codespell](https://github.com/codespell-project/codespell) in CI
+ * Stop supporting python-3.6, start supporting 3.9
 
 ## [0.5.1](../../compare/v0.5...v0.5.1) - 2022-05-10
 
@@ -24,7 +40,7 @@ Fixed:
 
 New Features:
 * [Added a PageView](../../pull/30) ([#15](../../issues/15) / [#28](../../issues/28)) \
-  Shows page image overlayed with [PAGE-XML](https://ocr-d.de/en/spec/page) annotations, similar to PRImA-[PageViewer](https://github.com/PRImA-Research-Lab/prima-page-viewer)
+  Shows page image overlaid with [PAGE-XML](https://ocr-d.de/en/spec/page) annotations, similar to PRImA-[PageViewer](https://github.com/PRImA-Research-Lab/prima-page-viewer)
   * Selectable `<Page>` or any `<AlternativeImage>` image as a base   
   * Selectable features as overlay: border, printSpace, region order, regions, lines, words, glyphs, warnings
   * Warnings: Display regions with problematic coordinates in red
@@ -63,7 +79,7 @@ Fixed:
 
 New Features
 
-* Views can be resized and splitted now [#12](../../issues/12) 
+* Views can be resized and split now [#12](../../issues/12) 
 * Added Webkit-HTML-View for [dinglehopper](https://github.com/qurator-spk/dinglehopper) [#25](../../pull/25) (partially fixes [#13](../../issues/13))
 * Added a button to launch [PageViewer](https://www.primaresearch.org/tools/PAGEViewer) from XmlView [#21](../../pull/21) 
 
