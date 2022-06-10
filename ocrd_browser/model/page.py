@@ -56,7 +56,7 @@ class Page:
         """
         TODO: Makes no sense anymore, what is **the** file of a page?
 
-        The whole Page class needs to be splitted in "PageProxy" and PageXmlPage maybe
+        The whole Page class needs to be split in "PageProxy" and PageXmlPage maybe
         @return:  Optional[OcrdFile]
         """
         if self.page_file:

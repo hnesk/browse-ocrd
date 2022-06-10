@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class RedirectedStdStreams:
     """
-    Temporarly redirects stdout/stderr
+    Temporarily redirects stdout/stderr
 
     Usage:
     with RedirectStdStreams(stderr=open(os.devnull, 'w')):
@@ -36,7 +36,7 @@ class RedirectedStdStreams:
 
 class SilencedStreams(RedirectedStdStreams):
     """
-    Temporarly redirects stdout/stderr
+    Temporarily redirects stdout/stderr to nothing (dev/null)
 
     Usage:
     with SilencedStream(False, True):

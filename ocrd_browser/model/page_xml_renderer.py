@@ -310,7 +310,7 @@ class PolygonOperation(Operation):
 
 class LineStringOperation(Operation):
     def __init__(self, linestring: LineString, color: str, width: int = 4):
-        super().__init__(color, 45)  # Depth 45 is betweeen 40(TextLine) and 50(Word)
+        super().__init__(color, 45)  # Depth 45 is between 40(TextLine) and 50(Word)
         self.linestring = linestring
         self.width = width
 
@@ -356,7 +356,7 @@ class TextOperation(Operation):
         return cls.font_cache[(file, size)]
 
     def __init__(self, region: Region, color: str):
-        super().__init__(color, 55)  # Depth 45 is betweeen 40(TextLine) and 50(Word)
+        super().__init__(color, 55)  # Depth 45 is between 40(TextLine) and 50(Word)
         self.region = region
 
     def paint(self, draw: ImageDraw.Draw, regions: RegionMap) -> None:
@@ -368,7 +368,7 @@ class TextOperation(Operation):
         while abs(factor - 1) > 0.05 and tries < 5:
             font = self.font('/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf', font_size)
             w, h = draw.textsize(self.region.text, font=font)
-            # TODO super random compromise betweeen fit to width and fit to height
+            # TODO super random compromise between fit to width and fit to height
             factor = 0.7 * (ex - sx) / w + 0.3 * (ey - sy) / h
             font_size = int(font_size * factor)
             tries += 1

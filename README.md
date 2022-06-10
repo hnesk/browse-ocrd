@@ -121,13 +121,13 @@ The `ocrd-browser.conf` file is an ini-file with the following keys:
 ```ini
 [FileGroups]
 # Preferred fileGrp names for thumbnail display in the Page Browser 
-# Comma seperated list of regular expressions
+# Comma separated list of regular expressions
 preferredImages = OCR-D-IMG, OCR-D-IMG.*, ORIGINAL
 
 # Each Tool has a section header [Tool XYZ]
 # At the moment the only defined tool is "PageViewer"  
 [Tool PageViewer]
-# (ba)sh commandline to execute with placeholders  
+# shell commandline to execute with placeholders  
 commandline = /usr/bin/java -jar /home/jk/bin/JPageViewer/JPageViewer.jar --resolve-dir {workspace.directory} {file.path.absolute}
 ```
 

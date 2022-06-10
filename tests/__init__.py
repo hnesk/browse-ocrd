@@ -1,5 +1,5 @@
 """
-Fixes warnings about unspecified version contraints a la:
+Fixes warnings about unspecified version constraints a la:
 PyGIWarning: GtkSource was imported without specifying a version first. Use gi.require_version('GtkSource', '4') before import to ensure that the right version gets loaded.
 
 import with:

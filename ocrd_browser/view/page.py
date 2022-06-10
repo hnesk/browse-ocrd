@@ -581,7 +581,7 @@ class ViewPage(View):
             context.set_source_rgba(239 / 255.0, 134 / 255.0, 97 / 255.0, 0.7)
             context.set_line_width(clamp(self.configurators['scale'].get_exp() * 12, 0.5, 5))
             context.new_path()
-            # Nice idea, but didnt work with scrolling: context.set_matrix(Matrix(1.0/self.t.scale, 0, 0, 1.0/self.t.scale, -self.t.tx, -self.t.ty))
+            # Nice idea, but didn't work with scrolling: context.set_matrix(Matrix(1.0/self.t.scale, 0, 0, 1.0/self.t.scale, -self.t.tx, -self.t.ty))
             for coord in poly.exterior.coords:
                 context.line_to(*self.t.inverse(*coord))
             context.close_path()
