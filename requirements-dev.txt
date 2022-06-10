@@ -1,7 +1,7 @@
 wheel
 setuptools
-six # generateDS uses six.moves.zip_longest
 unittest-xml-reporting
 html-testRunner
 flake8
 mypy
+codespell

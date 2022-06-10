@@ -53,16 +53,19 @@ testpypi: clean-build build
 pypi: clean-build build
 	twine upload ./dist/browse[_-]ocrd*.{tar.gz,whl}
 
-flake8:
+flake8: deps-dev
 	$(PYTHON) -m flake8 ocrd_browser tests
 
-mypy:
+mypy: deps-dev
 	$(PYTHON) -m mypy --show-error-codes  -p ocrd_browser
 
-ci: flake8 mypy test
+codespell: deps-dev
+	codespell
 
-test: tests/assets
+test: tests/assets deps-dev
 	$(PYTHON) -m xmlrunner discover -v -s tests --output-file $(CURDIR)/unittest.xml
+
+ci: flake8 mypy test codespell
 
 # Clone OCR-D/assets to ./repo/assets
 repo/assets:
