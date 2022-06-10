@@ -47,6 +47,7 @@ dmypy.json
 
 # Autosaved glade files
 *.ui#
+*.ui~
 /.coverage
 /.ipynb_checkpoints/
 /unittest.xml
