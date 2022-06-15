@@ -1,5 +1,7 @@
 from gi.repository import Gio, GLib, Gtk
 
+from importlib import resources
+
 from typing import Callable, Dict, Optional, Set, Any
 
 ActionCallback = Optional[Callable[[Gio.SimpleAction, Any], None]]
@@ -102,3 +104,7 @@ class WhenIdle:
             callback()
             self._callbacks.remove(callback)
             self._runner_callback(self._run)
+
+
+def resource_string(resource, package = 'ocrd_browser.resources'):
+    return resources.read_text(package, resource)
