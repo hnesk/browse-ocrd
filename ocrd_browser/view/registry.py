@@ -1,7 +1,12 @@
 from __future__ import annotations
-from importlib.metadata import entry_points
 from typing import Dict, Tuple, Optional, Type
 from .base import View
+
+try:
+    from importlib.metadata import entry_points
+except ModuleNotFoundError:
+    from importlib_metadata import entry_points  # type: ignore
+
 
 ViewInfo = Tuple[type, str, str]
 

@@ -2,10 +2,14 @@ from gi.repository import Gio, Gtk, GLib, Gdk
 
 from typing import List
 
-from importlib.metadata import entry_points
 from ocrd_browser.util.gtk import ActionRegistry
 from ocrd_browser.ui import MainWindow, AboutDialog, OpenDialog
 from ocrd_browser.view import ViewRegistry
+
+try:
+    from importlib.metadata import entry_points
+except ModuleNotFoundError:
+    from importlib_metadata import entry_points  # type: ignore
 
 
 class OcrdBrowserApplication(Gtk.Application):

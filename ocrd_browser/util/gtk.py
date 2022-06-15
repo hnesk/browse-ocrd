@@ -1,9 +1,13 @@
 from __future__ import annotations
 from gi.repository import Gio, GLib, Gtk
 
-from importlib import resources
-
 from typing import Callable, Dict, Optional, Set, Any
+
+try:
+    from importlib.resources import read_text
+except ModuleNotFoundError:
+    from importlib_resources import read_text  # type: ignore
+
 
 ActionCallback = Optional[Callable[[Gio.SimpleAction, Any], None]]
 
@@ -108,4 +112,4 @@ class WhenIdle:
 
 
 def resource_string(resource: str, package: str = 'ocrd_browser.resources') -> str:
-    return resources.read_text(package, resource)
+    return read_text(package, resource)
