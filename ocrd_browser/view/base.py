@@ -1,26 +1,27 @@
-from math import log
-
 from gi.repository import Gtk, Pango, GObject
 
-from typing import List, Tuple, Any, Optional, Dict, cast
+from typing import List, Tuple, Any, Optional, Dict, cast, TYPE_CHECKING
 
+from math import log
 from enum import Enum
 
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
-from ocrd_browser.model import Document, Page
 from ocrd_browser.util.gtk import WhenIdle
+
+if TYPE_CHECKING:
+    from ocrd_browser.model import Document, Page
 
 
 class Configurator(Gtk.Widget):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self.document: Optional[Document] = None
+        self.document: Optional['Document'] = None
         self.value: Any = None
 
-    def set_document(self, document: Document) -> None:
+    def set_document(self, document: 'Document') -> None:
         self.document = document
 
-    def set_page(self, page: Page) -> None:
+    def set_page(self, page: 'Page') -> None:
         pass
 
     def set_value(self, value: Any) -> None:
@@ -33,7 +34,7 @@ class View:
     def __init__(self, name: str, window: Gtk.Window):
         self.name: str = name
         self.window: Gtk.Window = window
-        self.document: Document = None
+        self.document: 'Document' = None
         self.current: Page = None
         self.page_id: str = None
 
@@ -54,7 +55,7 @@ class View:
         self.container.pack_start(self.action_bar, False, True, 0)
         self.container.pack_start(self.scroller, True, True, 0)
 
-    def set_document(self, document: Document) -> None:
+    def set_document(self, document: 'Document') -> None:
         self.document = document
         for configurator in self.configurators.values():
             configurator.set_document(document)
@@ -226,7 +227,7 @@ class FileGroupSelector(Gtk.Box, Configurator):
         if active_id:
             self.groups.set_active_id(active_id)
 
-    def set_document(self, document: Document) -> None:
+    def set_document(self, document: 'Document') -> None:
         self.groups.set_document(document)
         self.set_value(self.value)
 
@@ -270,7 +271,7 @@ class FileGroupComboBox(Gtk.ComboBox):
             return True
         return False
 
-    def set_document(self, document: Document) -> None:
+    def set_document(self, document: 'Document') -> None:
         self.set_model(FileGroupModel.build(document, self.filter))
         # self.set_active(0)
 
@@ -284,7 +285,7 @@ class FileGroupComboBox(Gtk.ComboBox):
 
 
 class FileGroupModel(Gtk.ListStore):
-    def __init__(self, document: Document):
+    def __init__(self, document: 'Document'):
         super().__init__(str, str, str, str)
         for group, mime in document.file_groups_and_mimetypes:
             if mime == 'text/html':
@@ -294,7 +295,7 @@ class FileGroupModel(Gtk.ListStore):
             self.append(('{}|{}'.format(group, mime), group, mime, ext))
 
     @classmethod
-    def build(cls, document: Document, filter_: 'FileGroupFilter' = None) -> 'FileGroupModel':
+    def build(cls, document: 'Document', filter_: 'FileGroupFilter' = None) -> 'FileGroupModel':
         model = cls(document)
         model = model.filter_new()
         model.set_visible_func(filter_ if filter_ else FileGroupFilter.ALL)

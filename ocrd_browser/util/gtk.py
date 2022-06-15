@@ -1,3 +1,4 @@
+from __future__ import annotations
 from gi.repository import Gio, GLib, Gtk
 
 from importlib import resources
@@ -72,14 +73,14 @@ class WhenIdle:
 
     Usage: see WhenIdle.call
     """
-    _instance: 'WhenIdle' = None
+    _instance: WhenIdle = None
 
     def __init__(self, runner_callback: Callable):  # type: ignore[type-arg]
         self._runner_callback = runner_callback
         self._callbacks: Set[Callback] = set()
 
     @classmethod
-    def instance(cls) -> 'WhenIdle':
+    def instance(cls) -> WhenIdle:
         if cls._instance is None:
             cls._instance = cls(GLib.idle_add)
         return cls._instance
