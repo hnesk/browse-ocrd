@@ -14,11 +14,11 @@ from ocrd_browser.util.image import add_dpi_to_png_buffer
 from ocrd_browser.util.streams import SilencedStreams
 from ocrd_modelfactory import page_from_file
 from ocrd_models.constants import NAMESPACES as NS
+from ocrd_models import OcrdFile
 from ocrd_utils import pushd_popd
 from ocrd_utils.constants import MIME_TO_EXT
 from ocrd_utils import getLogger
 
-from collections import OrderedDict
 from pathlib import Path
 from tempfile import mkdtemp
 from datetime import datetime
@@ -29,7 +29,6 @@ import cv2
 
 if TYPE_CHECKING:
     from ocrd import Workspace
-    from ocrd_models import OcrdFile
     from ocrd_models.ocrd_page_generateds import PcGtsType
     # noinspection PyProtectedMember
     from lxml.etree import ElementBase as Element, _ElementTree as ElementTree
@@ -226,7 +225,7 @@ class Document:
 
         @return: List[Tuple[str,str]]
         """
-        distinct_groups: OrderedDict[Tuple[str, str], None] = OrderedDict()
+        distinct_groups: Dict[Tuple[str, str], None] = {}
         for el in self.xpath('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]'):
             distinct_groups[(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
 

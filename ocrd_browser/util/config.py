@@ -1,6 +1,5 @@
 from __future__ import annotations
 import os
-from collections import OrderedDict
 from configparser import ConfigParser
 import shlex
 from typing import List, Optional, MutableMapping
@@ -67,7 +66,7 @@ class Settings:
         self.file_groups = _FileGroups.from_section('FileGroups', config['FileGroups'] if 'FileGroups' in config else {'': ''})
         if validate:
             self.file_groups.validate()
-        self.tools = OrderedDict()
+        self.tools = {}
         for name, section in config.items():
             if name.startswith(_Tool.PREFIX):
                 tool = _Tool.from_section(name, section)
