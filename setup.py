@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import fastentrypoints
+import fastentrypoints  # lgtm [py/unused-import]
 import codecs
 import subprocess
 

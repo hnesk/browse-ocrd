@@ -2,7 +2,6 @@
 # -*- Mode: Python; coding: utf-8; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*-
 import os
 import sys
-from pstats import SortKey
 import pstats
 import io
 import cProfile
@@ -49,7 +48,7 @@ def install_excepthook() -> None:
 def startup_time() -> None:
     PROFILER.disable()
     s = io.StringIO()
-    ps = pstats.Stats(PROFILER, stream=s).sort_stats(SortKey.TIME)
+    ps = pstats.Stats(PROFILER, stream=s).sort_stats(pstats.SortKey.TIME)
     ps.print_stats(20)
     print(s.getvalue())
 

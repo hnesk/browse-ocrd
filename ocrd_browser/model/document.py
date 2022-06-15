@@ -162,7 +162,7 @@ class Document:
         """
         return str(self.workspace.baseurl) + '/' + self.mets_filename if self.workspace else None
 
-    def path(self, other: Union[OcrdFile, Path, str]) -> Path:
+    def path(self, other: Union[OcrdFile, Path, str]) -> Optional[Path]:
         """
         Resolves other relative to current workspace
         """
@@ -445,6 +445,7 @@ class Document:
             if self._original_url:
                 self.workspace = self._clone_workspace(self._original_url)
             else:
+                # noinspection PyTypeChecker
                 self.workspace = Resolver().workspace_from_nothing(directory=None, mets_basename='mets.xml')
         else:
             self.workspace = Resolver().workspace_from_url(self.baseurl_mets)

@@ -64,6 +64,7 @@ class Page:
         elif self.image_files:
             return next(iter(self.image_files))
         else:
+            # noinspection PyTypeChecker
             any_files = self.get_files(mimetype=None)
             if any_files:
                 return next(iter(any_files))

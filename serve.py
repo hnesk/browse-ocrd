@@ -92,7 +92,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             if not path.endswith('mets.xml'):
                 path = os.path.join(path, 'mets.xml')
             ## run app
-            ret = Popen([which('browse-ocrd'),
+            Popen([which('browse-ocrd'),
                          '--display', ':' + str(self.bwport - 8080),
                          path])
             ## proxy does not work, because the follow-up requests would need to be forwarded, too:
