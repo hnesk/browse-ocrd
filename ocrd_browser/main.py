@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- Mode: Python; coding: utf-8; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*-
+import os
 import sys
+from pstats import SortKey
+import pstats, io
+import cProfile
 
 import gi
 
@@ -13,7 +17,7 @@ except ValueError:
 
 gi.require_version('WebKit2', '4.0')
 
-from gi.repository import Gtk, Gio  # noqa: E402
+from gi.repository import Gtk, Gio, GLib  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Type  # noqa: E402
 from types import TracebackType  # noqa: E402
@@ -22,6 +26,10 @@ BASE_PATH = Path(__file__).absolute().parent
 resources = Gio.resource_load(str(BASE_PATH / "ui.gresource"))
 Gio.resources_register(resources)
 
+PROFILER = None
+if 'STARTUP_PROFILE' in os.environ:
+    PROFILER = cProfile.Profile()
+    PROFILER.enable()
 
 def install_excepthook() -> None:
     """ Make sure we exit when an unhandled exception occurs. """
@@ -36,7 +44,17 @@ def install_excepthook() -> None:
     sys.excepthook = new_hook
 
 
+def startup_time():
+    PROFILER.disable()
+    s = io.StringIO()
+    ps = pstats.Stats(PROFILER, stream=s).sort_stats(SortKey.TIME)
+    ps.print_stats(20)
+    print(s.getvalue())
+
+
 def main() -> None:
+    if PROFILER:
+        GLib.idle_add(startup_time)
     from ocrd_utils import initLogging
     initLogging()
     from ocrd_browser.application import OcrdBrowserApplication
