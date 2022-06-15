@@ -2,12 +2,12 @@ from gi.repository import Gtk, Gdk, Pango, Gio, GObject
 
 from typing import List, Callable, Optional, Any, cast
 
-from pkg_resources import resource_filename
+from ocrd_browser.util.gtk import resource_string
 from ocrd_browser.model import Document
 from .page_store import PageListStore, ChangeList
 
 
-@Gtk.Template(filename=resource_filename(__name__, '../resources/page-list.ui'))
+@Gtk.Template(string=resource_string('page-list.ui'))
 class PagePreviewList(Gtk.IconView):
     __gtype_name__ = "PagePreviewList"
 

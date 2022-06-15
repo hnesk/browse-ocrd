@@ -1,11 +1,12 @@
 from gi.repository import Gtk, GdkPixbuf
 from typing import Any
-from pkg_resources import resource_filename
+
+from ocrd_browser.util.gtk import resource_string
 from ocrd_browser import __version__
 from ocrd_browser.model import Document
 
 
-@Gtk.Template(filename=resource_filename(__name__, '../resources/about-dialog.ui'))
+@Gtk.Template(string=resource_string('about-dialog.ui'))
 class AboutDialog(Gtk.AboutDialog):
     __gtype_name__ = "AboutDialog"
 
@@ -16,7 +17,7 @@ class AboutDialog(Gtk.AboutDialog):
         self.set_version(__version__)
 
 
-@Gtk.Template(filename=resource_filename(__name__, '../resources/open-dialog.ui'))
+@Gtk.Template(string=resource_string('open-dialog.ui'))
 class OpenDialog(Gtk.FileChooserDialog):
     __gtype_name__ = "OpenDialog"
 
@@ -36,7 +37,7 @@ class OpenDialog(Gtk.FileChooserDialog):
         self.add_filter(filter_any)
 
 
-@Gtk.Template(filename=resource_filename(__name__, '../resources/save-dialog.ui'))
+@Gtk.Template(string=resource_string('save-dialog.ui'))
 class SaveDialog(Gtk.FileChooserDialog):
     __gtype_name__ = "SaveDialog"
 

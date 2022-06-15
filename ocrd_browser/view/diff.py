@@ -80,7 +80,7 @@ class ViewDiff(View):
         self.file_group2: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
         self.font_size: Optional[int] = None
 
-        self.current2: Page = None
+        self.current2: Optional[Page] = None
 
         # noinspection PyTypeChecker
         self.text_view: GtkSource.View = None

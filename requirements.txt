@@ -9,3 +9,5 @@ setuptools
 lxml
 Shapely
 Deprecated
+importlib_metadata;python_version<'3.8'
+importlib_resources;python_version<'3.8'

@@ -1,35 +1,38 @@
+from __future__ import annotations
+from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any, Dict, TYPE_CHECKING
+
 import atexit
 import errno
 import os
 import shutil
 from functools import wraps
 
-from ocrd import Workspace, Resolver
+from ocrd import Resolver
 from ocrd_browser.model.page import Page
 from ocrd_browser.util.file_groups import best_file_group
 from ocrd_browser.util.image import add_dpi_to_png_buffer
 from ocrd_browser.util.streams import SilencedStreams
 from ocrd_modelfactory import page_from_file
-from ocrd_models import OcrdFile
-from ocrd_models.ocrd_page_generateds import PcGtsType
 from ocrd_models.constants import NAMESPACES as NS
+from ocrd_models import OcrdFile
 from ocrd_utils import pushd_popd
 from ocrd_utils.constants import MIME_TO_EXT
 from ocrd_utils import getLogger
 
-from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any, Dict
-from collections import OrderedDict
 from pathlib import Path
 from tempfile import mkdtemp
 from datetime import datetime
 from urllib.parse import urlparse, unquote
-# noinspection PyProtectedMember
-from lxml.etree import ElementBase as Element, _ElementTree as ElementTree
-
-from numpy import array as ndarray
 from PIL import Image
 
 import cv2
+
+if TYPE_CHECKING:
+    from ocrd import Workspace
+    from ocrd_models.ocrd_page_generateds import PcGtsType
+    # noinspection PyProtectedMember
+    from lxml.etree import ElementBase as Element, _ElementTree as ElementTree
+    from numpy import array as ndarray
 
 EventCallBack = Optional[Callable[[str, Any], None]]
 
@@ -60,11 +63,11 @@ class Document:
             os.chdir(self.workspace.directory)
 
     @classmethod
-    def create(cls, emitter: EventCallBack = None) -> 'Document':
+    def create(cls, emitter: EventCallBack = None) -> Document:
         return cls(None, emitter=emitter)
 
     @classmethod
-    def load(cls, mets_url: Union[Path, str] = None, emitter: EventCallBack = None) -> 'Document':
+    def load(cls, mets_url: Union[Path, str] = None, emitter: EventCallBack = None) -> Document:
         """
         Load a project from an url as a readonly view
 
@@ -80,7 +83,7 @@ class Document:
         return doc
 
     @classmethod
-    def clone(cls, mets_url: Union[Path, str], emitter: EventCallBack = None, editable: bool = True) -> 'Document':
+    def clone(cls, mets_url: Union[Path, str], emitter: EventCallBack = None, editable: bool = True) -> Document:
         """
         Clones a project (mets.xml and all used files) to a temporary directory for editing
         """
@@ -159,7 +162,7 @@ class Document:
         """
         return str(self.workspace.baseurl) + '/' + self.mets_filename if self.workspace else None
 
-    def path(self, other: Union[OcrdFile, Path, str]) -> Path:
+    def path(self, other: Union[OcrdFile, Path, str]) -> Optional[Path]:
         """
         Resolves other relative to current workspace
         """
@@ -222,7 +225,7 @@ class Document:
 
         @return: List[Tuple[str,str]]
         """
-        distinct_groups: OrderedDict[Tuple[str, str], None] = OrderedDict()
+        distinct_groups: Dict[Tuple[str, str], None] = {}
         for el in self.xpath('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]'):
             distinct_groups[(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
 
@@ -407,7 +410,7 @@ class Document:
 
     @check_editable
     def add_image(self, image: ndarray, page_id: str, file_id: str, file_group: str = 'OCR-D-IMG', dpi: int = 300,
-                  mimetype: str = 'image/png') -> 'OcrdFile':
+                  mimetype: str = 'image/png') -> OcrdFile:
         extension = MIME_TO_EXT[mimetype]
         retval, image_array = cv2.imencode(extension, image)
         image_bytes = add_dpi_to_png_buffer(image_array.tostring(), dpi)
@@ -442,6 +445,7 @@ class Document:
             if self._original_url:
                 self.workspace = self._clone_workspace(self._original_url)
             else:
+                # noinspection PyTypeChecker
                 self.workspace = Resolver().workspace_from_nothing(directory=None, mets_basename='mets.xml')
         else:
             self.workspace = Resolver().workspace_from_url(self.baseurl_mets)

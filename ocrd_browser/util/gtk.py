@@ -1,6 +1,13 @@
+from __future__ import annotations
 from gi.repository import Gio, GLib, Gtk
 
 from typing import Callable, Dict, Optional, Set, Any
+
+try:
+    from importlib.resources import read_text
+except ModuleNotFoundError:
+    from importlib_resources import read_text  # type: ignore
+
 
 ActionCallback = Optional[Callable[[Gio.SimpleAction, Any], None]]
 
@@ -70,14 +77,14 @@ class WhenIdle:
 
     Usage: see WhenIdle.call
     """
-    _instance: 'WhenIdle' = None
+    _instance: WhenIdle = None
 
     def __init__(self, runner_callback: Callable):  # type: ignore[type-arg]
         self._runner_callback = runner_callback
         self._callbacks: Set[Callback] = set()
 
     @classmethod
-    def instance(cls) -> 'WhenIdle':
+    def instance(cls) -> WhenIdle:
         if cls._instance is None:
             cls._instance = cls(GLib.idle_add)
         return cls._instance
@@ -102,3 +109,7 @@ class WhenIdle:
             callback()
             self._callbacks.remove(callback)
             self._runner_callback(self._run)
+
+
+def resource_string(resource: str, package: str = 'ocrd_browser.resources') -> str:
+    return read_text(package, resource)

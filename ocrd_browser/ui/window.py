@@ -3,22 +3,20 @@ from ocrd_models import OcrdFile
 
 from ocrd_browser.model import Document
 from ocrd_browser.view import ViewRegistry, ViewPage
-from ocrd_browser.util.gtk import ActionRegistry
+from ocrd_browser.util.gtk import ActionRegistry, resource_string
 from .dialogs import SaveDialog, SaveChangesDialog
 from .page_browser import PagePreviewList
-from pkg_resources import resource_filename
 from typing import List, cast, Any, Optional
 
 from ..view.manager import ViewManager
 
 
-@Gtk.Template(filename=resource_filename(__name__, '../resources/main-window.ui'))
+@Gtk.Template(string=resource_string('main-window.ui'))
 class MainWindow(Gtk.ApplicationWindow):
     __gtype_name__ = "MainWindow"
 
     header_bar: Gtk.HeaderBar = Gtk.Template.Child()
     page_list_scroller: Gtk.ScrolledWindow = Gtk.Template.Child()
-    panes: Gtk.Paned = Gtk.Template.Child()
     current_page_label: Gtk.Label = Gtk.Template.Child()
     view_container: Gtk.Box = Gtk.Template.Child()
     view_menu_box: Gtk.Box = Gtk.Template.Child()
