@@ -3,7 +3,8 @@
 import os
 import sys
 from pstats import SortKey
-import pstats, io
+import pstats
+import io
 import cProfile
 
 import gi
@@ -31,6 +32,7 @@ if 'STARTUP_PROFILE' in os.environ:
     PROFILER = cProfile.Profile()
     PROFILER.enable()
 
+
 def install_excepthook() -> None:
     """ Make sure we exit when an unhandled exception occurs. """
     old_hook = sys.excepthook
@@ -44,7 +46,7 @@ def install_excepthook() -> None:
     sys.excepthook = new_hook
 
 
-def startup_time():
+def startup_time() -> None:
     PROFILER.disable()
     s = io.StringIO()
     ps = pstats.Stats(PROFILER, stream=s).sort_stats(SortKey.TIME)

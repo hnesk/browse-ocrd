@@ -107,5 +107,5 @@ class WhenIdle:
             self._runner_callback(self._run)
 
 
-def resource_string(resource, package = 'ocrd_browser.resources'):
+def resource_string(resource: str, package: str = 'ocrd_browser.resources') -> str:
     return resources.read_text(package, resource)
