@@ -37,6 +37,8 @@ An extensible viewer for [OCR-D](https://ocr-d.de/) [mets.xml](https://ocr-d.de/
 
 ## Installation
 
+OCR-D Browser requires Python 3.7 or higher.
+
 ### Native (tested on Ubuntu 18.04/20.04) 
 
 The native installation requires [GTK 3](https://www.gtk.org/).
