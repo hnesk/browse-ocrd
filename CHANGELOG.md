@@ -1,9 +1,17 @@
 # Change Log
 
-
 <!-- 
-## [Unreleased](../../compare/v0.5.2...master)
+## [Unreleased](../../compare/v0.5.3...master)
 -->
+
+## [0.5.3](../../compare/v0.5.2...v0.5.3) - 2022-07-19
+
+Breaking: 
+ * Make explicit: requires now python>=3.7 (v0.5.1 is the last supported python3.6 version)
+
+Changed:
+ * Startup time improved by not using pkg_resources [#48](../../pull/48)  
+
 
 ## [0.5.2](../../compare/v0.5.1...v0.5.2) - 2022-06-10
 
