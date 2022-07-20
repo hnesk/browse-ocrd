@@ -17,8 +17,12 @@ deps-dev:
 deps:
 	$(PIP) install -r requirements.txt
 
-install:
+install: ocrd_browser/ui.gresource
 	$(PIP) install .
+
+ocrd_browser/ui.gresource: gresources/ocrd-browser.gresource.xml gresources
+	glib-compile-resources --sourcedir=$(<D) --target=$@ $<
+
 
 install-xdg-mime: share/mime/packages/org.readmachine.ocrd-browser.xml
 	mkdir -p $(SHARE_DIR)/mime/packages
