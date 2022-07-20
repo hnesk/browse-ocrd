@@ -47,6 +47,7 @@ clean-build: pyclean
 pyclean:
 	rm -f **/*.pyc
 	rm -rf .pytest_cache
+	rm -rf .mypy_cache/
 
 build: clean-build
 	$(PYTHON) -m build

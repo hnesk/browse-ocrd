@@ -3,17 +3,22 @@ import cv2
 import struct
 import zlib
 
-from typing import Tuple, Union
+from typing import Tuple, Union, Any, cast
 from PIL.Image import Image, fromarray
 from numpy import (
-    ndarray,
-    dtype as np_dtype,
     array as np_array,
     uint8 as np_uint8,
-    bool as np_bool,
-    stack as np_stack
+    dtype as np_dtype,
+    bool_ as np_bool,
+    stack as np_stack,
 )
 from gi.repository import GdkPixbuf, GLib
+
+try:
+    from numpy.typing import NDArray
+    numpy_array = NDArray[Any]
+except ImportError:
+    from numpy import ndarray as numpy_array
 
 __all__ = ['cv_scale', 'cv_to_pixbuf', 'pil_to_pixbuf', 'pil_scale', 'add_dpi_to_png_buffer']
 
@@ -25,7 +30,7 @@ def _bytes_to_pixbuf(bytes_: bytes) -> GdkPixbuf.Pixbuf:
     return loader.get_pixbuf()
 
 
-def _cv_to_pixbuf_via_cv(z: ndarray) -> GdkPixbuf.Pixbuf:
+def _cv_to_pixbuf_via_cv(z: numpy_array) -> GdkPixbuf.Pixbuf:
     if z.dtype == np_bool:
         z = (z * 255).astype(np_uint8)
     if z.ndim == 2:
@@ -43,7 +48,7 @@ def _cv_to_pixbuf_via_cv(z: ndarray) -> GdkPixbuf.Pixbuf:
     return pb
 
 
-def _cv_to_pixbuf_via_pixbuf_loader(cv_image: ndarray) -> GdkPixbuf:
+def _cv_to_pixbuf_via_pixbuf_loader(cv_image: numpy_array) -> GdkPixbuf:
     ret, byte_array = cv2.imencode('.jpg', cv_image)
     return _bytes_to_pixbuf(byte_array.tobytes())
 
@@ -68,7 +73,7 @@ def _pil_to_pixbuf_via_pixbuf_loader(im: Image) -> GdkPixbuf.Pixbuf:
     return _bytes_to_pixbuf(bytes_io.getvalue())
 
 
-def cv_scale(orig: ndarray, w: int = None, h: int = None) -> ndarray:
+def cv_scale(orig: numpy_array, w: int = None, h: int = None) -> numpy_array:
     """
     Scale a cv2 image
     :param orig: ndarray Original cv2 image
@@ -78,7 +83,7 @@ def cv_scale(orig: ndarray, w: int = None, h: int = None) -> ndarray:
     """
     height, width, depth = orig.shape
     new_width, new_height = _calculate_scale(width, height, w, h)
-    return cv2.resize(orig, (new_width, new_height))
+    return cast(numpy_array, cv2.resize(orig, (new_width, new_height)))
 
 
 def pil_scale(orig: Image, w: int = None, h: int = None) -> Image:
@@ -99,7 +104,7 @@ def pil_scale(orig: Image, w: int = None, h: int = None) -> Image:
         if arr.dtype.kind == 'i':
             # signed integer is *not* trustworthy in this context
             # (usually a mistake in the array interface)
-            arr.dtype = np_dtype('u' + arr.dtype.name)
+            arr = arr.astype(np_dtype('u' + arr.dtype.name), copy=False)
         if arr.dtype.kind == 'u':
             # integer needs to be scaled linearly to 8 bit
             # of course, an image might actually have some lower range

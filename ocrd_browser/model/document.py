@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any, Dict, TYPE_CHECKING
+from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any, Dict, Sequence, TYPE_CHECKING
 
 import atexit
 import errno
@@ -32,7 +32,11 @@ if TYPE_CHECKING:
     from ocrd_models.ocrd_page_generateds import PcGtsType
     # noinspection PyProtectedMember
     from lxml.etree import ElementBase as Element, _ElementTree as ElementTree
-    from numpy import array as ndarray
+    try:
+        from numpy.typing import ArrayLike
+    except ImportError:
+        ArrayLike = Sequence[Sequence[int]]  # type: ignore[misc]
+
 
 EventCallBack = Optional[Callable[[str, Any], None]]
 
@@ -409,7 +413,7 @@ class Document:
         self._emit('document_changed', 'page_deleted', [page_id])
 
     @check_editable
-    def add_image(self, image: ndarray, page_id: str, file_id: str, file_group: str = 'OCR-D-IMG', dpi: int = 300,
+    def add_image(self, image: ArrayLike, page_id: str, file_id: str, file_group: str = 'OCR-D-IMG', dpi: int = 300,
                   mimetype: str = 'image/png') -> OcrdFile:
         extension = MIME_TO_EXT[mimetype]
         retval, image_array = cv2.imencode(extension, image)
