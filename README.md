@@ -1,6 +1,6 @@
 [![Unit tests](https://github.com/hnesk/browse-ocrd/workflows/Unit%20tests/badge.svg?branch=master)](https://github.com/hnesk/browse-ocrd/actions/workflows/unittest.yml)
 [![Docker build](https://github.com/hnesk/browse-ocrd/actions/workflows/dockerhub.yml/badge.svg)](https://github.com/hnesk/browse-ocrd/actions/workflows/dockerhub.yml)
-
+[![PyPI version](https://badge.fury.io/py/browse-ocrd.svg)](https://badge.fury.io/py/browse-ocrd)
 # OCR-D Browser
 
 An extensible viewer for [OCR-D](https://ocr-d.de/) [mets.xml](https://ocr-d.de/en/spec/mets) files
