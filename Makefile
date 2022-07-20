@@ -49,7 +49,7 @@ pyclean:
 	rm -rf .pytest_cache
 
 build: clean-build
-	$(PYTHON) setup.py sdist bdist_wheel
+	$(PYTHON) -m build
 
 testpypi: clean-build build
 	twine upload --repository testpypi ./dist/browse[_-]ocrd*.{tar.gz,whl}
