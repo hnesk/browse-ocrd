@@ -2,9 +2,8 @@ import unittest
 from PIL import Image, ImageDraw
 from gi.repository import GdkPixbuf
 
-from tests import TestCase, ASSETS_PATH, data_provider
-from ocrd_browser.util.image import pil_to_pixbuf, _pil_to_pixbuf_via_cv, _pil_to_pixbuf_via_pixbuf_loader
-from timeit import timeit
+from tests import TestCase, data_provider
+from ocrd_browser.util.image import pil_to_pixbuf
 
 
 def _image_modes():
@@ -29,19 +28,6 @@ def _image_modes():
 
 
 class ImageUtilTestCase(TestCase):
-
-    def test_pil_to_pixbuf_is_faster_via_opencv(self):
-        self.skipTest('Slow test')
-        files = [
-            ASSETS_PATH / 'kant_aufklaerung_1784-binarized/data/OCR-D-IMG/OCR-D-IMG_0017.tif',
-            ASSETS_PATH / 'kant_aufklaerung_1784-binarized/data/OCR-D-IMG-1BIT/OCR-D-IMG-1BIT_0017.png',
-            ASSETS_PATH / 'kant_aufklaerung_1784-binarized/data/OCR-D-IMG-NRM/OCR-D-IMG-NRM_0017.png',
-        ]
-        for file in files:
-            via_cv_time, via_pil_time = self._test_pil_to_pixbuf_performance_on_file(file)
-            print('OpenCV({}s) vs. PIL({}s): {} for {}'.format(via_cv_time, via_pil_time, via_cv_time / via_pil_time,
-                                                               file))
-            self.assertLess(via_cv_time, via_pil_time, 'via_cv took longer for {}'.format(file))
 
     @data_provider(_image_modes)
     def test_image_modes(self, mode, bg, fg1, fg2, bg_test, fg1_test, fg2_test):
@@ -71,16 +57,6 @@ class ImageUtilTestCase(TestCase):
         draw.line((0, 0, w, h), fill=fg1)
         draw.line((0, h, w, 0), fill=fg2)
         return im
-
-    @staticmethod
-    def _test_pil_to_pixbuf_performance_on_file(file, number: int = 10):
-        image: Image.Image = Image.open(file)
-        image.load()
-
-        via_cv_time = timeit(lambda: _pil_to_pixbuf_via_cv(image), number=number)
-        via_pil_time = timeit(lambda: _pil_to_pixbuf_via_pixbuf_loader(image), number=number)
-
-        return via_cv_time, via_pil_time
 
 
 if __name__ == '__main__':

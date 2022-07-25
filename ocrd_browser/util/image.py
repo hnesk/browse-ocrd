@@ -1,4 +1,3 @@
-import io
 import cv2
 import struct
 import zlib
@@ -23,14 +22,7 @@ except ImportError:
 __all__ = ['cv_scale', 'cv_to_pixbuf', 'pil_to_pixbuf', 'pil_scale', 'add_dpi_to_png_buffer']
 
 
-def _bytes_to_pixbuf(bytes_: bytes) -> GdkPixbuf.Pixbuf:
-    loader = GdkPixbuf.PixbufLoader()
-    loader.write(bytes_)
-    loader.close()
-    return loader.get_pixbuf()
-
-
-def _cv_to_pixbuf_via_cv(z: numpy_array) -> GdkPixbuf.Pixbuf:
+def cv_to_pixbuf(z: numpy_array) -> GdkPixbuf.Pixbuf:
     if z.dtype == np_bool:
         z = (z * 255).astype(np_uint8)
     if z.ndim == 2:
@@ -48,12 +40,7 @@ def _cv_to_pixbuf_via_cv(z: numpy_array) -> GdkPixbuf.Pixbuf:
     return pb
 
 
-def _cv_to_pixbuf_via_pixbuf_loader(cv_image: numpy_array) -> GdkPixbuf:
-    ret, byte_array = cv2.imencode('.jpg', cv_image)
-    return _bytes_to_pixbuf(byte_array.tobytes())
-
-
-def _pil_to_pixbuf_via_cv(im: Image) -> GdkPixbuf.Pixbuf:
+def pil_to_pixbuf(im: Image) -> GdkPixbuf.Pixbuf:
     if im.mode == 'LA':
         bgra = cv2.cvtColor(np_array(im.convert('L'), dtype=np_uint8), cv2.COLOR_GRAY2BGRA)
         bgra[:, :, 3] = np_array(im.getchannel('A'), dtype=np_uint8)
@@ -64,13 +51,7 @@ def _pil_to_pixbuf_via_cv(im: Image) -> GdkPixbuf.Pixbuf:
         im = bgra
     else:
         im = cv2.cvtColor(np_array(im.convert('RGB'), dtype=np_uint8), cv2.COLOR_RGB2BGR)
-    return _cv_to_pixbuf_via_cv(im)
-
-
-def _pil_to_pixbuf_via_pixbuf_loader(im: Image) -> GdkPixbuf.Pixbuf:
-    bytes_io = io.BytesIO()
-    im.save(bytes_io, "PNG" if im.mode in ("LA", "RGBA") else "JPEG")
-    return _bytes_to_pixbuf(bytes_io.getvalue())
+    return cv_to_pixbuf(im)
 
 
 def cv_scale(orig: numpy_array, w: int = None, h: int = None) -> numpy_array:
@@ -163,10 +144,3 @@ def _calculate_scale(old_width: int, old_height: int, new_width: int = None, new
         image_scale = 1
 
     return int(old_width * image_scale), int(old_height * image_scale)
-
-
-pil_to_pixbuf = _pil_to_pixbuf_via_cv
-cv_to_pixbuf = _cv_to_pixbuf_via_cv
-
-# pil_to_pixbuf = _pil_to_pixbuf_via_pixbuf_loader
-# cv_to_pixbuf = _cv_to_pixbuf_via_pixbuf_loader
