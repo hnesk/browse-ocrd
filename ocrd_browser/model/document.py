@@ -323,15 +323,9 @@ class Document:
         return self.page_ids[index:index + page_qty]
 
     def page_for_id(self, page_id: str, file_group: str) -> Optional['Page']:
-        log = getLogger('ocrd_browser.model.document.Document.page_for_id')
         if not page_id:
             return None
-        page = Page(self, page_id, file_group)
-        if not page.file:
-            log.warning("No PAGE-XML and no image for page '{}' in fileGrp '{}'".format(page_id, file_group))
-            return None
-
-        return page
+        return Page(self, page_id, file_group)
 
     def files_for_page_id(self, page_id: str, file_group: str = None, mimetype: str = None) -> List[OcrdFile]:
         with pushd_popd(self.workspace.directory):

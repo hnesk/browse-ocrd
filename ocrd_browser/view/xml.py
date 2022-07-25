@@ -56,8 +56,8 @@ class ViewXml(View):
         self.reload()
 
     def open_jpageviewer(self, _button: Gtk.Button) -> None:
-        if self.current and self.current.file:
-            Launcher().launch('PageViewer', self.document, self.current.file)
+        if self.current and self.current.page_file:
+            Launcher().launch('PageViewer', self.document, self.current.page_file)
 
     def on_scroll(self, _widget: GtkSource.View, event: Gdk.EventScroll) -> bool:
         # Handles zoom in / zoom out on Ctrl+mouse wheel
@@ -91,8 +91,8 @@ class ViewXml(View):
     def redraw(self) -> None:
         if self.current:
             self.text_view.set_tooltip_text(self.page_id)
-            if self.current.file and self.current.file.mimetype == MIMETYPE_PAGE:
-                with self.document.path(self.current.file).open('r') as f:
+            if self.current.page_file:
+                with self.document.path(self.current.page_file).open('r') as f:
                     text = f.read()
             else:
                 text = to_xml(self.current.pc_gts)

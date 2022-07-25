@@ -43,12 +43,12 @@ class LauncherTestCase(TestCase):
     def setUp(self) -> None:
         self.launcher = Launcher()
         self.doc = Document.load(BASE_PATH / 'mets.xml')
-        self.file = self.doc.files_for_page_id('PHYS_0017', 'OCR-D-GT-PAGE')[0]
+        self.page_file = self.doc.page_for_id('PHYS_0017', 'OCR-D-GT-PAGE').page_file
 
     def test_launch_missing(self):
         setOverrideLogLevel('ERROR', True)
         with self.assertLogs('ocrd_browser.util.launcher.Launcher.launch', level='ERROR') as log_watch:
-            process = self.launcher.launch('missingtool', self.doc, self.file)
+            process = self.launcher.launch('missingtool', self.doc, self.page_file)
         self.assertIsNone(process)
         self.assertEqual(3, len(log_watch.records))
         self.assertEqual(
@@ -59,14 +59,14 @@ class LauncherTestCase(TestCase):
 
     def test_launch_tool(self):
         tool = _Tool('Echotest', 'echo -n {file.path.relative}')
-        with self.launcher.launch_tool(tool, self.doc, self.file, stdout=subprocess.PIPE) as process:
+        with self.launcher.launch_tool(tool, self.doc, self.page_file, stdout=subprocess.PIPE) as process:
             process.wait()
             result = process.stdout.read().decode('utf8')
         self.assertEqual('OCR-D-GT PÆGE/PAGE_0017 PÄGE.xml', result)
 
     @data_provider(template_testcases)
     def test_template(self, expected: Union[Path, str], template: str):
-        actual = self.launcher._template(template, self.doc, self.file)
+        actual = self.launcher._template(template, self.doc, self.page_file)
         self.assertEqual(str(expected), actual)
 
 

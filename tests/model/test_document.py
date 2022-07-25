@@ -131,12 +131,8 @@ class DocumentTestCase(TestCase):
         https://github.com/hnesk/browse-ocrd/issues/4
         """
         doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-complex/data/mets.xml')
-        with self.assertLogs('ocrd_browser.model.document', level='WARNING') as log_watch:
-            page = doc.page_for_id('PHYS_0020', 'OCR-D-IMG-CLIP')
-        self.assertIsNone(page)
-        self.assertEqual(1, len(log_watch.records))
-        self.assertEqual("No PAGE-XML and no image for page 'PHYS_0020' in fileGrp 'OCR-D-IMG-CLIP'",
-                         log_watch.records[0].msg)
+        page = doc.page_for_id('PHYS_0020', 'OCR-D-IMG-CLIP')
+        self.assertIsNone(page.page_file)
 
     def test_page_for_id_with_nothing_for_page_and_fileGrp(self):
         """
@@ -145,12 +141,8 @@ class DocumentTestCase(TestCase):
         https://github.com/hnesk/browse-ocrd/issues/4
         """
         doc = Document.load(ASSETS_PATH / '../example/workspaces/kant_aufklaerung_1784_missing_xml/mets.xml')
-        with self.assertLogs('ocrd_browser.model.document', level='WARNING') as log_watch:
-            page = doc.page_for_id('PHYS_0020', 'OCR-D-GT-PAGE')
-        self.assertIsNone(page)
-        self.assertEqual(1, len(log_watch.records))
-        self.assertEqual("No PAGE-XML and no image for page 'PHYS_0020' in fileGrp 'OCR-D-GT-PAGE'",
-                         log_watch.records[0].msg)
+        page = doc.page_for_id('PHYS_0020', 'OCR-D-GT-PAGE')
+        self.assertIsNone(page.page_file)
 
     def test_page_for_id_with_multiple_images_for_page_and_fileGrp(self):
         """

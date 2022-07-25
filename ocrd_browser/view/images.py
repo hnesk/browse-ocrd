@@ -4,7 +4,6 @@ from typing import Any, List, Optional, Tuple
 
 from itertools import zip_longest
 from ocrd_browser.util.image import pil_to_pixbuf, pil_scale
-from ocrd_models.constants import NAMESPACES as NS
 from .base import (
     View,
     FileGroupSelector,
@@ -121,15 +120,13 @@ class ViewImages(View):
                                           icon_size=Gtk.IconSize.DIALOG)
                         box.add(image)
                     if img:
-                        if page.image_files[0] == page.file:
+                        if not page.page_file:
                             # PAGE-XML was created from the (first) image file directly
                             image.set_tooltip_text(page.id)
                         else:
                             img_file = page.image_files[i]
                             # get segment ID for AlternativeImage as tooltip
-                            img_id = page.pc_gts.gds_elementtree_node_.xpath(
-                                '//page:AlternativeImage[@filename="{}"]/../@id'.format(img_file.local_filename),
-                                namespaces=NS)
+                            img_id = page.xpath('//page:AlternativeImage[@filename="{}"]/../@id'.format(img_file.local_filename))
                             if img_id:
                                 image.set_tooltip_text(page.id + ':' + img_id[0])
                             else:
