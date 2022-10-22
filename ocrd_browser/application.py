@@ -6,10 +6,7 @@ from ocrd_browser.util.gtk import ActionRegistry
 from ocrd_browser.ui import MainWindow, AboutDialog, OpenDialog
 from ocrd_browser.view import ViewRegistry
 
-try:
-    from importlib.metadata import entry_points
-except ModuleNotFoundError:
-    from importlib_metadata import entry_points  # type: ignore
+from importlib_metadata import entry_points  # type: ignore
 
 
 class OcrdBrowserApplication(Gtk.Application):
@@ -40,7 +37,7 @@ class OcrdBrowserApplication(Gtk.Application):
         self.set_accels_for_action('view.zoom_to::width', ['<Ctrl>numbersign'])
         self.set_accels_for_action('view.zoom_to::page', ['<Ctrl><Alt>numbersign'])
 
-        for entry_point in entry_points().get('ocrd_browser_ext', []):
+        for entry_point in entry_points(group='ocrd_browser_ext'):
             (entry_point.load())(self)
 
         self.load_css()
