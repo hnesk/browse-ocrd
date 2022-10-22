@@ -6,7 +6,7 @@ from ocrd_browser.util.gtk import ActionRegistry
 from ocrd_browser.ui import MainWindow, AboutDialog, OpenDialog
 from ocrd_browser.view import ViewRegistry
 
-from importlib_metadata import entry_points  # type: ignore
+from importlib_metadata import entry_points
 
 
 class OcrdBrowserApplication(Gtk.Application):

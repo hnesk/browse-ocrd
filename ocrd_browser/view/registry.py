@@ -2,8 +2,7 @@ from __future__ import annotations
 from typing import Dict, Tuple, Optional, Type
 from .base import View
 
-from importlib_metadata import entry_points  # type: ignore
-
+from importlib_metadata import entry_points
 
 ViewInfo = Tuple[type, str, str]
 
