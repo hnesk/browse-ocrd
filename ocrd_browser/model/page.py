@@ -72,7 +72,7 @@ class Page:
         return None
 
     @property
-    def pc_gts(self) -> PcGtsType:
+    def pc_gts(self) -> Optional[PcGtsType]:
         if self._pc_gts is None:
             if self.page_file:
                 self._pc_gts = self.document.page_for_file(self.page_file)
@@ -80,7 +80,9 @@ class Page:
                 image_files = self.image_files
                 if len(image_files) > 0:
                     self._pc_gts = self.document.page_for_file(image_files[0])
-        return self._pc_gts
+            if self._pc_gts is None:
+                self._pc_gts = False
+        return self._pc_gts or None
 
     def get_image(self, feature_selector: Union[str, Set[str]] = '', feature_filter: Union[str, Set[str]] = '', filename: str = '') -> Tuple[Image, Dict[str, Any], OcrdExif]:
         log = getLogger('ocrd_browser.model.page.Page.get_image')
@@ -111,19 +113,23 @@ class Page:
         return self._id
 
     @property
-    def page(self) -> PageType:
-        return self.pc_gts.get_Page()
+    def page(self) -> Optional[PageType]:
+        return self.pc_gts.get_Page() if self.pc_gts else None
 
     @property
-    def meta(self) -> MetadataType:
-        return self.pc_gts.get_Metadata()
+    def meta(self) -> Optional[MetadataType]:
+        return self.pc_gts.get_Metadata() if self.pc_gts else None
 
     def xpath(self, xpath: str) -> List[Element]:
+        if not self.pc_gts:
+            return []
         page_namespace = {'page': ns for ns in self.xml_root.nsmap.values() if ns.startswith('http://schema.primaresearch.org/PAGE/gts/pagecontent/')}
         return cast(List[Element], self.xml_root.xpath(xpath, namespaces=dict(NAMESPACES, **page_namespace)))
 
     @property
-    def xml_root(self) -> Element:
+    def xml_root(self) -> Optional[Element]:
+        if self.pc_gts is None:
+            return None
         if self.pc_gts.gds_elementtree_node_ is None:
             from ocrd_models.ocrd_page_generateds import parsexmlstring_
             from io import StringIO

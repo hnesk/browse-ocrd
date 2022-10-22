@@ -103,8 +103,8 @@ class ImageVersion(NamedTuple):
     @classmethod
     def list_from_page(cls, doc: Document, page: Page) -> List['ImageVersion']:
         versions = []
-        if page:
-            path = doc.path(page.page.imageFilename)
+        if page.pc_gts:
+            path = doc.path(page.pc_gts.get_Page().imageFilename)
             if path.exists():
                 versions.append(cls(path.relative_to(doc.directory), (page.page.imageWidth, page.page.imageHeight), frozenset(), None))
             alts: List[AlternativeImageType] = page.page.get_AlternativeImage()
