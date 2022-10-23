@@ -18,10 +18,6 @@ class DocumentTestCase(TestCase):
         doc = Document.load(self.path)
         self.assertEqual(['PHYS_0017', 'PHYS_0020'], doc.page_ids)
 
-    def test_get_mime_types(self):
-        doc = Document.load(self.path)
-        self.assertEqual({'application/vnd.prima.page+xml', 'image/tiff', 'application/alto+xml'}, doc.mime_types)
-
     def test_get_file_groups_and_mimetypes(self):
         doc = Document.load(self.path)
         expected = [
@@ -108,7 +104,7 @@ class DocumentTestCase(TestCase):
             saved_mets = directory + '/mets.xml'
             doc.save_as(saved_mets)
             saved = Document.load(saved_mets)
-            self.assertEqual(doc.file_groups, saved.file_groups)
+            self.assertEqual(doc.file_groups_and_mimetypes, saved.file_groups_and_mimetypes)
             self.assertEqual(doc.page_ids, saved.page_ids)
             self.assertEqual(doc.workspace.mets.unique_identifier, saved.workspace.mets.unique_identifier)
 

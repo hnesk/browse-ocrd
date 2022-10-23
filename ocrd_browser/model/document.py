@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Tuple, List, Set, Union, cast, Callable, Any, Dict, Sequence, TYPE_CHECKING
+from typing import Optional, Tuple, List, Union, cast, Callable, Any, Dict, Sequence, TYPE_CHECKING
 
 import atexit
 import errno
@@ -202,27 +202,6 @@ class Document:
         return cast(List[str], self.workspace.mets.physical_pages if self.workspace else [])
 
     @property
-    def file_groups(self) -> List[str]:
-        """
-        List of file_groups in this workspace
-
-        @return: List[str]
-        """
-        # noinspection PyTypeChecker
-        return cast(List[str], self.workspace.mets.file_groups) if self.workspace else []
-
-    # noinspection PyProtectedMember
-    @property
-    def mime_types(self) -> Set[str]:
-        """
-        Set with the distinct mime-types in this workspace
-
-        @return: Set[str]
-        """
-        return {el.get('MIMETYPE') for el in
-                self.xpath('mets:fileSec/mets:fileGrp/mets:file[@MIMETYPE]')}
-
-    @property
     def file_groups_and_mimetypes(self) -> List[Tuple[str, str]]:
         """
         A list with the distinct file_group/mimetype pairs in this workspace
@@ -279,7 +258,7 @@ class Document:
             images = [image for image in file_index.values() if
                       image.static_page_id == page_id and image.fileGrp == file_group]
             if len(images) == 1:
-                image_paths[page_id] = self.path(images[0])
+                image_paths[page_id] = self.directory.joinpath(images[0].local_filename)
             else:
                 log.warning('Found %d images for PAGE %s and fileGrp %s, expected 1', len(images), page_id, file_group)
                 image_paths[page_id] = None
