@@ -1,17 +1,17 @@
 import unittest
 
 from tests import TestCase
-from ocrd_browser.util.file_groups import best_file_group, weight_match
+from ocrd_browser.util.file_groups import best_file_group, weight_match, FileGroupHandle
 
 
 class FileGroupsTestCase(TestCase):
 
     def setUp(self) -> None:
         self.test_groups = [
-            ('OCR-D-SEG-BLOCK-tesseract', 'application/vnd.prima.page+xml'),
-            ('OCR-D-GT-PAGE', 'application/vnd.prima.page+xml'),
-            ('OCR-D-IMG', 'image/tiff'),
-            ('OCR-D-IMG-BIN', 'image/tiff'),
+            FileGroupHandle('OCR-D-SEG-BLOCK-tesseract', 'application/vnd.prima.page+xml'),
+            FileGroupHandle('OCR-D-GT-PAGE', 'application/vnd.prima.page+xml'),
+            FileGroupHandle('OCR-D-IMG', 'image/tiff'),
+            FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'),
         ]
 
     def test_weight_match(self):

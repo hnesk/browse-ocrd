@@ -287,12 +287,12 @@ class FileGroupComboBox(Gtk.ComboBox):
 class FileGroupModel(Gtk.ListStore):
     def __init__(self, document: 'Document'):
         super().__init__(str, str, str, str)
-        for group, mime in document.file_groups_and_mimetypes:
-            if mime == 'text/html':
+        for fg in document.file_groups:
+            if fg.mime == 'text/html':
                 ext = '.html'
             else:
-                ext = MIME_TO_EXT.get(mime, '.???')
-            self.append(('{}|{}'.format(group, mime), group, mime, ext))
+                ext = MIME_TO_EXT.get(fg.mime, '.???')
+            self.append((fg.key, fg.group, fg.mime, ext))
 
     @classmethod
     def build(cls, document: 'Document', filter_: 'FileGroupFilter' = None) -> 'FileGroupModel':

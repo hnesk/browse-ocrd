@@ -102,12 +102,11 @@ class PageListStore(LazyLoadingListStore):
         def _page_added(page_ids: List[str]) -> None:
             for page_id in page_ids:
                 try:
-                    file = next(
-                        iter(self.document.workspace.mets.find_files(fileGrp=self.file_group, pageId=page_id)))
+                    file = next(iter(self.document.workspace.mets.find_files(pageId=page_id, fileGrp=self.file_group.group, mimetype=self.file_group.mime)))
                     file_name = str(self.document.path(file))
                     self.append((page_id, '', file_name, None, len(self)))
                 except StopIteration as e:
-                    raise ValueError('Page {} / Group {}  not in workspace'.format(page_id, self.file_group)) from e
+                    raise ValueError('Page {} in group {}  not in workspace'.format(page_id, self.file_group)) from e
 
         def _page_deleted(page_ids: List[str]) -> None:
             for delete_page_id in reversed(page_ids):
@@ -118,8 +117,7 @@ class PageListStore(LazyLoadingListStore):
             for page_id in page_ids:
                 n, row = self.get_row_by_page_id(page_id)
                 try:
-                    file = next(
-                        iter(self.document.workspace.mets.find_files(fileGrp=self.file_group, pageId=page_id)))
+                    file = next(iter(self.document.workspace.mets.find_files(pageId=page_id, fileGrp=self.file_group.group, mimetype=self.file_group.mime)))
                     file_name = str(self.document.path(file))
                     row[self.COLUMN_FILENAME] = file_name
                 except StopIteration:

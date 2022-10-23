@@ -1,6 +1,6 @@
 import re
 from collections import Counter
-from typing import List, Optional, Counter as CounterType, NamedTuple
+from typing import List, Optional, Counter as CounterType, NamedTuple, cast
 
 from ocrd_models import OcrdFile
 
@@ -14,7 +14,10 @@ class FileGroupHandle(NamedTuple):
         return '|'.join(self)
 
     def match(self, file: OcrdFile) -> bool:
-        return file.fileGrp == self.group and file.mimetype == self.mime
+        return cast(bool, file.fileGrp == self.group and file.mimetype == self.mime)
+
+    def __str__(self) -> str:
+        return ' - '.join(self)
 
 
 def weight_match(s: str, preferred: Optional[List[str]] = None) -> float:

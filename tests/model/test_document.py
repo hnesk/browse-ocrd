@@ -1,6 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from ocrd_browser.util.file_groups import FileGroupHandle
 from tests import TestCase, ASSETS_PATH, TEST_BASE_PATH
 from ocrd_browser.model import Document, Page
 from datetime import datetime
@@ -18,14 +19,14 @@ class DocumentTestCase(TestCase):
         doc = Document.load(self.path)
         self.assertEqual(['PHYS_0017', 'PHYS_0020'], doc.page_ids)
 
-    def test_get_file_groups_and_mimetypes(self):
+    def test_get_file_groups(self):
         doc = Document.load(self.path)
         expected = [
-            ('OCR-D-IMG', 'image/tiff'),
-            ('OCR-D-GT-PAGE', 'application/vnd.prima.page+xml'),
-            ('OCR-D-GT-ALTO', 'application/alto+xml')
+            FileGroupHandle('OCR-D-IMG', 'image/tiff'),
+            FileGroupHandle('OCR-D-GT-PAGE', 'application/vnd.prima.page+xml'),
+            FileGroupHandle('OCR-D-GT-ALTO', 'application/alto+xml')
         ]
-        self.assertEqual(expected, doc.file_groups_and_mimetypes)
+        self.assertEqual(expected, doc.file_groups)
 
     def test_get_page_index(self):
         doc = Document.load(self.path)
@@ -37,7 +38,7 @@ class DocumentTestCase(TestCase):
 
     def test_get_image_paths(self):
         doc = Document.load(self.path)
-        image_paths = doc.get_image_paths('OCR-D-IMG')
+        image_paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG', 'image/tiff'))
         self.assertEqual(2, len(image_paths))
         self.assertEqual('INPUT_0017.tif', image_paths['PHYS_0017'].name)
         self.assertEqual('INPUT_0020.tif', image_paths['PHYS_0020'].name)
@@ -45,17 +46,17 @@ class DocumentTestCase(TestCase):
     def test_get_default_image_group(self):
         doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-complex/data/mets.xml')
         file_group = doc.get_default_image_group(['OCR-D-IMG-BIN', 'OCR-D-IMG.*'])
-        self.assertEqual('OCR-D-IMG-BIN', file_group)
+        self.assertEqual(FileGroupHandle('OCR-D-IMG-BIN', 'image/png'), file_group)
 
     def test_get_default_image_group_no_preference(self):
         doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-complex/data/mets.xml')
         file_group = doc.get_default_image_group()
-        self.assertEqual('OCR-D-IMG', file_group)
+        self.assertEqual(FileGroupHandle('OCR-D-IMG', 'image/tiff'), file_group)
 
     def test_get_default_image_group_with_missing_ocr_d_img(self):
         doc = Document.load(ASSETS_PATH / '../example/workspaces/no_ocrd_d_img_group/mets.xml')
         file_group = doc.get_default_image_group()
-        self.assertEqual('OCR-D-IMG-PNG', file_group)
+        self.assertEqual(FileGroupHandle('OCR-D-IMG-PNG', 'image/png'), file_group)
 
     def test_path_string(self):
         doc = Document.load(self.path)
@@ -104,14 +105,14 @@ class DocumentTestCase(TestCase):
             saved_mets = directory + '/mets.xml'
             doc.save_as(saved_mets)
             saved = Document.load(saved_mets)
-            self.assertEqual(doc.file_groups_and_mimetypes, saved.file_groups_and_mimetypes)
+            self.assertEqual(doc.file_groups, saved.file_groups)
             self.assertEqual(doc.page_ids, saved.page_ids)
             self.assertEqual(doc.workspace.mets.unique_identifier, saved.workspace.mets.unique_identifier)
 
             for page_id in doc.page_ids:
-                for file_group, mime in doc.file_groups_and_mimetypes:
-                    original_file = doc.files_for_page_id(page_id, file_group, mime)[0]
-                    saved_file = saved.files_for_page_id(page_id, file_group, mime)[0]
+                for fg in doc.file_groups:
+                    original_file = doc.files_for_page_id(page_id, fg.group, fg.mime)[0]
+                    saved_file = saved.files_for_page_id(page_id, fg.group, fg.mime)[0]
                     self.assertEqual(original_file, saved_file)
 
     def test_derive_backup_directory(self):

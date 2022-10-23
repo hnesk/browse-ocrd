@@ -9,7 +9,7 @@ from functools import wraps
 
 from ocrd import Resolver
 from ocrd_browser.model.page import Page
-from ocrd_browser.util.file_groups import best_file_group
+from ocrd_browser.util.file_groups import best_file_group, FileGroupHandle
 from ocrd_browser.util.image import add_dpi_to_png_buffer
 from ocrd_browser.util.streams import SilencedStreams
 from ocrd_modelfactory import page_from_file
@@ -202,15 +202,16 @@ class Document:
         return cast(List[str], self.workspace.mets.physical_pages if self.workspace else [])
 
     @property
-    def file_groups_and_mimetypes(self) -> List[Tuple[str, str]]:
+    def file_groups(self) -> List[FileGroupHandle]:
         """
         A list with the distinct file_group/mimetype pairs in this workspace
 
-        @return: List[Tuple[str,str]]
+        @return: List[FileGroupHandle]
         """
-        distinct_groups: Dict[Tuple[str, str], None] = {}
+        distinct_groups: Dict[FileGroupHandle, None] = {}
+        # Using dict keys as a workaround for an ordered set
         for el in self.xpath('mets:fileSec/mets:fileGrp[@USE]/mets:file[@MIMETYPE]'):
-            distinct_groups[(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
+            distinct_groups[FileGroupHandle(el.getparent().get('USE'), el.get('MIMETYPE'))] = None
 
         return list(distinct_groups.keys())
 
@@ -264,9 +265,8 @@ class Document:
                 image_paths[page_id] = None
         return image_paths
 
-    def get_default_image_group(self, preferred_image_file_groups: Optional[List[str]] = None) -> Optional[str]:
-        best_group = best_file_group(self.file_groups_and_mimetypes, preferred_image_file_groups, [r'image/.*'], cutoff=0)
-        return best_group[0] if best_group else None
+    def get_default_image_group(self, preferred_image_file_groups: Optional[List[str]] = None) -> Optional[FileGroupHandle]:
+        return best_file_group(self.file_groups, preferred_image_file_groups, [r'image/.*'], cutoff=0)
 
     def get_unused_page_id(self, template_page_id: str = 'PAGE_{page_nr}') -> Tuple[str, int]:
         """
