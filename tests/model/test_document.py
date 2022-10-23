@@ -43,6 +43,16 @@ class DocumentTestCase(TestCase):
         self.assertEqual('INPUT_0017.tif', image_paths['PHYS_0017'].name)
         self.assertEqual('INPUT_0020.tif', image_paths['PHYS_0020'].name)
 
+    def test_get_image_paths_only_returns_matching_groups(self):
+        """
+        Testcase for https://github.com/hnesk/browse-ocrd/issues/51
+        """
+        doc = Document.load(ASSETS_PATH / '../example/workspaces/kant_aufklaerung_1784_bin/mets.xml')
+        image_paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG-BIN', 'image/png'))
+        self.assertEqual(2, len(image_paths))
+        self.assertEqual('OCR-D-IMG-BIN_0001.IMG-BIN.png', image_paths['PHYS_0017'].name)
+        self.assertEqual('OCR-D-IMG-BIN_0002.IMG-BIN.png', image_paths['PHYS_0020'].name)
+
     def test_get_default_image_group(self):
         doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-complex/data/mets.xml')
         file_group = doc.get_default_image_group(['OCR-D-IMG-BIN', 'OCR-D-IMG.*'])

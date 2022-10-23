@@ -246,7 +246,7 @@ class Document:
 
         return file_index
 
-    def get_image_paths(self, file_group: str) -> Dict[str, Path]:
+    def get_image_paths(self, file_group: FileGroupHandle) -> Dict[str, Path]:
         """
         Builds a Dict ID->Path for all page_ids fast
 
@@ -256,12 +256,11 @@ class Document:
         image_paths = {}
         file_index = self.get_file_index()
         for page_id in self.page_ids:
-            images = [image for image in file_index.values() if
-                      image.static_page_id == page_id and image.fileGrp == file_group]
-            if len(images) == 1:
+            images = [image for image in file_index.values() if image.static_page_id == page_id and file_group.match(image)]
+            if len(images) > 0:
                 image_paths[page_id] = self.directory.joinpath(images[0].local_filename)
             else:
-                log.warning('Found %d images for PAGE %s and fileGrp %s, expected 1', len(images), page_id, file_group)
+                log.warning('Found no images for PAGE %s and fileGrp %s', page_id, file_group)
                 image_paths[page_id] = None
         return image_paths
 

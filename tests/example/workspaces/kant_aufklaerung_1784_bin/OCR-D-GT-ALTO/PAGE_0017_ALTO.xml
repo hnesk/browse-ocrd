@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<alto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.loc.gov/standards/alto/ns-v2#" xmlns:page="http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15" xsi:schemaLocation="http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15 http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15/pagecontent.xsd http://www.loc.gov/standards/alto/ns-v2# http://www.loc.gov/standards/alto/alto-v2.0.xsd">
+  <Description>
+    <MeasurementUnit>pixel</MeasurementUnit>
+  </Description>
+  <Layout>
+    <Page ID="Page1" PHYSICAL_IMG_NR="1" HEIGHT="2083" WIDTH="1457">
+      <TopMargin HEIGHT="232" WIDTH="1457" VPOS="0" HPOS="0"/>
+      <LeftMargin HEIGHT="1562" WIDTH="101" VPOS="232" HPOS="0"/>
+      <RightMargin HEIGHT="1562" WIDTH="525" VPOS="232" HPOS="932"/>
+      <BottomMargin HEIGHT="289" WIDTH="1457" VPOS="1794" HPOS="0"/>
+      <PrintSpace HEIGHT="1562" WIDTH="831" VPOS="232" HPOS="101">
+        <TextBlock ID="r_1_1" HEIGHT="74" WIDTH="806" VPOS="365" HPOS="113">
+          <Shape>
+            <Polygon POINTS="113,365 919,365 919,439 113,439"/>
+          </Shape>
+          <TextLine ID="tl_1" BASELINE="438" HEIGHT="72" WIDTH="804" VPOS="366" HPOS="114" STYLEREFS="Arial_17.0__true_____">
+            <String ID="w_w1aab1b1b2b1b1ab1" HEIGHT="69" WIDTH="328" VPOS="368" HPOS="114" STYLEREFS="Arial_17.0__true_____" CONTENT="Berliniſche"/>
+            <String ID="word_1478541234932_798" HEIGHT="69" WIDTH="420" VPOS="367" HPOS="482" STYLEREFS="Arial_17.0__true_____" CONTENT="Monatsſchrift"/>
+            <String ID="word_1478541234930_797" HEIGHT="69" WIDTH="16" VPOS="367" HPOS="902" STYLEREFS="Arial_17.0__true_____" CONTENT="."/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="r_1_2" HEIGHT="49" WIDTH="207" VPOS="482" HPOS="408">
+          <Shape>
+            <Polygon POINTS="408,482 615,482 615,531 408,531"/>
+          </Shape>
+          <TextLine ID="tl_2" BASELINE="530" HEIGHT="47" WIDTH="205" VPOS="483" HPOS="409" STYLEREFS="___true_____">
+            <String ID="word_1478541239126_800" HEIGHT="46" WIDTH="190" VPOS="483" HPOS="409" STYLEREFS="_12.0__true_____" CONTENT="1784"/>
+            <String ID="word_1478541239125_799" HEIGHT="42" WIDTH="15" VPOS="487" HPOS="599" STYLEREFS="_12.0__true_____" CONTENT="."/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="r_1_3" HEIGHT="54" WIDTH="528" VPOS="567" HPOS="251">
+          <Shape>
+            <Polygon POINTS="251,567 779,567 779,621 251,621"/>
+          </Shape>
+          <TextLine ID="tl_3" BASELINE="620" HEIGHT="52" WIDTH="526" VPOS="568" HPOS="252" STYLEREFS="Arial_12.0_______">
+            <String ID="w_w1aab1b1b2b5b1ab1" HEIGHT="49" WIDTH="165" VPOS="571" HPOS="252" STYLEREFS="Arial_12.0_______" CONTENT="Zwoͤlftes"/>
+            <String ID="word_1478541244022_802" HEIGHT="42" WIDTH="93" VPOS="569" HPOS="429" STYLEREFS="Arial_12.0_______" CONTENT="Stuͤk"/>
+            <String ID="word_1478541244021_801" HEIGHT="42" WIDTH="13" VPOS="569" HPOS="522" STYLEREFS="Arial_12.0_______" CONTENT="."/>
+            <String ID="word_1478541247872_804" HEIGHT="42" WIDTH="178" VPOS="570" HPOS="588" STYLEREFS="Arial_12.0_______" CONTENT="December"/>
+            <String ID="word_1478541247871_803" HEIGHT="42" WIDTH="12" VPOS="570" HPOS="766" STYLEREFS="Arial_12.0_______" CONTENT="."/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="r_2_1" HEIGHT="26" WIDTH="28" VPOS="747" HPOS="500">
+          <Shape>
+            <Polygon POINTS="500,747 528,747 528,773 500,773"/>
+          </Shape>
+          <TextLine ID="tl_4" BASELINE="772" HEIGHT="24" WIDTH="26" VPOS="748" HPOS="501" STYLEREFS="Arial_10.0_______">
+            <String ID="word_1478541284648_806" HEIGHT="24" WIDTH="12" VPOS="748" HPOS="501" STYLEREFS="Arial_10.0_______" CONTENT="1"/>
+            <String ID="word_1478541284647_805" HEIGHT="24" WIDTH="14" VPOS="748" HPOS="513" STYLEREFS="Arial_10.0_______" CONTENT="."/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="r_2_2" HEIGHT="138" WIDTH="685" VPOS="804" HPOS="176">
+          <Shape>
+            <Polygon POINTS="176,804 861,804 861,942 176,942"/>
+          </Shape>
+          <TextLine ID="tl_5" BASELINE="860" HEIGHT="55" WIDTH="564" VPOS="805" HPOS="233" STYLEREFS="Arial_12.0_______">
+            <String ID="w_w1aab1b3b2b3b1ab1" HEIGHT="51" WIDTH="306" VPOS="807" HPOS="233" STYLEREFS="Arial_12.0_______" CONTENT="Beantwortung"/>
+            <String ID="w_w1aab1b3b2b3b1ac27" HEIGHT="38" WIDTH="61" VPOS="810" HPOS="569" STYLEREFS="Arial_12.0_______" CONTENT="der"/>
+            <String ID="word_1478541289590_808" HEIGHT="53" WIDTH="124" VPOS="806" HPOS="654" STYLEREFS="Arial_12.0_______" CONTENT="Frage"/>
+            <String ID="word_1478541289588_807" HEIGHT="53" WIDTH="19" VPOS="806" HPOS="778" STYLEREFS="Arial_12.0_______" CONTENT=":"/>
+          </TextLine>
+          <TextLine ID="tl_6" BASELINE="941" HEIGHT="55" WIDTH="683" VPOS="886" HPOS="177" STYLEREFS="________">
+            <String ID="w_w1aab1b3b2b3b3ab1" HEIGHT="46" WIDTH="139" VPOS="888" HPOS="177" STYLEREFS="Arial_12.0_______" CONTENT="Was"/>
+            <String ID="w_w1aab1b3b2b3b3ab9" HEIGHT="51" WIDTH="56" VPOS="890" HPOS="362" STYLEREFS="Arial_12.0_______" CONTENT="iſt"/>
+            <String ID="word_1478541293583_810" HEIGHT="52" WIDTH="367" VPOS="887" HPOS="465" STYLEREFS="Arial_12.0_______" CONTENT="Aufklaͤrung"/>
+            <String ID="word_1478541293581_809" HEIGHT="52" WIDTH="28" VPOS="887" HPOS="832" STYLEREFS="Arial_12.0_______" CONTENT="?"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="r_2_3" HEIGHT="42" WIDTH="474" VPOS="977" HPOS="277">
+          <Shape>
+            <Polygon POINTS="277,977 751,977 751,1019 277,1019"/>
+          </Shape>
+          <TextLine ID="tl_7" BASELINE="1018" HEIGHT="40" WIDTH="472" VPOS="978" HPOS="278">
+            <String ID="word_1478541297889_812" HEIGHT="37" WIDTH="18" VPOS="981" HPOS="278" STYLEREFS="Arial_7.5_______" CONTENT="("/>
+            <String ID="word_1478541302856_814" HEIGHT="37" WIDTH="31" VPOS="981" HPOS="296" STYLEREFS="Arial_7.5_______" CONTENT="S"/>
+            <String ID="word_1478541302855_813" HEIGHT="37" WIDTH="11" VPOS="981" HPOS="327" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="word_1478541307290_816" HEIGHT="31" WIDTH="127" VPOS="981" HPOS="353" STYLEREFS="Arial_7.5_______" CONTENT="Decemb"/>
+            <String ID="word_1478541307288_815" HEIGHT="31" WIDTH="9" VPOS="981" HPOS="480" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="word_1478541311201_818" HEIGHT="30" WIDTH="73" VPOS="987" HPOS="505" STYLEREFS="Arial_7.5_______" CONTENT="1783"/>
+            <String ID="word_1478541311199_817" HEIGHT="30" WIDTH="8" VPOS="987" HPOS="578" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="word_1478541314888_820" HEIGHT="32" WIDTH="36" VPOS="979" HPOS="608" STYLEREFS="Arial_7.5_______" CONTENT="S"/>
+            <String ID="word_1478541314887_819" HEIGHT="32" WIDTH="8" VPOS="979" HPOS="644" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="word_1478541319891_824" HEIGHT="38" WIDTH="60" VPOS="979" HPOS="664" STYLEREFS="Arial_7.5_______" CONTENT="516"/>
+            <String ID="word_1478541319888_823" HEIGHT="37" WIDTH="11" VPOS="979" HPOS="724" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="word_1478541318719_821" HEIGHT="37" WIDTH="15" VPOS="979" HPOS="735" STYLEREFS="Arial_7.5_______" CONTENT=")"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="region_1474985170674_163" HEIGHT="63" WIDTH="55" VPOS="1055" HPOS="111">
+          <Shape>
+            <Polygon POINTS="166,1118 111,1118 111,1055 166,1055"/>
+          </Shape>
+          <TextLine ID="line_1478541866583_902" BASELINE="1115" HEIGHT="59" WIDTH="53" VPOS="1056" HPOS="112">
+            <String ID="word_1478541873536_903" HEIGHT="58" WIDTH="52" VPOS="1056" HPOS="112" CONTENT="A"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="r_2_4" HEIGHT="537" WIDTH="817" VPOS="1054" HPOS="109">
+          <Shape>
+            <Polygon POINTS="109,1119 169,1117 166,1055 926,1054 926,1591 109,1591"/>
+          </Shape>
+          <TextLine ID="tl_8" BASELINE="1124" HEIGHT="69" WIDTH="754" VPOS="1055" HPOS="163">
+            <String ID="w_w1aab1b3b2b7b1ab1" HEIGHT="67" WIDTH="227" VPOS="1057" HPOS="166" STYLEREFS="Arial_7.5_______" CONTENT="ufklaͤrung"/>
+            <String ID="w_w1aab1b3b2b7b1b1b3" HEIGHT="35" WIDTH="37" VPOS="1086" HPOS="414" STYLEREFS="Arial_7.5_______" CONTENT="iſt"/>
+            <String ID="w_w1aab1b3b2b7b1b1c11" HEIGHT="28" WIDTH="54" VPOS="1088" HPOS="473" STYLEREFS="Arial_7.5_______" CONTENT="der"/>
+            <String ID="w_w1aab1b3b2b7b1b1c19" HEIGHT="37" WIDTH="161" VPOS="1086" HPOS="552" STYLEREFS="Arial_7.5_______" CONTENT="Ausgang"/>
+            <String ID="w_w1aab1b3b2b7b1b1c35" HEIGHT="29" WIDTH="55" VPOS="1086" HPOS="740" STYLEREFS="Arial_7.5_______" CONTENT="des"/>
+            <String ID="word_1478541370337_826" HEIGHT="31" WIDTH="88" VPOS="1085" HPOS="818" STYLEREFS="Arial_7.5_______" CONTENT="Men"/>
+            <String ID="word_1478541370335_825" HEIGHT="31" WIDTH="11" VPOS="1085" HPOS="906" STYLEREFS="Arial_7.5_______" CONTENT="-"/>
+          </TextLine>
+          <TextLine ID="tl_9" BASELINE="1170" HEIGHT="40" WIDTH="808" VPOS="1130" HPOS="114" STYLEREFS="Arial_7.5_______">
+            <String ID="w_w1aab1b3b2b7b3ab1" HEIGHT="37" WIDTH="90" VPOS="1133" HPOS="114" STYLEREFS="Arial_7.5_______" CONTENT="ſchen"/>
+            <String ID="w_w1aab1b3b2b7b3ac13" HEIGHT="21" WIDTH="63" VPOS="1142" HPOS="218" STYLEREFS="Arial_7.5_______" CONTENT="aus"/>
+            <String ID="w_w1aab1b3b2b7b3ac21" HEIGHT="37" WIDTH="96" VPOS="1132" HPOS="297" STYLEREFS="Arial_7.5_______" CONTENT="ſeiner"/>
+            <String ID="w_w1aab1b3b2b7b3ac35" HEIGHT="36" WIDTH="88" VPOS="1133" HPOS="415" STYLEREFS="Arial_7.5_______" CONTENT="ſelbſt"/>
+            <String ID="w_w1aab1b3b2b7b3ac49" HEIGHT="36" WIDTH="235" VPOS="1133" HPOS="520" STYLEREFS="Arial_7.5_______" CONTENT="verſchuldeten"/>
+            <String ID="word_1478541375312_828" HEIGHT="32" WIDTH="137" VPOS="1130" HPOS="774" STYLEREFS="Arial_7.5_______" CONTENT="Unmuͤn"/>
+            <String ID="word_1478541375310_827" HEIGHT="32" WIDTH="11" VPOS="1130" HPOS="911" STYLEREFS="Arial_7.5_______" CONTENT="-"/>
+          </TextLine>
+          <TextLine ID="tl_10" BASELINE="1218" HEIGHT="43" WIDTH="807" VPOS="1175" HPOS="113" STYLEREFS="Arial_7.5_______">
+            <String ID="word_1478541379624_830" HEIGHT="37" WIDTH="116" VPOS="1180" HPOS="113" STYLEREFS="Arial_7.5_______" CONTENT="digkeit"/>
+            <String ID="word_1478541379622_829" HEIGHT="37" WIDTH="10" VPOS="1180" HPOS="229" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="w_w1aab1b3b2b7b5ac19" HEIGHT="40" WIDTH="254" VPOS="1177" HPOS="286" STYLEREFS="Arial_7.5_______" CONTENT="Unmuͤndigkeit"/>
+            <String ID="w_w1aab1b3b2b7b5ac45" HEIGHT="34" WIDTH="32" VPOS="1181" HPOS="572" STYLEREFS="Arial_7.5_______" CONTENT="iſt"/>
+            <String ID="w_w1aab1b3b2b7b5ac53" HEIGHT="26" WIDTH="49" VPOS="1183" HPOS="635" STYLEREFS="Arial_7.5_______" CONTENT="das"/>
+            <String ID="word_1478541383852_832" HEIGHT="37" WIDTH="194" VPOS="1179" HPOS="715" STYLEREFS="Arial_7.5_______" CONTENT="Unvermoͤgen"/>
+            <String ID="word_1478541383849_831" HEIGHT="37" WIDTH="11" VPOS="1179" HPOS="909" STYLEREFS="Arial_7.5_______" CONTENT=","/>
+          </TextLine>
+          <TextLine ID="tl_11" BASELINE="1265" HEIGHT="41" WIDTH="805" VPOS="1224" HPOS="115" STYLEREFS="Arial_7.5_______">
+            <String ID="w_w1aab1b3b2b7b7ab1" HEIGHT="36" WIDTH="48" VPOS="1226" HPOS="115" STYLEREFS="Arial_7.5_______" CONTENT="ſich"/>
+            <String ID="w_w1aab1b3b2b7b7ac11" HEIGHT="34" WIDTH="86" VPOS="1226" HPOS="180" STYLEREFS="Arial_7.5_______" CONTENT="ſeines"/>
+            <String ID="w_w1aab1b3b2b7b7ac25" HEIGHT="36" WIDTH="170" VPOS="1226" HPOS="281" STYLEREFS="Arial_7.5_______" CONTENT="Verstandes"/>
+            <String ID="w_w1aab1b3b2b7b7ac47" HEIGHT="31" WIDTH="70" VPOS="1229" HPOS="472" STYLEREFS="Arial_7.5_______" CONTENT="ohne"/>
+            <String ID="w_w1aab1b3b2b7b7ac57" HEIGHT="38" WIDTH="112" VPOS="1226" HPOS="563" STYLEREFS="Arial_7.5_______" CONTENT="Leitung"/>
+            <String ID="w_w1aab1b3b2b7b7ac73" HEIGHT="28" WIDTH="74" VPOS="1227" HPOS="704" STYLEREFS="Arial_7.5_______" CONTENT="eines"/>
+            <String ID="w_w1aab1b3b2b7b7ac85" HEIGHT="27" WIDTH="122" VPOS="1228" HPOS="798" STYLEREFS="Arial_7.5_______" CONTENT="anderen"/>
+          </TextLine>
+          <TextLine ID="tl_12" BASELINE="1311" HEIGHT="40" WIDTH="810" VPOS="1271" HPOS="111" STYLEREFS="Arial_7.5_______">
+            <String ID="w_w1aab1b3b2b7b9ab1" HEIGHT="30" WIDTH="35" VPOS="1279" HPOS="111" STYLEREFS="Arial_7.5_______" CONTENT="zu"/>
+            <String ID="word_1478541388499_834" HEIGHT="29" WIDTH="129" VPOS="1273" HPOS="161" STYLEREFS="Arial_7.5_______" CONTENT="bedienen"/>
+            <String ID="word_1478541388497_833" HEIGHT="29" WIDTH="9" VPOS="1273" HPOS="290" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="w_w1aab1b3b2b7b9ac27" HEIGHT="38" WIDTH="310" VPOS="1272" HPOS="338" STYLEREFS="Arial_7.5_______" CONTENT="Selbſtverſchuldet"/>
+            <String ID="w_w1aab1b3b2b7b9ac63" HEIGHT="35" WIDTH="33" VPOS="1274" HPOS="662" STYLEREFS="Arial_7.5_______" CONTENT="iſt"/>
+            <String ID="w_w1aab1b3b2b7b9ac71" HEIGHT="35" WIDTH="67" VPOS="1271" HPOS="710" STYLEREFS="Arial_7.5_______" CONTENT="dieſe"/>
+            <String ID="word_1478541392592_836" HEIGHT="35" WIDTH="120" VPOS="1271" HPOS="791" STYLEREFS="Arial_7.5_______" CONTENT="Unmuͤn"/>
+            <String ID="word_1478541392590_835" HEIGHT="35" WIDTH="10" VPOS="1271" HPOS="911" STYLEREFS="Arial_7.5_______" CONTENT="-"/>
+          </TextLine>
+          <TextLine ID="tl_13" BASELINE="1355" HEIGHT="38" WIDTH="808" VPOS="1317" HPOS="115" STYLEREFS="Arial_7.5_______">
+            <String ID="word_1478541396544_838" HEIGHT="35" WIDTH="100" VPOS="1319" HPOS="115" STYLEREFS="Arial_7.5_______" CONTENT="digkeit"/>
+            <String ID="word_1478541396542_837" HEIGHT="35" WIDTH="12" VPOS="1319" HPOS="215" STYLEREFS="Arial_7.5_______" CONTENT=","/>
+            <String ID="w_w1aab1b3b2b7c11ac19" HEIGHT="22" WIDTH="85" VPOS="1327" HPOS="247" STYLEREFS="Arial_7.5_______" CONTENT="wenn"/>
+            <String ID="w_w1aab1b3b2b7c11ac29" HEIGHT="28" WIDTH="40" VPOS="1321" HPOS="351" STYLEREFS="Arial_7.5_______" CONTENT="die"/>
+            <String ID="w_w1aab1b3b2b7c11ac37" HEIGHT="35" WIDTH="113" VPOS="1319" HPOS="406" STYLEREFS="Arial_7.5_______" CONTENT="Urſache"/>
+            <String ID="w_w1aab1b3b2b7c11ac53" HEIGHT="35" WIDTH="133" VPOS="1319" HPOS="533" STYLEREFS="Arial_7.5_______" CONTENT="derſelben"/>
+            <String ID="w_w1aab1b3b2b7c11ac73" HEIGHT="35" WIDTH="72" VPOS="1318" HPOS="684" STYLEREFS="Arial_7.5_______" CONTENT="nicht"/>
+            <String ID="w_w1aab1b3b2b7c11ac85" HEIGHT="22" WIDTH="46" VPOS="1326" HPOS="770" STYLEREFS="Arial_7.5_______" CONTENT="am"/>
+            <String ID="word_1478541401113_840" HEIGHT="31" WIDTH="82" VPOS="1318" HPOS="830" STYLEREFS="Arial_7.5_______" CONTENT="Man"/>
+            <String ID="word_1478541401111_839" HEIGHT="31" WIDTH="11" VPOS="1318" HPOS="912" STYLEREFS="Arial_7.5_______" CONTENT="-"/>
+          </TextLine>
+          <TextLine ID="tl_14" BASELINE="1404" HEIGHT="42" WIDTH="811" VPOS="1362" HPOS="110" STYLEREFS="Arial_7.5_______">
+            <String ID="w_w1aab1b3b2b7c13ab1" HEIGHT="36" WIDTH="43" VPOS="1365" HPOS="110" STYLEREFS="Arial_7.5_______" CONTENT="gel"/>
+            <String ID="w_w1aab1b3b2b7c13ab9" HEIGHT="27" WIDTH="48" VPOS="1367" HPOS="169" STYLEREFS="Arial_7.5_______" CONTENT="des"/>
+            <String ID="word_1478541404896_842" HEIGHT="37" WIDTH="173" VPOS="1364" HPOS="233" STYLEREFS="Arial_7.5_______" CONTENT="Verſtandes"/>
+            <String ID="word_1478541404895_841" HEIGHT="37" WIDTH="11" VPOS="1364" HPOS="406" STYLEREFS="Arial_7.5_______" CONTENT=","/>
+            <String ID="w_w1aab1b3b2b7c13ac41" HEIGHT="32" WIDTH="113" VPOS="1367" HPOS="438" STYLEREFS="Arial_7.5_______" CONTENT="ſondern"/>
+            <String ID="w_w1aab1b3b2b7c13ac57" HEIGHT="26" WIDTH="46" VPOS="1369" HPOS="578" STYLEREFS="Arial_7.5_______" CONTENT="der"/>
+            <String ID="w_w1aab1b3b2b7c13ac65" HEIGHT="37" WIDTH="214" VPOS="1365" HPOS="637" STYLEREFS="Arial_7.5_______" CONTENT="Entſchließung"/>
+            <String ID="w_w1aab1b3b2b7c13ac93" HEIGHT="29" WIDTH="55" VPOS="1366" HPOS="866" STYLEREFS="Arial_7.5_______" CONTENT="und"/>
+          </TextLine>
+          <TextLine ID="tl_15" BASELINE="1451" HEIGHT="42" WIDTH="809" VPOS="1409" HPOS="113" STYLEREFS="Arial_7.5_______">
+            <String ID="w_w1aab1b3b2b7c15ab1" HEIGHT="28" WIDTH="49" VPOS="1412" HPOS="113" STYLEREFS="Arial_7.5_______" CONTENT="des"/>
+            <String ID="w_w1aab1b3b2b7c15ab9" HEIGHT="37" WIDTH="125" VPOS="1411" HPOS="183" STYLEREFS="Arial_7.5_______" CONTENT="Muthes"/>
+            <String ID="word_1478541410608_844" HEIGHT="34" WIDTH="64" VPOS="1415" HPOS="331" STYLEREFS="Arial_7.5_______" CONTENT="liegt"/>
+            <String ID="word_1478541410606_843" HEIGHT="34" WIDTH="11" VPOS="1415" HPOS="395" STYLEREFS="Arial_7.5_______" CONTENT=","/>
+            <String ID="w_w1aab1b3b2b7c15ac37" HEIGHT="36" WIDTH="47" VPOS="1413" HPOS="435" STYLEREFS="Arial_7.5_______" CONTENT="ſich"/>
+            <String ID="w_w1aab1b3b2b7c15ac47" HEIGHT="35" WIDTH="84" VPOS="1414" HPOS="509" STYLEREFS="Arial_7.5_______" CONTENT="ſeiner"/>
+            <String ID="w_w1aab1b3b2b7c15ac61" HEIGHT="36" WIDTH="69" VPOS="1411" HPOS="619" STYLEREFS="Arial_7.5_______" CONTENT="ohne"/>
+            <String ID="w_w1aab1b3b2b7c15ac71" HEIGHT="39" WIDTH="113" VPOS="1410" HPOS="713" STYLEREFS="Arial_7.5_______" CONTENT="Leitung"/>
+            <String ID="w_w1aab1b3b2b7c15ac87" HEIGHT="28" WIDTH="75" VPOS="1413" HPOS="847" STYLEREFS="Arial_7.5_______" CONTENT="eines"/>
+          </TextLine>
+          <TextLine ID="tl_16" BASELINE="1496" HEIGHT="41" WIDTH="810" VPOS="1455" HPOS="113">
+            <String ID="w_w1aab1b3b2b7c17ab1" HEIGHT="27" WIDTH="109" VPOS="1460" HPOS="113" STYLEREFS="Arial_7.5_______" CONTENT="andern"/>
+            <String ID="w_w1aab1b3b2b7c17ac15" HEIGHT="27" WIDTH="29" VPOS="1466" HPOS="250" STYLEREFS="Arial_7.5_______" CONTENT="zu"/>
+            <String ID="word_1478541415864_846" HEIGHT="29" WIDTH="132" VPOS="1459" HPOS="302" STYLEREFS="Arial_7.5_______" CONTENT="bedienen"/>
+            <String ID="word_1478541415863_845" HEIGHT="29" WIDTH="8" VPOS="1459" HPOS="434" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="w_w1aab1b3b2b7c17b1b1" HEIGHT="33" WIDTH="95" VPOS="1460" HPOS="481" STYLEREFS="Arial_7.0_______" CONTENT="Sapere"/>
+            <String ID="word_1478541419944_848" HEIGHT="38" WIDTH="71" VPOS="1457" HPOS="594" STYLEREFS="Arial_7.0_______" CONTENT="aude"/>
+            <String ID="word_1478541419943_847" HEIGHT="38" WIDTH="13" VPOS="1457" HPOS="665" STYLEREFS="Arial_7.0_______" CONTENT="!"/>
+            <String ID="w_w1aab1b3b2b7c17b2b1" HEIGHT="39" WIDTH="82" VPOS="1456" HPOS="719" STYLEREFS="Arial_7.5_______" CONTENT="Habe"/>
+            <String ID="w_w1aab1b3b2b7c17b2c11" HEIGHT="39" WIDTH="96" VPOS="1455" HPOS="827" STYLEREFS="Arial_7.5_______" CONTENT="Muth"/>
+          </TextLine>
+          <TextLine ID="tl_17" BASELINE="1543" HEIGHT="41" WIDTH="813" VPOS="1502" HPOS="112" STYLEREFS="Arial_7.5_______">
+            <String ID="w_w1aab1b3b2b7c19ab1" HEIGHT="33" WIDTH="58" VPOS="1504" HPOS="112" STYLEREFS="Arial_7.5_______" CONTENT="dich"/>
+            <String ID="w_w1aab1b3b2b7c19ac11" HEIGHT="27" WIDTH="92" VPOS="1506" HPOS="188" STYLEREFS="Arial_7.5_______" CONTENT="deines"/>
+            <String ID="w_w1aab1b3b2b7c19ac25" HEIGHT="36" WIDTH="125" VPOS="1506" HPOS="296" STYLEREFS="Arial_7.5_______" CONTENT="eigenen"/>
+            <String ID="w_w1aab1b3b2b7c19ac41" HEIGHT="37" WIDTH="172" VPOS="1505" HPOS="436" STYLEREFS="Arial_7.5_______" CONTENT="Verſtandes"/>
+            <String ID="w_w1aab1b3b2b7c19ac63" HEIGHT="28" WIDTH="30" VPOS="1514" HPOS="623" STYLEREFS="Arial_7.5_______" CONTENT="zu"/>
+            <String ID="word_1478541425928_850" HEIGHT="29" WIDTH="132" VPOS="1506" HPOS="669" STYLEREFS="Arial_7.5_______" CONTENT="bedienen"/>
+            <String ID="word_1478541425926_849" HEIGHT="29" WIDTH="13" VPOS="1506" HPOS="801" STYLEREFS="Arial_7.5_______" CONTENT="!"/>
+            <String ID="w_w1aab1b3b2b7c19ac87" HEIGHT="37" WIDTH="34" VPOS="1504" HPOS="834" STYLEREFS="Arial_7.5_______" CONTENT="iſt"/>
+            <String ID="word_1478541430334_852" HEIGHT="30" WIDTH="28" VPOS="1504" HPOS="884" STYLEREFS="Arial_7.5_______" CONTENT="al"/>
+            <String ID="word_1478541430332_851" HEIGHT="30" WIDTH="13" VPOS="1504" HPOS="912" STYLEREFS="Arial_7.5_______" CONTENT="-"/>
+          </TextLine>
+          <TextLine ID="tl_18" BASELINE="1590" HEIGHT="42" WIDTH="543" VPOS="1548" HPOS="111" STYLEREFS="Arial_7.5_______">
+            <String ID="w_w1aab1b3b2b7c21ab1" HEIGHT="37" WIDTH="29" VPOS="1549" HPOS="111" STYLEREFS="Arial_7.5_______" CONTENT="ſo"/>
+            <String ID="w_w1aab1b3b2b7c21ab7" HEIGHT="27" WIDTH="46" VPOS="1553" HPOS="155" STYLEREFS="Arial_7.5_______" CONTENT="der"/>
+            <String ID="w_w1aab1b3b2b7c21ac15" HEIGHT="36" WIDTH="178" VPOS="1551" HPOS="216" STYLEREFS="Arial_7.5_______" CONTENT="Wahlſpruch"/>
+            <String ID="w_w1aab1b3b2b7c21ac37" HEIGHT="26" WIDTH="47" VPOS="1555" HPOS="406" STYLEREFS="Arial_7.5_______" CONTENT="der"/>
+            <String ID="word_1478541434310_854" HEIGHT="37" WIDTH="177" VPOS="1552" HPOS="468" STYLEREFS="Arial_7.5_______" CONTENT="Aufklaͤrung"/>
+            <String ID="word_1478541434309_853" HEIGHT="37" WIDTH="9" VPOS="1552" HPOS="645" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="TextRegion_1478541553314_860" HEIGHT="147" WIDTH="817" VPOS="1602" HPOS="108">
+          <Shape>
+            <Polygon POINTS="925,1749 108,1749 108,1602 925,1602"/>
+          </Shape>
+          <TextLine ID="tl_19" BASELINE="1645" HEIGHT="42" WIDTH="749" VPOS="1603" HPOS="171" STYLEREFS="Arial_7.5_______">
+            <String ID="w_w1aab1b3b2b9b1ab1" HEIGHT="36" WIDTH="131" VPOS="1605" HPOS="171" STYLEREFS="Arial_7.5_______" CONTENT="Faulheit"/>
+            <String ID="w_w1aab1b3b2b9b1ac19" HEIGHT="25" WIDTH="54" VPOS="1611" HPOS="317" STYLEREFS="Arial_7.5_______" CONTENT="und"/>
+            <String ID="w_w1aab1b3b2b9b1ac29" HEIGHT="37" WIDTH="123" VPOS="1607" HPOS="382" STYLEREFS="Arial_7.5_______" CONTENT="Feigheit"/>
+            <String ID="w_w1aab1b3b2b9b1ac47" HEIGHT="35" WIDTH="57" VPOS="1609" HPOS="518" STYLEREFS="Arial_7.5_______" CONTENT="ſind"/>
+            <String ID="w_w1aab1b3b2b9b1ac57" HEIGHT="28" WIDTH="41" VPOS="1609" HPOS="594" STYLEREFS="Arial_7.5_______" CONTENT="die"/>
+            <String ID="word_1478541521633_856" HEIGHT="37" WIDTH="134" VPOS="1606" HPOS="644" STYLEREFS="Arial_7.5_______" CONTENT="Ursachen"/>
+            <String ID="word_1478541521631_855" HEIGHT="37" WIDTH="11" VPOS="1606" HPOS="778" STYLEREFS="Arial_7.5_______" CONTENT=","/>
+            <String ID="w_w1aab1b3b2b9b1ac85" HEIGHT="24" WIDTH="110" VPOS="1612" HPOS="810" STYLEREFS="Arial_7.5_______" CONTENT="warum"/>
+          </TextLine>
+          <TextLine ID="tl_20" BASELINE="1691" HEIGHT="42" WIDTH="815" VPOS="1649" HPOS="109" STYLEREFS="Arial_7.5_______">
+            <String ID="w_w1aab1b3b2b9b3ab1" HEIGHT="30" WIDTH="49" VPOS="1651" HPOS="109" STYLEREFS="Arial_7.5_______" CONTENT="ein"/>
+            <String ID="w_w1aab1b3b2b9b3ab9" HEIGHT="33" WIDTH="27" VPOS="1652" HPOS="171" STYLEREFS="Arial_7.5_______" CONTENT="ſo"/>
+            <String ID="w_w1aab1b3b2b9b3ac15" HEIGHT="36" WIDTH="98" VPOS="1653" HPOS="216" STYLEREFS="Arial_7.5_______" CONTENT="großer"/>
+            <String ID="w_w1aab1b3b2b9b3ac29" HEIGHT="35" WIDTH="80" VPOS="1653" HPOS="330" STYLEREFS="Arial_7.5_______" CONTENT="Theil"/>
+            <String ID="w_w1aab1b3b2b9b3ac41" HEIGHT="25" WIDTH="47" VPOS="1657" HPOS="426" STYLEREFS="Arial_7.5_______" CONTENT="der"/>
+            <String ID="word_1478541526326_858" HEIGHT="35" WIDTH="156" VPOS="1654" HPOS="485" STYLEREFS="Arial_7.5_______" CONTENT="Menſchen"/>
+            <String ID="word_1478541526324_857" HEIGHT="35" WIDTH="14" VPOS="1654" HPOS="641" STYLEREFS="Arial_7.5_______" CONTENT=","/>
+            <String ID="w_w1aab1b3b2b9b3ac69" HEIGHT="34" WIDTH="129" VPOS="1654" HPOS="676" STYLEREFS="Arial_7.5_______" CONTENT="nachdem"/>
+            <String ID="w_w1aab1b3b2b9b3ac85" HEIGHT="35" WIDTH="34" VPOS="1654" HPOS="827" STYLEREFS="Arial_7.5_______" CONTENT="ſie"/>
+            <String ID="w_w1aab1b3b2b9b3ac93" HEIGHT="29" WIDTH="44" VPOS="1653" HPOS="880" STYLEREFS="Arial_7.5_______" CONTENT="die"/>
+          </TextLine>
+          <TextLine ID="tl_21" BASELINE="1740" HEIGHT="47" WIDTH="808" VPOS="1693" HPOS="114" STYLEREFS="Arial_7.5_______">
+            <String ID="w_w1aab1b3b2b9b5ab1" HEIGHT="33" WIDTH="103" VPOS="1695" HPOS="114" STYLEREFS="Arial_7.5_______" CONTENT="Natur"/>
+            <String ID="w_w1aab1b3b2b9b5ac13" HEIGHT="37" WIDTH="88" VPOS="1698" HPOS="235" STYLEREFS="Arial_7.5_______" CONTENT="laͤngſt"/>
+            <String ID="w_w1aab1b3b2b9b5ac27" HEIGHT="21" WIDTH="55" VPOS="1708" HPOS="343" STYLEREFS="Arial_7.5_______" CONTENT="von"/>
+            <String ID="w_w1aab1b3b2b9b5ac35" HEIGHT="35" WIDTH="117" VPOS="1699" HPOS="422" STYLEREFS="Arial_7.5_______" CONTENT="fremder"/>
+            <String ID="w_w1aab1b3b2b9b5ac51" HEIGHT="37" WIDTH="112" VPOS="1702" HPOS="554" STYLEREFS="Arial_7.5_______" CONTENT="Leitung"/>
+            <String ID="w_w1aab1b3b2b9b5ac67" HEIGHT="37" WIDTH="51" VPOS="1701" HPOS="686" STYLEREFS="Arial_7.5_______" CONTENT="frei"/>
+            <String ID="w_w1aab1b3b2b9b5ac77" HEIGHT="38" WIDTH="157" VPOS="1699" HPOS="765" STYLEREFS="Arial_7.5_______" CONTENT="geſprochen"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="TextRegion_1478541568663_880" HEIGHT="38" WIDTH="741" VPOS="1749" HPOS="108">
+          <Shape>
+            <Polygon POINTS="849,1787 108,1787 108,1749 849,1749"/>
+          </Shape>
+          <TextLine ID="line_1478541568699_882" BASELINE="1786" HEIGHT="45" WIDTH="702" VPOS="1741" HPOS="147">
+            <String ID="word_1478541745560_891" HEIGHT="29" WIDTH="33" VPOS="1743" HPOS="147" STYLEREFS="Arial_7.5_______" CONTENT="B"/>
+            <String ID="word_1478541745558_890" HEIGHT="29" WIDTH="7" VPOS="1743" HPOS="180" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="word_1478541750305_893" HEIGHT="35" WIDTH="189" VPOS="1745" HPOS="197" STYLEREFS="Arial_7.5_______" CONTENT="Monatsſchr"/>
+            <String ID="word_1478541750303_892" HEIGHT="35" WIDTH="9" VPOS="1745" HPOS="386" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="word_1478541755264_895" HEIGHT="29" WIDTH="36" VPOS="1747" HPOS="411" STYLEREFS="Arial_7.5_______" CONTENT="IV"/>
+            <String ID="word_1478541755262_894" HEIGHT="29" WIDTH="9" VPOS="1747" HPOS="447" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="word_1478541759652_897" HEIGHT="30" WIDTH="31" VPOS="1746" HPOS="463" STYLEREFS="Arial_7.5_______" CONTENT="B"/>
+            <String ID="word_1478541759650_896" HEIGHT="30" WIDTH="8" VPOS="1746" HPOS="494" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="word_1478541764579_899" HEIGHT="26" WIDTH="16" VPOS="1749" HPOS="518" STYLEREFS="Arial_8.0_______" CONTENT="6"/>
+            <String ID="word_1478541764577_898" HEIGHT="27" WIDTH="8" VPOS="1749" HPOS="534" STYLEREFS="Arial_8.0_______" CONTENT="."/>
+            <String ID="word_1478541768880_901" HEIGHT="29" WIDTH="44" VPOS="1747" HPOS="555" STYLEREFS="Arial_7.5_______" CONTENT="St"/>
+            <String ID="word_1478541768879_900" HEIGHT="29" WIDTH="9" VPOS="1747" HPOS="599" STYLEREFS="Arial_7.5_______" CONTENT="."/>
+            <String ID="word_1478541553430_873" HEIGHT="42" WIDTH="31" VPOS="1743" HPOS="692" STYLEREFS="Arial_7.5_______" CONTENT="H"/>
+            <String ID="word_1478541553433_875" HEIGHT="41" WIDTH="17" VPOS="1743" HPOS="734" STYLEREFS="Arial_7.5_______" CONTENT="h"/>
+          </TextLine>
+        </TextBlock>
+        <TextBlock ID="TextRegion_1478541568662_879" HEIGHT="38" WIDTH="76" VPOS="1749" HPOS="849">
+          <Shape>
+            <Polygon POINTS="925,1787 849,1787 849,1749 925,1749"/>
+          </Shape>
+          <TextLine ID="line_1478541568699_881" BASELINE="1786" HEIGHT="45" WIDTH="74" VPOS="1741" HPOS="849">
+            <String ID="word_1478541605630_883" HEIGHT="30" WIDTH="63" VPOS="1748" HPOS="860" STYLEREFS="Arial_7.5_______" CONTENT="(na-"/>
+          </TextLine>
+        </TextBlock>
+        <GraphicalElement ID="r_3" HEIGHT="29" WIDTH="801" VPOS="232" HPOS="109"/>
+        <GraphicalElement ID="Separator_1475146243208_1" HEIGHT="29" WIDTH="805" VPOS="661" HPOS="115"/>
+      </PrintSpace>
+    </Page>
+  </Layout>
+</alto>
