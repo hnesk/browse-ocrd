@@ -3,14 +3,15 @@ from collections import Counter
 from typing import List, Tuple, Optional, Counter as CounterType
 
 
-def weight_match(s: str, preferreds: Optional[List[str]] = None) -> float:
+
+def weight_match(s: str, preferred: Optional[List[str]] = None) -> float:
     """
     Weights how good a string matches a list of regular expressions
     """
     weight = 0.0
-    if preferreds:
-        ln = float(len(preferreds))
-        for i, preferred in enumerate(preferreds):
+    if preferred:
+        ln = float(len(preferred))
+        for i, preferred in enumerate(preferred):
             if re.fullmatch(preferred, s):
                 # prefer matches earlier in the list
                 weight += (ln - i) / ln
