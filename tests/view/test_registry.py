@@ -18,6 +18,10 @@ class ViewManagerTestCase(TestCase):
         actual = self.vm.get_view('images')
         self.assertEqual(expected, actual)
 
+    def test_create_from_entry_points_doesnt_throw(self):
+        vr = ViewRegistry.create_from_entry_points()
+        self.assertIsInstance(vr, ViewRegistry)
+
 
 if __name__ == '__main__':
     unittest.main()
