@@ -1,8 +1,10 @@
 from gi.repository import GObject, GtkSource, Gtk, Gdk, Pango
 
-from typing import Optional, Tuple, Any
+from typing import Optional, Any
 
 from ocrd_utils.constants import MIMETYPE_PAGE
+
+from ocrd_browser.util.file_groups import FileGroupHandle
 from ocrd_browser.view import View
 from ocrd_browser.view.base import FileGroupSelector, FileGroupFilter
 
@@ -18,7 +20,7 @@ class ViewText(View):
 
     def __init__(self, name: str, window: Gtk.Window):
         super().__init__(name, window)
-        self.file_group: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
+        self.file_group = FileGroupHandle(None, MIMETYPE_PAGE)
         self.font_size: Optional[int] = None
         # noinspection PyTypeChecker
         self.text_view: GtkSource.View = None
@@ -37,7 +39,7 @@ class ViewText(View):
 
     @property
     def use_file_group(self) -> str:
-        return self.file_group[0]
+        return self.file_group.group
 
     def config_changed(self, name: str, value: Any) -> None:
         super().config_changed(name, value)

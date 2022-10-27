@@ -1,11 +1,12 @@
 from gi.repository import Gtk, Pango, GObject
 
-from typing import List, Tuple, Any, Optional, Dict, cast, TYPE_CHECKING
+from typing import List, Any, Optional, Dict, cast, TYPE_CHECKING
 
 from math import log
 from enum import Enum
 
 from ocrd_utils.constants import MIMETYPE_PAGE, MIME_TO_EXT
+from ocrd_browser.util.file_groups import FileGroupHandle
 from ocrd_browser.util.gtk import WhenIdle
 
 if TYPE_CHECKING:
@@ -207,7 +208,7 @@ class FileGroupSelector(Gtk.Box, Configurator):
 
     def __init__(self, filter_: Optional['FileGroupFilter'] = None, show_mime: bool = False, show_ext: bool = True):
         super().__init__(visible=True, spacing=2)
-        self.value = None
+        self.value: Optional[FileGroupHandle] = None
 
         self.groups = FileGroupComboBox(filter_, show_mime, show_ext)
 
@@ -217,11 +218,12 @@ class FileGroupSelector(Gtk.Box, Configurator):
 
         self.groups.connect('changed', self.combo_box_changed)
 
-    def set_value(self, value: Tuple[str, str]) -> None:
+    def set_value(self, value: FileGroupHandle) -> None:
+        value = FileGroupHandle.cast(value)
         self.value = value
         active_id = None
         for id_, group, mime, _ext in self.groups.get_model():
-            if (value[0] is None or value[0] == group) and (value[1] is None or value[1] == mime):
+            if (value.group is None or value.group == group) and (value.mime is None or value.mime == mime):
                 active_id = id_
                 break
         if active_id:
@@ -239,7 +241,7 @@ class FileGroupSelector(Gtk.Box, Configurator):
 
     @GObject.Signal()
     def changed(self, file_group: str, mime_type: str) -> None:
-        self.value = (file_group, mime_type)
+        self.value = FileGroupHandle(file_group, mime_type)
 
 
 class FileGroupComboBox(Gtk.ComboBox):

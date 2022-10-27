@@ -1,6 +1,6 @@
 from gi.repository import Gtk, Gdk, GLib, Gio
 
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional
 
 from itertools import zip_longest
 from ocrd_browser.util.image import pil_to_pixbuf, pil_scale
@@ -12,6 +12,7 @@ from .base import (
     ImageZoomSelector
 )
 from ..model import Page
+from ..util.file_groups import FileGroupHandle
 from ..util.gtk import WhenIdle, ActionRegistry
 
 
@@ -24,7 +25,7 @@ class ViewImages(View):
 
     def __init__(self, name: str, window: Gtk.Window):
         super().__init__(name, window)
-        self.file_group: Tuple[Optional[str], Optional[str]] = (None, None)
+        self.file_group = FileGroupHandle(None, None)
         self.page_qty: int = 1
         self.preview_height: int = 10
         self.scale: float = -2.0
@@ -95,7 +96,7 @@ class ViewImages(View):
 
     @property
     def use_file_group(self) -> str:
-        return self.file_group[0]
+        return self.file_group.group
 
     def reload(self) -> None:
         if self.document:

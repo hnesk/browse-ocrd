@@ -2,12 +2,13 @@ from difflib import SequenceMatcher
 
 from gi.repository import GObject, GtkSource, Gtk, Gdk, Pango
 
-from typing import Optional, Tuple, Any, NamedTuple, List
+from typing import Optional, Any, NamedTuple, List
 
 from ocrd_models.ocrd_page_generateds import PcGtsType
 from ocrd_utils.constants import MIMETYPE_PAGE
 
 from ocrd_browser.model import Page
+from ocrd_browser.util.file_groups import FileGroupHandle
 from ocrd_browser.view import View
 from ocrd_browser.view.base import FileGroupSelector, FileGroupFilter
 
@@ -76,8 +77,8 @@ class ViewDiff(View):
 
     def __init__(self, name: str, window: Gtk.Window):
         super().__init__(name, window)
-        self.file_group: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
-        self.file_group2: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
+        self.file_group = FileGroupHandle(None, MIMETYPE_PAGE)
+        self.file_group2 = FileGroupHandle(None, MIMETYPE_PAGE)
         self.font_size: Optional[int] = None
 
         self.current2: Optional[Page] = None
@@ -100,10 +101,10 @@ class ViewDiff(View):
 
     @property
     def use_file_group(self) -> str:
-        return self.file_group[0]
+        return self.file_group.group
 
     def reload(self) -> None:
-        self.current2 = self.document.page_for_id(self.page_id, self.file_group2[0])
+        self.current2 = self.document.page_for_id(self.page_id, self.file_group2.group)
         super().reload()
 
     def config_changed(self, name: str, value: Any) -> None:

@@ -21,6 +21,7 @@ from .base import (
 )
 from ..model import Page, Document, IMAGE_FROM_PAGE_FILENAME_SUPPORT
 from ..model.page_xml_renderer import PageXmlRenderer, RegionMap, Feature, Region
+from ..util.file_groups import FileGroupHandle
 from ..util.gtk import WhenIdle, ActionRegistry
 
 
@@ -289,7 +290,7 @@ class ViewPage(View):
         self.current: Optional[Page] = None
 
         # Configurators
-        self.file_group: Tuple[Optional[str], Optional[str]] = (None, MIMETYPE_PAGE)
+        self.file_group = FileGroupHandle(None, MIMETYPE_PAGE)
         self.scale: float = -2.0
         self.image_version: Tuple[Optional[str], str] = (None, '')
         self.features: Feature = Feature.DEFAULT
@@ -359,7 +360,7 @@ class ViewPage(View):
 
     @property
     def use_file_group(self) -> str:
-        return self.file_group[0]
+        return self.file_group.group
 
     def redraw(self) -> None:
         got_result = False
@@ -573,7 +574,7 @@ class ViewPage(View):
         if w > 0 and h > 0:
             self.highlight.queue_draw_area(x, y, w, h)
 
-    def draw_highlight(self, _area: Gtk.DrawingArea, context: Context) -> None:
+    def draw_highlight(self, _area: Gtk.DrawingArea, context: Context) -> None:  # type: ignore[type-arg]
         if self.current_region and self.t:
             poly: Polygon = self.current_region.poly
             poly = poly.buffer(1, single_sided=True)

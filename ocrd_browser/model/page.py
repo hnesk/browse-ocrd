@@ -50,7 +50,7 @@ class Page:
                 self._page_file = page_files[0]
         return self._page_file
 
-    @property  # type: ignore[misc]
+    @property
     @deprecated(reason="Makes no sense anymore, what is **the** file of a page? Use get_files() or page_file / image_files instead")
     def file(self) -> Optional[OcrdFile]:
         """

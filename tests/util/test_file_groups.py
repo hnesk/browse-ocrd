@@ -36,6 +36,14 @@ class FileGroupsTestCase(TestCase):
         actual = best_file_group(self.test_groups, preferred_mimetypes=[r'application/.*'])
         self.assertEqual(expected, actual)
 
+    def test_FileGroupHandle_cast(self):
+        fg = FileGroupHandle.cast(('a', 'b'))
+        self.assertEqual('a', fg.group)
+        self.assertEqual('b', fg.mime)
+        fg = FileGroupHandle.cast(fg)
+        self.assertEqual('a', fg.group)
+        self.assertEqual('b', fg.mime)
+
 
 if __name__ == '__main__':
     unittest.main()

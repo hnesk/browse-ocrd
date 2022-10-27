@@ -1,7 +1,8 @@
 from gi.repository import GObject, Gtk, WebKit2
 
-from typing import Optional, Tuple, Any
+from typing import Any
 
+from ocrd_browser.util.file_groups import FileGroupHandle
 from ocrd_browser.view import View
 from ocrd_browser.view.base import FileGroupSelector, FileGroupFilter
 
@@ -17,7 +18,7 @@ class ViewHtml(View):
 
     def __init__(self, name: str, window: Gtk.Window):
         super().__init__(name, window)
-        self.file_group: Tuple[Optional[str], Optional[str]] = (None, 'text/html')
+        self.file_group = FileGroupHandle(None, 'text/html')
         # noinspection PyTypeChecker
         self.web_view: WebKit2.WebView = None
 
@@ -31,7 +32,7 @@ class ViewHtml(View):
 
     @property
     def use_file_group(self) -> str:
-        return self.file_group[0]
+        return self.file_group.group
 
     def config_changed(self, name: str, value: Any) -> None:
         super().config_changed(name, value)

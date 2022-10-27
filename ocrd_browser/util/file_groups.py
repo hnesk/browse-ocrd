@@ -1,6 +1,7 @@
+from __future__ import annotations
 import re
 from collections import Counter
-from typing import List, Optional, Counter as CounterType, NamedTuple, cast
+from typing import List, Optional, Counter as CounterType, NamedTuple, cast, Tuple, Union
 
 from ocrd_models import OcrdFile
 
@@ -18,6 +19,13 @@ class FileGroupHandle(NamedTuple):
 
     def __str__(self) -> str:
         return ' - '.join(self)
+
+    @classmethod
+    def cast(cls, tpl: Union[FileGroupHandle, Tuple[str, str]]) -> FileGroupHandle:
+        if isinstance(tpl, cls):
+            return tpl
+        else:
+            return cls._make(tpl)
 
 
 def weight_match(s: str, preferred: Optional[List[str]] = None) -> float:
