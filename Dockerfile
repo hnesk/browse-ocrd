@@ -1,12 +1,18 @@
 FROM python:3.7
 
-COPY Makefile /Makefile
+WORKDIR /
+COPY Makefile .
+COPY setup.cfg .
+COPY setup.py .
+COPY requirements.txt .
+COPY README.md .
+COPY ocrd_browser ocrd_browser
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3-dev make \
-    && make -f /Makefile deps-ubuntu \
-    && pip3 install -U setuptools --use-feature=2020-resolver \
-    && pip3 install browse-ocrd --use-feature=2020-resolver \
-    && rm /Makefile
+    && make deps-ubuntu \
+    && pip3 install -U setuptools pip \
+    && pip3 install -e / \
+    && rm Makefile
 
 MAINTAINER https://github.com/hnesk/browse-ocrd/issues
 
@@ -18,8 +24,7 @@ EXPOSE 8080
 
 VOLUME /data
 
-COPY init.sh /init.sh
-COPY serve.py /serve.py
+COPY init.sh .
+COPY serve.py .
 
-WORKDIR /
 CMD ["/init.sh", "/data"]
