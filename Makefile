@@ -69,6 +69,7 @@ codespell: deps-dev
 
 test: tests/assets deps-dev
 	$(PYTHON) -m xmlrunner discover -v -s tests --output-file $(CURDIR)/unittest.xml
+	OCRD_METS_CACHING=true $(PYTHON) -m xmlrunner discover -v -s tests --output-file $(CURDIR)/unittest.xml
 
 ci: flake8 mypy test codespell
 
