@@ -1,4 +1,4 @@
-ocrd
+ocrd >= 2.43.0
 Pillow
 numpy >= 1.20
 opencv-python-headless
