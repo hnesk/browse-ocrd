@@ -1,8 +1,20 @@
 # Change Log
 
 <!-- 
-## [Unreleased](../../compare/v0.5.3...master)
+## [Unreleased](../../compare/v0.5.4...master)
 -->
+
+## [0.5.4](../../compare/v0.5.3...0.5.4)
+
+Changed: 
+ * build via python -m build and setup.cfg
+
+Fixed:
+ *  False warning about number of images per grp/page [#51](../../issues/51)
+ *  adapt to new import.metadata.entry_points API [#53](../../pull/53), thanks @bertsky
+ *  Dockerfile: use local pkg, not PyPI [#56](../../pull/56), thanks @bertsky
+ *  AttributeError: 'EntryPoints' object has no attribute 'get' [#57](../../issues/57) 
+ *  Document.reorder: invalidate OcrdMets cache before save [#58](../../pull/58), thanks @kba
 
 ## [0.5.3](../../compare/v0.5.2...v0.5.3) - 2022-07-19
 
