@@ -237,11 +237,11 @@ class FileGroupSelector(Gtk.Box, Configurator):
         model = combo.get_model()
         if len(model) > 0:
             row = combo.get_model()[combo.get_active()][:]
-            self.emit('changed', row[FileGroupComboBox.COLUMN_GROUP], row[FileGroupComboBox.COLUMN_MIME])
+            self.emit('changed', FileGroupHandle(row[FileGroupComboBox.COLUMN_GROUP], row[FileGroupComboBox.COLUMN_MIME]))
 
-    @GObject.Signal()
-    def changed(self, file_group: str, mime_type: str) -> None:
-        self.value = FileGroupHandle(file_group, mime_type)
+    @GObject.Signal(arg_types=[object])
+    def changed(self, file_group: FileGroupHandle) -> None:
+        self.value = file_group
 
 
 class FileGroupComboBox(Gtk.ComboBox):
