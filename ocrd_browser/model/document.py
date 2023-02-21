@@ -1,5 +1,8 @@
 from __future__ import annotations
-from typing import Optional, Tuple, List, Union, cast, Callable, Any, Dict, Sequence, TYPE_CHECKING
+
+from contextlib import contextmanager
+
+from typing import Optional, Tuple, List, Union, cast, Callable, Any, Dict, Sequence, Generator, TYPE_CHECKING
 
 import atexit
 import errno
@@ -39,6 +42,17 @@ if TYPE_CHECKING:
 
 
 EventCallBack = Optional[Callable[[str, Any], None]]
+
+
+@contextmanager
+def caching_environment(value: str = '1') -> Generator[None, None, None]:
+    backup_caching = os.environ.get('OCRD_METS_CACHING', None)
+    os.environ['OCRD_METS_CACHING'] = value
+    try:
+        yield
+    finally:
+        if backup_caching is not None:
+            os.environ['OCRD_METS_CACHING'] = backup_caching
 
 
 def check_editable(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -81,7 +95,9 @@ class Document:
             return cls.create(emitter=emitter)
         mets_path = cls._to_path(mets_url)
 
-        workspace = Resolver().workspace_from_url(str(mets_path), download=False)
+        with caching_environment('1'):
+            workspace = Resolver().workspace_from_url(str(mets_path), download=False)
+
         doc = cls(workspace, emitter=emitter, original_url=str(mets_url))
         doc._empty = False
         return doc
@@ -106,7 +122,10 @@ class Document:
         cls.temporary_workspaces.append(temporary_workspace)
         # TODO download = False and lazy loading would be nice for responsiveness
         log.info("Cloning '%s' to '%s'", mets_url, temporary_workspace)
-        workspace = Resolver().workspace_from_url(mets_url=mets_url, dst_dir=temporary_workspace, download=True)
+
+        with caching_environment('1'):
+            workspace = Resolver().workspace_from_url(mets_url=mets_url, dst_dir=temporary_workspace, download=True)
+
         return workspace
 
     @check_editable
@@ -219,49 +238,25 @@ class Document:
     def title(self) -> str:
         return str(self.workspace.mets.unique_identifier) if self.workspace and self.workspace.mets.unique_identifier else '<unnamed>'
 
-    def get_file_index(self) -> Dict[str, OcrdFile]:
-        """
-        Return all OcrdFiles by file id and additionally augments the OcrdFile with static_page_id for fast(er) lookup
-
-        Example:
-        page17 = [file for file in file_index.values() if file.static_page_id == 'PHYS_0017']
-
-        """
-        log = getLogger('ocrd_browser.model.document.Document.get_file_index')
-        file_index = {}
-        if self.workspace:
-            for file in self.workspace.mets.find_files():
-                file.static_page_id = None
-                file_index[file.ID] = file
-
-        file_pointers: List[Element] = self.xpath(
-            'mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]/mets:div[@TYPE="page"]/mets:fptr')
-        for file_pointer in file_pointers:
-            file_id = file_pointer.get('FILEID')
-            page_id = file_pointer.getparent().get('ID')
-            if file_id in file_index:
-                file_index[file_id].static_page_id = page_id
-            else:
-                log.warning("FILEID '%s' for PAGE '%s' not in mets:fileSec", file_id, page_id)
-
-        return file_index
-
-    def get_image_paths(self, file_group: FileGroupHandle) -> Dict[str, Path]:
+    def get_image_paths(self, file_group: FileGroupHandle) -> Dict[str, Optional[Path]]:
         """
         Builds a Dict ID->Path for all page_ids fast
 
         More precisely:  fast = Faster than iterating over page_ids and using mets.get_physical_page_for_file for each entry
         """
         log = getLogger('ocrd_browser.model.document.Document.get_image_paths')
-        image_paths = {}
-        file_index = self.get_file_index()
-        for page_id in self.page_ids:
-            images = [image for image in file_index.values() if image.static_page_id == page_id and file_group.match(image)]
-            if len(images) > 0:
-                image_paths[page_id] = self.directory.joinpath(images[0].local_filename)
-            else:
-                log.warning('Found no images for PAGE %s and fileGrp %s', page_id, file_group)
-                image_paths[page_id] = None
+        image_paths: Dict[str, Optional[Path]] = {}
+        if self.workspace:
+            for page_id in self.page_ids:
+                for file in self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group.group, mimetype=file_group.mime):
+                    if page_id in image_paths:
+                        log.warning('Multiple images for PAGE %s and fileGrp %s, using first %s', page_id, file_group, image_paths[page_id])
+                    else:
+                        image_paths[page_id] = self.directory.joinpath(file.local_filename)
+                if page_id not in image_paths:
+                    log.warning('Found no images for PAGE %s and fileGrp %s', page_id, file_group)
+                    image_paths[page_id] = None
+
         return image_paths
 
     def get_default_image_group(self, preferred_image_file_groups: Optional[List[str]] = None) -> Optional[FileGroupHandle]:
@@ -418,14 +413,15 @@ class Document:
 
     @editable.setter
     def editable(self, editable: bool) -> None:
-        if editable:
-            if self._original_url:
-                self.workspace = self._clone_workspace(self._original_url)
+        with caching_environment('1'):
+            if editable:
+                if self._original_url:
+                    self.workspace = self._clone_workspace(self._original_url)
+                else:
+                    # noinspection PyTypeChecker
+                    self.workspace = Resolver().workspace_from_nothing(directory=None, mets_basename='mets.xml')
             else:
-                # noinspection PyTypeChecker
-                self.workspace = Resolver().workspace_from_nothing(directory=None, mets_basename='mets.xml')
-        else:
-            self.workspace = Resolver().workspace_from_url(self.baseurl_mets)
+                self.workspace = Resolver().workspace_from_url(self.baseurl_mets)
         self._editable = editable
         # self._empty = False
         # self._modified = False

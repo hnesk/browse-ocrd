@@ -30,14 +30,6 @@ class DocumentTestCase(TestCase):
         ]
         self.assertEqual(expected, doc.file_groups)
 
-    def test_get_page_index(self):
-        doc = Document.load(self.path)
-        file_index = doc.get_file_index()
-        page17 = [file for file in file_index.values() if file.static_page_id == 'PHYS_0017']
-        alto = [file for file in file_index.values() if file.mimetype == 'application/alto+xml']
-        self.assertEqual(3, len(page17))
-        self.assertEqual(2, len(alto))
-
     def test_get_image_paths(self):
         doc = Document.load(self.path)
         image_paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG', 'image/tiff'))
@@ -63,7 +55,6 @@ class DocumentTestCase(TestCase):
         paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'))
         self.assertGreater(len(paths), 0)
         self.assertIsInstance(list(paths.values())[0], Path)
-
 
     def test_get_default_image_group(self):
         doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-complex/data/mets.xml')
