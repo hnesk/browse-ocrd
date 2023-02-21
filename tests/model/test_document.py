@@ -195,7 +195,6 @@ class DocumentTestCase(TestCase):
         for file_group_dir in path.parent.glob('OCR-D-*'):
             shutil.rmtree(file_group_dir)
         doc = Document.load(path.as_uri())
-        paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG-BIN','image/tiff'))
+        paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'))
         self.assertGreater(len(paths), 0)
         self.assertIsInstance(list(paths.values())[0], Path)
-
