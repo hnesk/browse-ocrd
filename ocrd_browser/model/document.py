@@ -238,23 +238,23 @@ class Document:
     def title(self) -> str:
         return str(self.workspace.mets.unique_identifier) if self.workspace and self.workspace.mets.unique_identifier else '<unnamed>'
 
-    def get_image_paths(self, file_group: FileGroupHandle) -> Dict[str, Optional[Path]]:
+    def get_image_files(self, file_group: FileGroupHandle) -> Dict[str, Optional[OcrdFile]]:
         """
         Builds a Dict ID->Path for all page_ids fast
 
         More precisely:  fast = Faster than iterating over page_ids and using mets.get_physical_page_for_file for each entry
         """
         log = getLogger('ocrd_browser.model.document.Document.get_image_paths')
-        image_paths: Dict[str, Optional[Path]] = {}
+        image_paths: Dict[str, Optional[OcrdFile]] = {}
         if self.workspace:
             for page_id in self.page_ids:
                 for file in self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group.group, mimetype=file_group.mime):
                     if page_id in image_paths:
-                        log.warning('Multiple images for PAGE %s and fileGrp %s, using first %s', page_id, file_group, image_paths[page_id])
+                        log.warning('Multiple files for PAGE %s and fileGrp %s, using first %s', page_id, file_group, image_paths[page_id])
                     else:
-                        image_paths[page_id] = self.directory.joinpath(file.local_filename)
+                        image_paths[page_id] = file
                 if page_id not in image_paths:
-                    log.warning('Found no images for PAGE %s and fileGrp %s', page_id, file_group)
+                    log.warning('Found no files for PAGE %s and fileGrp %s', page_id, file_group)
                     image_paths[page_id] = None
 
         return image_paths

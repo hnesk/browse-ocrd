@@ -1,4 +1,5 @@
 import shutil
+from ocrd_models import OcrdFile
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -32,29 +33,29 @@ class DocumentTestCase(TestCase):
 
     def test_get_image_paths(self):
         doc = Document.load(self.path)
-        image_paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG', 'image/tiff'))
-        self.assertEqual(2, len(image_paths))
-        self.assertEqual('INPUT_0017.tif', image_paths['PHYS_0017'].name)
-        self.assertEqual('INPUT_0020.tif', image_paths['PHYS_0020'].name)
+        image_files = doc.get_image_files(FileGroupHandle('OCR-D-IMG', 'image/tiff'))
+        self.assertEqual(2, len(image_files))
+        self.assertEqual('INPUT_0017.tif', image_files['PHYS_0017'].basename)
+        self.assertEqual('INPUT_0020.tif', image_files['PHYS_0020'].basename)
 
     def test_get_image_paths_only_returns_matching_groups(self):
         """
         Testcase for https://github.com/hnesk/browse-ocrd/issues/51
         """
         doc = Document.load(ASSETS_PATH / '../example/workspaces/kant_aufklaerung_1784_bin/mets.xml')
-        image_paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG-BIN', 'image/png'))
-        self.assertEqual(2, len(image_paths))
-        self.assertEqual('OCR-D-IMG-BIN_0001.IMG-BIN.png', image_paths['PHYS_0017'].name)
-        self.assertEqual('OCR-D-IMG-BIN_0002.IMG-BIN.png', image_paths['PHYS_0020'].name)
+        image_files = doc.get_image_files(FileGroupHandle('OCR-D-IMG-BIN', 'image/png'))
+        self.assertEqual(2, len(image_files))
+        self.assertEqual('OCR-D-IMG-BIN_0001.IMG-BIN.png', image_files['PHYS_0017'].basename)
+        self.assertEqual('OCR-D-IMG-BIN_0002.IMG-BIN.png', image_files['PHYS_0020'].basename)
 
     def test_get_image_path_with_remote_image(self):
         path = TEST_BASE_PATH / 'example/workspaces/remote/mets.xml'
         for file_group_dir in path.parent.glob('OCR-D-*'):
             shutil.rmtree(file_group_dir)
         doc = Document.load(path.as_uri())
-        paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'))
-        self.assertGreater(len(paths), 0)
-        self.assertIsInstance(list(paths.values())[0], Path)
+        image_files = doc.get_image_files(FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'))
+        self.assertGreater(len(image_files), 0)
+        self.assertIsInstance(list(image_files.values())[0], OcrdFile)
 
     def test_get_default_image_group(self):
         doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-complex/data/mets.xml')

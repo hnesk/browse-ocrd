@@ -52,13 +52,16 @@ class PageListStore(LazyLoadingListStore):
             ) for icon_name in ['page-loading', 'page-missing']
         }
 
+        # TODO end constructor here and add a new method to fill the store for testability and developer sanity
         # TODO: make file_group selectable, see https://github.com/hnesk/browse-ocrd/issues/7#issuecomment-707851109
         self.file_group = document.get_default_image_group(Settings.get().file_groups.preferred_images)
-        file_lookup = document.get_image_paths(self.file_group)
+        file_lookup = document.get_image_files(self.file_group)
         order = count(start=1)
         for page_id in self.document.page_ids:
             file = file_lookup[page_id]
-            self.append((page_id, '', str(file) if file else None, None, next(order)))
+            # TODO: self.document.path(file) works only for local files
+            path = document.path(file)
+            self.append((page_id, '', str(path) if file else None, None, next(order)))
 
         GLib.timeout_add(10, self.start_loading)
 
@@ -103,6 +106,7 @@ class PageListStore(LazyLoadingListStore):
             for page_id in page_ids:
                 try:
                     file = next(iter(self.document.workspace.mets.find_files(pageId=page_id, fileGrp=self.file_group.group, mimetype=self.file_group.mime)))
+                    # TODO: self.document.path(file) works only for local files
                     file_name = str(self.document.path(file))
                     self.append((page_id, '', file_name, None, len(self)))
                 except StopIteration as e:
