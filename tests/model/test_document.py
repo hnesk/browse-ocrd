@@ -1,3 +1,5 @@
+import shutil
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -187,3 +189,13 @@ class DocumentTestCase(TestCase):
         image, info, exif = page.get_image(feature_selector='', feature_filter='binarized')
         # Assert no exceptions happened and no image returned
         self.assertIsNone(image)
+
+    def test_remote_image(self):
+        path = TEST_BASE_PATH / 'example/workspaces/remote/mets.xml'
+        for file_group_dir in path.parent.glob('OCR-D-*'):
+            shutil.rmtree(file_group_dir)
+        doc = Document.load(path.as_uri())
+        paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG-BIN','image/tiff'))
+        self.assertGreater(len(paths), 0)
+        self.assertIsInstance(list(paths.values())[0], Path)
+
