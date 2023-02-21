@@ -55,6 +55,16 @@ class DocumentTestCase(TestCase):
         self.assertEqual('OCR-D-IMG-BIN_0001.IMG-BIN.png', image_paths['PHYS_0017'].name)
         self.assertEqual('OCR-D-IMG-BIN_0002.IMG-BIN.png', image_paths['PHYS_0020'].name)
 
+    def test_get_image_path_with_remote_image(self):
+        path = TEST_BASE_PATH / 'example/workspaces/remote/mets.xml'
+        for file_group_dir in path.parent.glob('OCR-D-*'):
+            shutil.rmtree(file_group_dir)
+        doc = Document.load(path.as_uri())
+        paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'))
+        self.assertGreater(len(paths), 0)
+        self.assertIsInstance(list(paths.values())[0], Path)
+
+
     def test_get_default_image_group(self):
         doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-complex/data/mets.xml')
         file_group = doc.get_default_image_group(['OCR-D-IMG-BIN', 'OCR-D-IMG.*'])
@@ -189,12 +199,3 @@ class DocumentTestCase(TestCase):
         image, info, exif = page.get_image(feature_selector='', feature_filter='binarized')
         # Assert no exceptions happened and no image returned
         self.assertIsNone(image)
-
-    def test_remote_image(self):
-        path = TEST_BASE_PATH / 'example/workspaces/remote/mets.xml'
-        for file_group_dir in path.parent.glob('OCR-D-*'):
-            shutil.rmtree(file_group_dir)
-        doc = Document.load(path.as_uri())
-        paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'))
-        self.assertGreater(len(paths), 0)
-        self.assertIsInstance(list(paths.values())[0], Path)
