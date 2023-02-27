@@ -49,13 +49,16 @@ class DocumentTestCase(TestCase):
         self.assertEqual('OCR-D-IMG-BIN_0002.IMG-BIN.png', image_files['PHYS_0020'].basename)
 
     def test_get_image_path_with_remote_image(self):
-        path = TEST_BASE_PATH / 'example/workspaces/remote/mets.xml'
+        path = TEST_BASE_PATH / 'example/workspaces/remote-single/mets.xml'
         for file_group_dir in path.parent.glob('OCR-D-*'):
             shutil.rmtree(file_group_dir)
         doc = Document.load(path.as_uri())
         image_files = doc.get_image_files(FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'))
         self.assertGreater(len(image_files), 0)
         self.assertIsInstance(list(image_files.values())[0], OcrdFile)
+
+
+
 
     def test_get_default_image_group(self):
         doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-complex/data/mets.xml')
