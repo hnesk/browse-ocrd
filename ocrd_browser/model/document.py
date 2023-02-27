@@ -192,6 +192,8 @@ class Document:
         if not self.directory:
             return None
         if isinstance(other, OcrdFile):
+            if not other.local_filename:
+                other = self.workspace.download_file(other)
             return self.directory.joinpath(other.local_filename)
         elif isinstance(other, Path):
             return self.directory.joinpath(other)
@@ -314,7 +316,7 @@ class Document:
 
     def resolve_image(self, image_file: OcrdFile) -> Image:
         with pushd_popd(self.workspace.directory):
-            pil_image = Image.open(self.workspace.download_file(image_file).local_filename)
+            pil_image = Image.open(self.path(image_file))
             # pil_image.load()
             return pil_image
 
