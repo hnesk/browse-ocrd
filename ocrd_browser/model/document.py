@@ -185,7 +185,7 @@ class Document:
         """
         return str(self.workspace.baseurl) + '/' + self.mets_filename if self.workspace else None
 
-    def path(self, other: Union[OcrdFile, Path, str]) -> Optional[Path]:
+    def path(self, other: Union[OcrdFile, Path, str], allow_download: bool = False) -> Optional[Path]:
         """
         Resolves other relative to current workspace
         """
@@ -193,7 +193,10 @@ class Document:
             return None
         if isinstance(other, OcrdFile):
             if not other.local_filename:
-                other = self.workspace.download_file(other)
+                if allow_download:
+                    other = self.workspace.download_file(other)
+                else:
+                    raise ValueError('path with allow_download=False for non local file called: #{s}: {}'.format(other.ID, other.url))
             return self.directory.joinpath(other.local_filename)
         elif isinstance(other, Path):
             return self.directory.joinpath(other)
@@ -240,13 +243,11 @@ class Document:
     def title(self) -> str:
         return str(self.workspace.mets.unique_identifier) if self.workspace and self.workspace.mets.unique_identifier else '<unnamed>'
 
-    def get_image_files(self, file_group: FileGroupHandle) -> Dict[str, Optional[OcrdFile]]:
+    def get_image_files(self, file_group: FileGroupHandle, allow_download=False) -> Dict[str, Optional[OcrdFile]]:
         """
-        Builds a Dict ID->Path for all page_ids fast
-
-        More precisely:  fast = Faster than iterating over page_ids and using mets.get_physical_page_for_file for each entry
+        Builds a Dict PageID->OcrdFile|None for all page_ids
         """
-        log = getLogger('ocrd_browser.model.document.Document.get_image_paths')
+        log = getLogger('ocrd_browser.model.document.Document.get_image_files')
         image_paths: Dict[str, Optional[OcrdFile]] = {}
         if self.workspace:
             for page_id in self.page_ids:
@@ -254,6 +255,9 @@ class Document:
                     if page_id in image_paths:
                         log.warning('Multiple files for PAGE %s and fileGrp %s, using first %s', page_id, file_group, image_paths[page_id])
                     else:
+                        if not file.local_filename:
+                            if allow_download:
+                                file = self.workspace.download_file(file)
                         image_paths[page_id] = file
                 if page_id not in image_paths:
                     log.warning('Found no files for PAGE %s and fileGrp %s', page_id, file_group)
@@ -316,7 +320,7 @@ class Document:
 
     def resolve_image(self, image_file: OcrdFile) -> Image:
         with pushd_popd(self.workspace.directory):
-            pil_image = Image.open(self.path(image_file))
+            pil_image = Image.open(self.path(image_file, allow_download=True))
             # pil_image.load()
             return pil_image
 

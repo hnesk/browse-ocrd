@@ -55,7 +55,7 @@ class PageListStore(LazyLoadingListStore):
         # TODO end constructor here and add a new method to fill the store for testability and developer sanity
         # TODO: make file_group selectable, see https://github.com/hnesk/browse-ocrd/issues/7#issuecomment-707851109
         self.file_group = document.get_default_image_group(Settings.get().file_groups.preferred_images)
-        file_lookup = document.get_image_files(self.file_group)
+        file_lookup = document.get_image_files(self.file_group, allow_download=True)
         order = count(start=1)
         for page_id in self.document.page_ids:
             file = file_lookup[page_id]
@@ -107,7 +107,7 @@ class PageListStore(LazyLoadingListStore):
                 try:
                     file = next(iter(self.document.workspace.mets.find_files(pageId=page_id, fileGrp=self.file_group.group, mimetype=self.file_group.mime)))
                     # TODO: self.document.path(file) works only for local files
-                    file_name = str(self.document.path(file))
+                    file_name = str(self.document.path(file, allow_download=True))
                     self.append((page_id, '', file_name, None, len(self)))
                 except StopIteration as e:
                     raise ValueError('Page {} in group {}  not in workspace'.format(page_id, self.file_group)) from e
@@ -122,7 +122,7 @@ class PageListStore(LazyLoadingListStore):
                 n, row = self.get_row_by_page_id(page_id)
                 try:
                     file = next(iter(self.document.workspace.mets.find_files(pageId=page_id, fileGrp=self.file_group.group, mimetype=self.file_group.mime)))
-                    file_name = str(self.document.path(file))
+                    file_name = str(self.document.path(file, allow_download=True))
                     row[self.COLUMN_FILENAME] = file_name
                 except StopIteration:
                     pass
