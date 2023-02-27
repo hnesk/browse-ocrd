@@ -55,13 +55,14 @@ class PageListStore(LazyLoadingListStore):
         # TODO end constructor here and add a new method to fill the store for testability and developer sanity
         # TODO: make file_group selectable, see https://github.com/hnesk/browse-ocrd/issues/7#issuecomment-707851109
         self.file_group = document.get_default_image_group(Settings.get().file_groups.preferred_images)
-        file_lookup = document.get_image_files(self.file_group, allow_download=True)
+        files = document.get_image_files(self.file_group, allow_download=True)
         order = count(start=1)
-        for page_id in self.document.page_ids:
-            file = file_lookup[page_id]
-            # TODO: self.document.path(file) works only for local files
-            path = document.path(file)
-            self.append((page_id, '', str(path) if file else None, None, next(order)))
+        for page_id, file in files.items():
+            if file:
+                path = str(document.path(file))
+                self.append((page_id, '', path, None, next(order)))
+            else:
+                self.append((page_id, '', None, None, next(order)))
 
         GLib.timeout_add(10, self.start_loading)
 
