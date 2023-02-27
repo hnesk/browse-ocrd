@@ -196,7 +196,7 @@ class Document:
                 if allow_download:
                     other = self.workspace.download_file(other)
                 else:
-                    raise ValueError('path with allow_download=False for non local file called: #{s}: {}'.format(other.ID, other.url))
+                    raise ValueError('path with allow_download=False for non local file called: #{}: {}'.format(other.ID, other.url))
             return self.directory.joinpath(other.local_filename)
         elif isinstance(other, Path):
             return self.directory.joinpath(other)
@@ -243,7 +243,7 @@ class Document:
     def title(self) -> str:
         return str(self.workspace.mets.unique_identifier) if self.workspace and self.workspace.mets.unique_identifier else '<unnamed>'
 
-    def get_image_files(self, file_group: FileGroupHandle, allow_download=False) -> Dict[str, Optional[OcrdFile]]:
+    def get_image_files(self, file_group: FileGroupHandle, allow_download: bool = False) -> Dict[str, Optional[OcrdFile]]:
         """
         Builds a Dict PageID->OcrdFile|None for all page_ids
         """

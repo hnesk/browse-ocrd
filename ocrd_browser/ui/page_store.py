@@ -155,19 +155,21 @@ class PageListStore(LazyLoadingListStore):
 
     def _init_row(self, row: Gtk.TreeModelRow) -> None:
         if row[self.COLUMN_FILENAME] is not None:
-            row[1] = 'Loading {}'.format(row[self.COLUMN_FILENAME])
-            row[3] = self.pixbufs['page-loading']
+            row[PageListStore.COLUMN_TOOLTIP] = 'Loading {}'.format(row[self.COLUMN_FILENAME])
+            row[PageListStore.COLUMN_THUMB] = self.pixbufs['page-loading']
         else:
-            row[1] = 'No image for {}'.format(row[self.COLUMN_PAGE_ID])
-            row[3] = self.pixbufs['page-missing']
+            row[PageListStore.COLUMN_TOOLTIP] = 'No image for {}'.format(row[self.COLUMN_PAGE_ID])
+            row[PageListStore.COLUMN_THUMB] = self.pixbufs['page-missing']
 
     @staticmethod
     def _load_row(row: Gtk.TreeModelRow) -> Gtk.TreeModelRow:
         filename = row[PageListStore.COLUMN_FILENAME]
-        if filename is not None:
-            image = cv2.imread(filename)
-            row[1] = '{} ({}x{})'.format(filename, image.shape[1], image.shape[0])
-            row[3] = cv_to_pixbuf(cv_scale(image, 100, None))
+        if filename is None:
+            return row
+
+        image = cv2.imread(filename)
+        row[PageListStore.COLUMN_TOOLTIP] = '{} ({}x{})'.format(filename, image.shape[1], image.shape[0])
+        row[PageListStore.COLUMN_THUMB] = cv_to_pixbuf(cv_scale(image, 100, None))
         return row
 
     @staticmethod

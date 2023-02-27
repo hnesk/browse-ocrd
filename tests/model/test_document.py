@@ -48,15 +48,28 @@ class DocumentTestCase(TestCase):
         self.assertEqual('OCR-D-IMG-BIN_0001.IMG-BIN.png', image_files['PHYS_0017'].basename)
         self.assertEqual('OCR-D-IMG-BIN_0002.IMG-BIN.png', image_files['PHYS_0020'].basename)
 
-    def test_get_image_path_with_remote_image(self):
+    def test_get_image_files_with_remote_image(self):
         path = TEST_BASE_PATH / 'example/workspaces/remote-single/mets.xml'
         for file_group_dir in path.parent.glob('OCR-D-*'):
             shutil.rmtree(file_group_dir)
         doc = Document.load(path.as_uri())
-        image_files = doc.get_image_files(FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'))
+        image_files = doc.get_image_files(FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'), allow_download=True)
         self.assertGreater(len(image_files), 0)
-        self.assertIsInstance(list(image_files.values())[0], OcrdFile)
+        file = image_files['PHYS_0002']
+        self.assertIsInstance(file, OcrdFile)
+        self.assertIsNotNone(file.local_filename)
 
+
+    def test_get_image_files_with_remote_image_and_disallowed_download(self):
+        path = TEST_BASE_PATH / 'example/workspaces/remote-single/mets.xml'
+        for file_group_dir in path.parent.glob('OCR-D-*'):
+            shutil.rmtree(file_group_dir)
+        doc = Document.load(path.as_uri())
+        image_files = doc.get_image_files(FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'), allow_download=False)
+        self.assertGreater(len(image_files), 0)
+        file = image_files['PHYS_0002']
+        self.assertIsInstance(file, OcrdFile)
+        self.assertIsNone(file.local_filename)
 
 
 
