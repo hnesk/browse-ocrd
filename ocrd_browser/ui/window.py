@@ -1,4 +1,6 @@
 from gi.repository import Gtk, GdkPixbuf, Gio, GObject, GLib, Gdk
+from enum import Flag, auto
+
 from ocrd_models import OcrdFile
 
 from ocrd_browser.model import Document
@@ -9,6 +11,12 @@ from .page_browser import PagePreviewList
 from typing import List, cast, Any, Optional
 
 from ..view.manager import ViewManager
+
+
+class WindowFlags(Flag):
+    NONE = 0
+    FULLSCREEN = auto()
+    MAXIMIZE = auto()
 
 
 @Gtk.Template(string=resource_string('main-window.ui'))
@@ -42,9 +50,10 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions.create('split_view', param_type=GLib.VariantType("(ssb)"))
         self.actions.create('create_view', param_type=GLib.VariantType("s"))
         self.actions.create('replace_view', param_type=GLib.VariantType("(ss)"))
-        self.actions.create('toggle_edit_mode', state=GLib.Variant('b', False))
+        self.actions.create('toggle_edit_mode', state=GLib.Variant.new_boolean(False))
         self.actions.create('save')
         self.actions.create('save_as')
+        self.actions.create('fullscreen', state=GLib.Variant.new_boolean(self.get_application().window_flags & WindowFlags.FULLSCREEN))
 
         self.connect('delete-event', self.on_delete_event)
 
@@ -242,3 +251,10 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_toggle_edit_mode(self, _a: Gio.SimpleAction = None, _p: None = None) -> None:
         self.document.editable = not self.document.editable
         self.update_ui()
+
+    def on_fullscreen(self, action: Gio.Action, value: GLib.Variant) -> None:
+        action.set_state(value)
+        if value.get_boolean():
+            self.fullscreen()
+        else:
+            self.unfullscreen()

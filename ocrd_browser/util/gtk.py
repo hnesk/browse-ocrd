@@ -34,7 +34,7 @@ class ActionRegistry:
                param_type: GLib.VariantType = None, state: GLib.Variant = None) -> Gio.SimpleAction:
         callback = callback if callback else getattr(self.for_widget, 'on_' + name)
         action = Gio.SimpleAction(name=name, parameter_type=param_type, state=state)
-        if state:
+        if state is not None:
             action.connect("change-state", callback)
         else:
             action.connect("activate", callback)
