@@ -1,9 +1,10 @@
 from gi.repository import Gio, Gtk, GLib, Gdk
 
-from typing import List
+from typing import List, Dict, Any
 
+from ocrd_browser import __version__
 from ocrd_browser.util.gtk import ActionRegistry
-from ocrd_browser.ui import MainWindow, AboutDialog, OpenDialog
+from ocrd_browser.ui import MainWindow, WindowFlags, AboutDialog, OpenDialog
 from ocrd_browser.view import ViewRegistry
 
 from importlib_metadata import entry_points
@@ -24,6 +25,12 @@ class OcrdBrowserApplication(Gtk.Application):
         self.actions = ActionRegistry(for_widget=self)
         self.view_registry = ViewRegistry.create_from_entry_points()
 
+        self.window_flags = WindowFlags.NONE
+
+        self.add_main_option("version", ord("v"), GLib.OptionFlags.NONE, GLib.OptionArg.NONE, "Show version and exit", None)
+        self.add_main_option("maximize", ord("m"), GLib.OptionFlags.NONE, GLib.OptionArg.NONE, "Open in maximized window", None)
+        self.add_main_option("fullscreen", ord("f"), GLib.OptionFlags.NONE, GLib.OptionArg.NONE, "Open in fullscreen window", None)
+
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
         self.actions.create('new')
@@ -36,6 +43,7 @@ class OcrdBrowserApplication(Gtk.Application):
         self.set_accels_for_action('view.zoom_to::original', ['<Ctrl>0'])
         self.set_accels_for_action('view.zoom_to::width', ['<Ctrl>numbersign'])
         self.set_accels_for_action('view.zoom_to::page', ['<Ctrl><Alt>numbersign'])
+        self.set_accels_for_action("win.fullscreen", ['F11'])
 
         for entry_point in entry_points(group='ocrd_browser_ext'):
             (entry_point.load())(self)
@@ -52,11 +60,7 @@ class OcrdBrowserApplication(Gtk.Application):
         # Gtk.StyleContext().add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
     def do_activate(self) -> None:
-
-        win = self.get_active_window()
-        if not win:
-            win = MainWindow(application=self)
-        win.present()
+        self._present_window(self.get_active_window())
 
     def on_about(self, _action: Gio.SimpleAction, _param: str = None) -> None:
         about_dialog = AboutDialog(application=self, transient_for=self.get_active_window(), modal=True)
@@ -89,8 +93,31 @@ class OcrdBrowserApplication(Gtk.Application):
             self.open_in_window(file.get_uri(), window=None)
         return 0
 
+    def do_handle_local_options(self, goptions: GLib.VariantDict) -> int:
+        options: Dict[str, Any] = goptions.end().unpack()
+        print(options)
+        if options.get('version', False):
+            print('browse-ocrd: {}'.format(__version__))
+            return 0
+        if options.get('maximize', False):
+            self.window_flags |= WindowFlags.MAXIMIZE
+        if options.get('fullscreen', False):
+            self.window_flags |= WindowFlags.FULLSCREEN
+
+        return -1
+
     def open_in_window(self, uri: str, window: MainWindow = None) -> None:
         if not window or not window.document.empty:
             window = MainWindow(application=self)
-        window.present()
+        self._present_window(window)
         GLib.timeout_add(10, window.open, uri)
+
+    def _present_window(self, win: MainWindow) -> None:
+        if not win:
+            win = MainWindow(application=self)
+        if self.window_flags & WindowFlags.MAXIMIZE:
+            win.maximize()
+        if self.window_flags & WindowFlags.FULLSCREEN:
+            win.fullscreen()
+
+        win.present()
