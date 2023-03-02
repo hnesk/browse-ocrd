@@ -59,7 +59,6 @@ class DocumentTestCase(TestCase):
         self.assertIsInstance(file, OcrdFile)
         self.assertIsNotNone(file.local_filename)
 
-
     def test_get_image_files_with_remote_image_and_disallowed_download(self):
         path = TEST_BASE_PATH / 'example/workspaces/remote-single/mets.xml'
         for file_group_dir in path.parent.glob('OCR-D-*'):
@@ -70,8 +69,6 @@ class DocumentTestCase(TestCase):
         file = image_files['PHYS_0002']
         self.assertIsInstance(file, OcrdFile)
         self.assertIsNone(file.local_filename)
-
-
 
     def test_get_default_image_group(self):
         doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-complex/data/mets.xml')
