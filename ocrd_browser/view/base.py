@@ -275,7 +275,7 @@ class FileGroupComboBox(Gtk.ComboBox):
 
     def set_document(self, document: 'Document') -> None:
         self.set_model(FileGroupModel.build(document, self.filter))
-        self.set_active(len(self.get_model())-1)
+        self.set_active(len(self.get_model()) - 1)
 
     def add_renderer(self, column: int, width: int = None) -> Gtk.CellRendererText:
         renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.MIDDLE)
