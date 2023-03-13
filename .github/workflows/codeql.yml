@@ -26,8 +26,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - run: |
-          make deps-ubuntu
+      - name: Install os packages
+        run: |
+          sudo apt update
+          sudo make deps-ubuntu
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
