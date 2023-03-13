@@ -148,7 +148,7 @@ It is possible to set or override values of the configuration through environmen
 Some examples:
 ```shell
 BROCRD__FILE_GROUPS__PREFERRED_IMAGES='THUMB'  
-BROCRD__TOOL__PAGEVIEWER__COMMANDLINE='rhythmbox'  
+BROCRD__TOOL__PAGEVIEWER__COMMANDLINE='ls {file.path.absolute}'  
 
 ```
 

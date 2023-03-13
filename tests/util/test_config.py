@@ -32,9 +32,9 @@ class SettingsTestCase(TestCase):
         del os.environ['BROCRD__FILE_GROUPS__PREFERRED_IMAGES']
 
     def test_value_environment_deep(self):
-        os.environ['BROCRD__TOOL__PAGEVIEWER__COMMANDLINE'] = 'rhythmbox'
+        os.environ['BROCRD__TOOL__PAGEVIEWER__COMMANDLINE'] = 'ls {file.path.absolute}'
         settings = SettingsFactory.build_from_files([TEST_BASE_PATH / 'example/config/simple.conf'])
-        self.assertEqual('rhythmbox', settings.tool['pageviewer'].commandline)
+        self.assertEqual('ls {file.path.absolute}', settings.tool['pageviewer'].commandline)
         del os.environ['BROCRD__TOOL__PAGEVIEWER__COMMANDLINE']
 
     def test_tools(self):
