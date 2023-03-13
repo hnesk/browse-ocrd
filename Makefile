@@ -18,7 +18,7 @@ deps:
 	$(PIP) install -r requirements.txt
 
 install: ocrd_browser/ui.gresource
-	$(PIP) install .
+	$(PIP) install -e .
 
 ocrd_browser/ui.gresource: gresources/ocrd-browser.gresource.xml gresources
 	glib-compile-resources --sourcedir=$(<D) --target=$@ $<
