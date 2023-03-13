@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Union
 
 from ocrd_browser.model import Document
-from ocrd_browser.util.config import _Tool
+from ocrd_browser.util.config import Tool
 from ocrd_browser.util.launcher import Launcher
 from tests import TestCase, TEST_BASE_PATH, data_provider
 
@@ -41,7 +41,7 @@ def template_testcases():
 class LauncherTestCase(TestCase):
 
     def setUp(self) -> None:
-        self.launcher = Launcher()
+        self.launcher = Launcher({'echo': Tool(commandline='echo -n {file.path.relative}')})
         self.doc = Document.load(BASE_PATH / 'mets.xml')
         self.page_file = self.doc.page_for_id('PHYS_0017', 'OCR-D-GT-PAGE').page_file
 
@@ -58,8 +58,7 @@ class LauncherTestCase(TestCase):
         setOverrideLogLevel('OFF', True)
 
     def test_launch_tool(self):
-        tool = _Tool('Echotest', 'echo -n {file.path.relative}')
-        with self.launcher.launch_tool(tool, self.doc, self.page_file, stdout=subprocess.PIPE) as process:
+        with self.launcher.launch_tool(self.launcher.tools['echo'], self.doc, self.page_file, 'echo', stdout=subprocess.PIPE) as process:
             process.wait()
             result = process.stdout.read().decode('utf8')
         self.assertEqual('OCR-D-GT PÆGE/PAGE_0017 PÄGE.xml', result)

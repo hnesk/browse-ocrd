@@ -11,3 +11,4 @@ Shapely
 Deprecated
 importlib_metadata>=3.6
 importlib_resources;python_version<'3.8'
+pydantic ~= 1.10

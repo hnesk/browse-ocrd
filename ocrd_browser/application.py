@@ -95,7 +95,6 @@ class OcrdBrowserApplication(Gtk.Application):
 
     def do_handle_local_options(self, goptions: GLib.VariantDict) -> int:
         options: Dict[str, Any] = goptions.end().unpack()
-        print(options)
         if options.get('version', False):
             print('browse-ocrd: {}'.format(__version__))
             return 0

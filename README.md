@@ -119,7 +119,7 @@ os.getcwd()                    # './ocrd-browser.conf'
 
 ### Configuration file syntax
 
-The `ocrd-browser.conf` file is an ini-file with the following keys:
+The `ocrd-browser.conf` file is an ini-file with the following sections and keys:
 ```ini
 [FileGroups]
 # Preferred fileGrp names for thumbnail display in the Page Browser 
@@ -133,9 +133,22 @@ preferredImages = OCR-D-IMG, OCR-D-IMG.*, ORIGINAL
 commandline = /usr/bin/java -jar /home/jk/bin/JPageViewer/JPageViewer.jar --resolve-dir {workspace.directory} {file.path.absolute}
 ```
 
+> Note: You can get PRImA's PageViewer at [Github](https://github.com/PRImA-Research-Lab/prima-page-viewer/releases).
+
+
 The `commandline` string will be used as a python format string with the keyword arguments:
 
 * `workspace` : The current `ocrd.Workspace`, all properties get shell escaped (by `shlex.quote`) automatically.
 * `file` : The current `ocrd_models.OcrdFile`, all properties get shell escaped (by `shlex.quote`) automatically, also there is an additional property `path` with the properties `absolute` and `relative`, so `{file.path.absolute}` will be replaced by the shell quoted absolute path of the file. 
 
-> Note: You can get PRImA's PageViewer at [Github](https://github.com/PRImA-Research-Lab/prima-page-viewer/releases).
+### Configuration by environment variables
+
+It is possible to set or override values of the configuration through environment variables. The environment variables follow this structure :  `BROCRD__{SECTION}__{KEY}`, where `SECTION` and `KEY` are in upper snake case and divided by a double underscore (`__`). If the section title contains spaces, the single words are also divided by `__`.  
+
+Some examples:
+```shell
+BROCRD__FILE_GROUPS__PREFERRED_IMAGES='THUMB'  
+BROCRD__TOOL__PAGEVIEWER__COMMANDLINE='rhythmbox'  
+
+```
+

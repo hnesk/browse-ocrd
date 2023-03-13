@@ -6,7 +6,7 @@ from itertools import count
 from ocrd_browser.util.image import cv_to_pixbuf, cv_scale
 from ocrd_browser.model import Document
 from .icon_store import LazyLoadingListStore
-from ..util.config import Settings
+from ..util.config import SettingsFactory
 
 import cv2
 import os
@@ -53,7 +53,7 @@ class PageListStore(LazyLoadingListStore):
         }
 
         # TODO: make file_group selectable, see https://github.com/hnesk/browse-ocrd/issues/7#issuecomment-707851109
-        self.file_group = document.get_default_image_group(Settings.get().file_groups.preferred_images)
+        self.file_group = document.get_default_image_group(SettingsFactory.settings().file_groups.preferred_images)
         file_lookup = document.get_image_paths(self.file_group)
         order = count(start=1)
         for page_id in self.document.page_ids:

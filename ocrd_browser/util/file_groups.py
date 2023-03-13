@@ -1,9 +1,12 @@
 from __future__ import annotations
 import re
 from collections import Counter
-from typing import List, Optional, Counter as CounterType, NamedTuple, cast, Tuple, Union
+from typing import List, Optional, Counter as CounterType, NamedTuple, cast, Tuple, Union, Pattern, Sequence, Any
 
 from ocrd_models import OcrdFile
+
+AnyPattern = Union[Pattern[Any], str]
+PatternList = Optional[Sequence[AnyPattern]]
 
 
 class FileGroupHandle(NamedTuple):
@@ -28,7 +31,7 @@ class FileGroupHandle(NamedTuple):
             return cls._make(tpl)
 
 
-def weight_match(s: str, preferred: Optional[List[str]] = None) -> float:
+def weight_match(s: str, preferred: PatternList = None) -> float:
     """
     Weights how good a string matches a list of regular expressions
     """
@@ -43,7 +46,7 @@ def weight_match(s: str, preferred: Optional[List[str]] = None) -> float:
     return weight
 
 
-def best_file_group(file_group_handles: List[FileGroupHandle], preferred_groups: Optional[List[str]] = None, preferred_mimetypes: Optional[List[str]] = None, cutoff: float = -9999) -> Optional[FileGroupHandle]:
+def best_file_group(file_group_handles: List[FileGroupHandle], preferred_groups: PatternList = None, preferred_mimetypes: PatternList = None, cutoff: float = -9999) -> Optional[FileGroupHandle]:
     file_groups_counter: CounterType[FileGroupHandle] = Counter()
     for file_group_handle in file_group_handles:
         file_groups_counter[file_group_handle] += weight_match(file_group_handle.group, preferred_groups)  # type: ignore[assignment]

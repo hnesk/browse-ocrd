@@ -58,7 +58,7 @@ class ViewXml(View):
 
     def open_jpageviewer(self, _button: Gtk.Button) -> None:
         if self.current and self.current.page_file:
-            Launcher().launch('PageViewer', self.document, self.current.page_file)
+            Launcher().launch('pageviewer', self.document, self.current.page_file)
 
     def on_scroll(self, _widget: GtkSource.View, event: Gdk.EventScroll) -> bool:
         # Handles zoom in / zoom out on Ctrl+mouse wheel

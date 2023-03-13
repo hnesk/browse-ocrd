@@ -6,7 +6,7 @@ from ocrd_models import OcrdFile
 from ocrd_utils import getLogger
 
 from ocrd_browser.model import Document
-from ocrd_browser.util.config import _Tool, Settings
+from ocrd_browser.util.config import Tool, SettingsFactory
 
 
 class ResolvableFileName:
@@ -51,12 +51,12 @@ class FileProxy(QuotingProxy):
 
 
 class Launcher:
-    def __init__(self, tools: Optional[Dict[str, _Tool]] = None):
-        self.tools = tools if tools else Settings.get().tools
+    def __init__(self, tools: Optional[Dict[str, Tool]] = None):
+        self.tools = tools if tools else SettingsFactory.settings().tool
 
     def launch(self, toolname: str, doc: Document, file: OcrdFile) -> Optional[Popen]:  # type: ignore[type-arg]
         if toolname in self.tools:
-            return self.launch_tool(self.tools[toolname], doc, file)
+            return self.launch_tool(self.tools[toolname], doc, file, toolname)
         else:
             log = getLogger('ocrd_browser.util.launcher.Launcher.launch')
             log.error(
@@ -66,13 +66,14 @@ class Launcher:
             log.error('commandline = /usr/bin/yourtool --base-dir {workspace.directory} {file.path.absolute}')
             return None
 
-    def launch_tool(self, tool: _Tool, doc: Document, file: OcrdFile, **kwargs: Any) -> Popen:  # type: ignore[type-arg]
+    def launch_tool(self, tool: Tool, doc: Document, file: OcrdFile, toolname: str, **kwargs: Any) -> Popen:  # type: ignore[type-arg]
         log = getLogger('ocrd_browser.util.launcher.Launcher.launch_tool')
         commandline = self._template(tool.commandline, doc, file)
-        log.debug('Calling tool "%s" with commandline: ', tool.name)
+        log.debug('Calling tool "%s" with commandline: ', toolname)
         log.debug('%s', commandline)
         process = Popen(args=commandline, shell=True, cwd=doc.directory, **kwargs)
         return process
 
-    def _template(self, arg: str, doc: Document, file: OcrdFile) -> str:
+    @staticmethod
+    def _template(arg: str, doc: Document, file: OcrdFile) -> str:
         return arg.format(file=FileProxy(file, doc), workspace=QuotingProxy(doc.workspace))

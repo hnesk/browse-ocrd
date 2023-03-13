@@ -9,7 +9,7 @@ from functools import wraps
 
 from ocrd import Resolver
 from ocrd_browser.model.page import Page
-from ocrd_browser.util.file_groups import best_file_group, FileGroupHandle
+from ocrd_browser.util.file_groups import best_file_group, FileGroupHandle, PatternList
 from ocrd_browser.util.image import add_dpi_to_png_buffer
 from ocrd_browser.util.streams import SilencedStreams
 from ocrd_modelfactory import page_from_file
@@ -264,7 +264,7 @@ class Document:
                 image_paths[page_id] = None
         return image_paths
 
-    def get_default_image_group(self, preferred_image_file_groups: Optional[List[str]] = None) -> Optional[FileGroupHandle]:
+    def get_default_image_group(self, preferred_image_file_groups: PatternList = None) -> Optional[FileGroupHandle]:
         return best_file_group(self.file_groups, preferred_image_file_groups, [r'image/.*'], cutoff=0)
 
     def get_unused_page_id(self, template_page_id: str = 'PAGE_{page_nr}') -> Tuple[str, int]:
