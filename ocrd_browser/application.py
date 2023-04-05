@@ -26,10 +26,12 @@ class OcrdBrowserApplication(Gtk.Application):
         self.view_registry = ViewRegistry.create_from_entry_points()
 
         self.window_flags = WindowFlags.NONE
+        self.readonly = False
 
         self.add_main_option("version", ord("v"), GLib.OptionFlags.NONE, GLib.OptionArg.NONE, "Show version and exit", None)
         self.add_main_option("maximize", ord("m"), GLib.OptionFlags.NONE, GLib.OptionArg.NONE, "Open in maximized window", None)
         self.add_main_option("fullscreen", ord("f"), GLib.OptionFlags.NONE, GLib.OptionArg.NONE, "Open in fullscreen window", None)
+        self.add_main_option("readonly", ord("r"), GLib.OptionFlags.NONE, GLib.OptionArg.NONE, "Open restricted (no edit/open functionality)", None)
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
@@ -85,7 +87,7 @@ class OcrdBrowserApplication(Gtk.Application):
         open_dialog.destroy()
 
     def on_new(self, _action: Gio.SimpleAction, _param: str = None) -> None:
-        win = MainWindow(application=self)
+        win = MainWindow(application=self, readonly=self.readonly)
         win.present()
 
     def do_open(self, files: List[Gio.File], file_count: int, hint: str) -> int:
@@ -102,18 +104,20 @@ class OcrdBrowserApplication(Gtk.Application):
             self.window_flags |= WindowFlags.MAXIMIZE
         if options.get('fullscreen', False):
             self.window_flags |= WindowFlags.FULLSCREEN
+        if options.get('readonly', False):
+            self.readonly = True
 
         return -1
 
     def open_in_window(self, uri: str, window: MainWindow = None) -> None:
         if not window or not window.document.empty:
-            window = MainWindow(application=self)
+            window = MainWindow(application=self, readonly=self.readonly)
         self._present_window(window)
         GLib.timeout_add(10, window.open, uri)
 
     def _present_window(self, win: MainWindow) -> None:
         if not win:
-            win = MainWindow(application=self)
+            win = MainWindow(application=self, readonly=self.readonly)
         if self.window_flags & WindowFlags.MAXIMIZE:
             win.maximize()
         if self.window_flags & WindowFlags.FULLSCREEN:

@@ -323,7 +323,7 @@ THE SOFTWARE.
     <property name="can_focus">False</property>
     <property name="relative_to">main_menu_button</property>
     <child>
-      <object class="GtkBox">
+      <object class="GtkBox" id="main_menu_box">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="border_width">4</property>

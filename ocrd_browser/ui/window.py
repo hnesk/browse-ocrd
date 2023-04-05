@@ -13,6 +13,9 @@ from typing import List, cast, Any, Optional
 from ..view.manager import ViewManager
 
 
+EDIT_ACTIONS = ['app.new', 'win.toggle_edit_mode', 'win.page_remove', 'win.save_as', 'win.save']
+
+
 class WindowFlags(Flag):
     NONE = 0
     FULLSCREEN = auto()
@@ -28,32 +31,33 @@ class MainWindow(Gtk.ApplicationWindow):
     current_page_label: Gtk.Label = Gtk.Template.Child()
     view_container: Gtk.Box = Gtk.Template.Child()
     view_menu_box: Gtk.Box = Gtk.Template.Child()
+    open_button_box: Gtk.ButtonBox = Gtk.Template.Child()
+    main_menu_box: Gtk.Box = Gtk.Template.Child()
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, readonly: bool = False, **kwargs: Any):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
         # noinspection PyCallByClass,PyArgumentList
         self.set_icon(GdkPixbuf.Pixbuf.new_from_resource("/org/readmachine/ocrd-browser/icons/icon.png"))
         self.view_manager = ViewManager(self, self.view_container)
         self.current_page_id: Optional[str] = None
-        # noinspection PyTypeChecker
         self.document = Document.create(emitter=self.emit)
-
+        self._readonly = False
         self.actions = ActionRegistry(for_widget=self)
         self.actions.create('close')
         self.actions.create('goto_first')
         self.actions.create('go_back')
         self.actions.create('go_forward')
         self.actions.create('goto_last')
-        self.actions.create('page_remove')
         self.actions.create('page_properties')
         self.actions.create('close_view', param_type=GLib.VariantType("s"))
         self.actions.create('split_view', param_type=GLib.VariantType("(ssb)"))
         self.actions.create('create_view', param_type=GLib.VariantType("s"))
         self.actions.create('replace_view', param_type=GLib.VariantType("(ss)"))
+        self.actions.create('fullscreen', state=GLib.Variant.new_boolean(self.get_application().window_flags & WindowFlags.FULLSCREEN))
         self.actions.create('toggle_edit_mode', state=GLib.Variant.new_boolean(False))
         self.actions.create('save')
         self.actions.create('save_as')
-        self.actions.create('fullscreen', state=GLib.Variant.new_boolean(self.get_application().window_flags & WindowFlags.FULLSCREEN))
+        self.actions.create('page_remove')
 
         self.connect('delete-event', self.on_delete_event)
 
@@ -68,9 +72,29 @@ class MainWindow(Gtk.ApplicationWindow):
             self.view_menu_box.pack_start(menu_item, True, True, 0)
 
         self.view_manager.set_root_view(ViewPage)
-        # self.view_manager.split(None, ViewPage, False)
+        self.readonly = readonly
 
         self.update_ui()
+
+    @property
+    def readonly(self) -> bool:
+        return self._readonly
+
+    @readonly.setter
+    def readonly(self, readonly: bool) -> None:
+        for action in EDIT_ACTIONS:
+            if action.startswith('win.'):
+                self.actions[action[4:]].set_enabled(not readonly)
+            elif action.startswith('app.'):
+                self.get_application().actions[action[4:]].set_enabled(not readonly)
+
+        for item in self.main_menu_box.get_children():
+            if isinstance(item, Gtk.ModelButton):
+                if item.get_action_name() in EDIT_ACTIONS:
+                    item.set_visible(not readonly)
+
+        self.open_button_box.set_visible(not readonly)
+        self._readonly = readonly
 
     def on_page_remove(self, _a: Gio.SimpleAction, _p: None) -> None:
         for page_id in self.page_list.get_selected_ids():
@@ -157,10 +181,11 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions['go_back'].set_enabled(can_go_back)
         self.actions['go_forward'].set_enabled(can_go_forward)
         self.actions['goto_last'].set_enabled(can_go_forward)
-        self.actions['page_remove'].set_enabled(self.document.editable)
-        # noinspection PyCallByClass,PyArgumentList
-        self.actions['toggle_edit_mode'].set_state(GLib.Variant.new_boolean(self.document.editable))
-        self.actions['save'].set_enabled(self.document.modified)
+        if not self.readonly:
+            self.actions['page_remove'].set_enabled(self.document.editable)
+            # noinspection PyCallByClass,PyArgumentList
+            self.actions['toggle_edit_mode'].set_state(GLib.Variant.new_boolean(self.document.editable))
+            self.actions['save'].set_enabled(self.document.modified)
         self.view_manager.update_ui()
 
     def close_confirm(self) -> bool:
@@ -213,7 +238,7 @@ class MainWindow(Gtk.ApplicationWindow):
             self.view_manager.close(view_name.get_string())
         except ValueError:
             # Tried to remove last view
-            pass
+            self.on_close()
 
     def on_split_view(self, _action: Gio.SimpleAction, arguments: GLib.Variant) -> None:
         (split_view, new_view_name, horizontal) = arguments
