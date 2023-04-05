@@ -34,14 +34,14 @@ class MainWindow(Gtk.ApplicationWindow):
     open_button_box: Gtk.ButtonBox = Gtk.Template.Child()
     main_menu_box: Gtk.Box = Gtk.Template.Child()
 
-    def __init__(self, readonly: bool = False, **kwargs: Any):
+    def __init__(self, restricted: bool = False, **kwargs: Any):
         Gtk.ApplicationWindow.__init__(self, **kwargs)
         # noinspection PyCallByClass,PyArgumentList
         self.set_icon(GdkPixbuf.Pixbuf.new_from_resource("/org/readmachine/ocrd-browser/icons/icon.png"))
         self.view_manager = ViewManager(self, self.view_container)
         self.current_page_id: Optional[str] = None
         self.document = Document.create(emitter=self.emit)
-        self._readonly = False
+        self._restricted = False
         self.actions = ActionRegistry(for_widget=self)
         self.actions.create('close')
         self.actions.create('goto_first')
@@ -72,29 +72,29 @@ class MainWindow(Gtk.ApplicationWindow):
             self.view_menu_box.pack_start(menu_item, True, True, 0)
 
         self.view_manager.set_root_view(ViewPage)
-        self.readonly = readonly
+        self.restricted = restricted
 
         self.update_ui()
 
     @property
-    def readonly(self) -> bool:
-        return self._readonly
+    def restricted(self) -> bool:
+        return self._restricted
 
-    @readonly.setter
-    def readonly(self, readonly: bool) -> None:
+    @restricted.setter
+    def restricted(self, restricted: bool) -> None:
         for action in EDIT_ACTIONS:
             if action.startswith('win.'):
-                self.actions[action[4:]].set_enabled(not readonly)
+                self.actions[action[4:]].set_enabled(not restricted)
             elif action.startswith('app.'):
-                self.get_application().actions[action[4:]].set_enabled(not readonly)
+                self.get_application().actions[action[4:]].set_enabled(not restricted)
 
         for item in self.main_menu_box.get_children():
             if isinstance(item, Gtk.ModelButton):
                 if item.get_action_name() in EDIT_ACTIONS:
-                    item.set_visible(not readonly)
+                    item.set_visible(not restricted)
 
-        self.open_button_box.set_visible(not readonly)
-        self._readonly = readonly
+        self.open_button_box.set_visible(not restricted)
+        self._restricted = restricted
 
     def on_page_remove(self, _a: Gio.SimpleAction, _p: None) -> None:
         for page_id in self.page_list.get_selected_ids():
@@ -181,7 +181,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.actions['go_back'].set_enabled(can_go_back)
         self.actions['go_forward'].set_enabled(can_go_forward)
         self.actions['goto_last'].set_enabled(can_go_forward)
-        if not self.readonly:
+        if not self.restricted:
             self.actions['page_remove'].set_enabled(self.document.editable)
             # noinspection PyCallByClass,PyArgumentList
             self.actions['toggle_edit_mode'].set_state(GLib.Variant.new_boolean(self.document.editable))
