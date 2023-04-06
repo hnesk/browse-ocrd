@@ -42,12 +42,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-/resources/ocrd-browser.gresource
-/ocrd_browser/ui.gresource
 
 # Autosaved glade files
 *.ui#
 *.ui~
+
 /.coverage
 /.ipynb_checkpoints/
 /unittest.xml
