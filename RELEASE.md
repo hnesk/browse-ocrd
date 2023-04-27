@@ -6,7 +6,6 @@
 3) `git commit` 
 4) `git tag -a v0.5.2` 
 5) `git push origin v0.5.2`
-6) `git push --tags`
-7) https://github.com/hnesk/browse-ocrd/releases/new and paste CHANGELOG changes
-8) `make testpypi`
-9) `make pypi`
+6) https://github.com/hnesk/browse-ocrd/releases/new and paste CHANGELOG changes
+7) `make testpypi`
+8) `make pypi`
