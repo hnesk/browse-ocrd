@@ -1,9 +1,30 @@
 # Change Log
 
 <!-- 
-## [Unreleased](../../compare/v0.5.4...master)
+## [Unreleased](../../compare/v0.5.5...master)
 -->
 
+## [0.5.5](../../compare/v0.5.4...0.5.5)
+
+Features:
+ * Fullscreen mode via F11
+ * add CLI options for better Dockerization [#61](../../issues/61): 
+   * `-m`, `--maximize` Open in maximized window
+   * `-f`, `--fullscreen` Open in fullscreen window
+   * `-r`, `--restricted` Open restricted (no edit/open functionality)
+   * `-v`, `--version` commandline flag
+
+Changed:
+ * Refactored configuration to use pydantic, allows for overriding configurations settings by environment, e.g.:
+
+   `BROCRD__FILE_GROUPS__PREFERRED_IMAGES='THUMB,IMG.*'`
+
+Fixed:
+ * Use last fileGrp as default (hoping that it is the fileGrp with the richest annotations ) [#60](../../issues/60) 
+ * Application crashes on launch [#62](../..issues/62)
+
+   Added the generated file ui.gresource to git. Previously it was not possible to install via `pip install git+https://github.com/hnesk/browse-ocrd` which is a pity.
+ 
 ## [0.5.4](../../compare/v0.5.3...0.5.4)
 
 Changed: 
