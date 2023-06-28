@@ -173,6 +173,8 @@ class Document:
         if not self.directory:
             return None
         if isinstance(other, OcrdFile):
+            if not other.local_filename:
+                other = self.workspace.download_file(other)
             return self.directory.joinpath(other.local_filename)
         elif isinstance(other, Path):
             return self.directory.joinpath(other)
@@ -258,7 +260,7 @@ class Document:
         for page_id in self.page_ids:
             images = [image for image in file_index.values() if image.static_page_id == page_id and file_group.match(image)]
             if len(images) > 0:
-                image_paths[page_id] = self.directory.joinpath(images[0].local_filename)
+                image_paths[page_id] = self.path(images[0])
             else:
                 log.warning('Found no images for PAGE %s and fileGrp %s', page_id, file_group)
                 image_paths[page_id] = None
@@ -319,7 +321,7 @@ class Document:
 
     def resolve_image(self, image_file: OcrdFile) -> Image:
         with pushd_popd(self.workspace.directory):
-            pil_image = Image.open(self.workspace.download_file(image_file).local_filename)
+            pil_image = Image.open(self.path(image_file))
             # pil_image.load()
             return pil_image
 
