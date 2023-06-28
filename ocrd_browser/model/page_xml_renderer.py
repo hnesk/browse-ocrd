@@ -331,6 +331,9 @@ class ArrowOperation(Operation):
         angle = radians(180.0 - 30)  # 30 degrees
         c, s = cos(angle), sin(angle)
         d = self.p1[0] - self.p0[0], self.p1[1] - self.p0[1]
+        if np.isclose(d[0], 0) and np.isclose(d[1], 0):
+            # arrow start and end very close to each toerh
+            return
         left = d[0] * c - d[1] * s, d[0] * s + d[1] * c
         right = d[0] * c + d[1] * s, -d[0] * s + d[1] * c
         lf = self.size / (d[0] ** 2 + d[1] ** 2) ** 0.5
