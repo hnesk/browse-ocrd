@@ -519,6 +519,19 @@ class ViewPage(View):
             ]:
                 if hasattr(region.region, attribute) and getattr(region.region, attribute):
                     content += '\n<tt>@{}=</tt>{}'.format(attribute, getattr(region.region, attribute))
+            if hasattr(region.region, 'Roles') and getattr(region.region, 'Roles'):
+                roles = getattr(region.region, 'Roles')
+                if hasattr(roles, 'TableCellRole') and getattr(roles, 'TableCellRole'):
+                    cellrole = getattr(roles, 'TableCellRole')
+                    for attribute in [
+                            'rowIndex',
+                            'columnIndex',
+                            'rowSpan',
+                            'colSpan',
+                            'header',
+                    ]:
+                        if hasattr(cellrole, attribute):
+                            content += '\n<tt>@{}=</tt>{}'.format(attribute, getattr(cellrole, attribute))
             if hasattr(region.region, 'TextStyle') and getattr(region.region, 'TextStyle'):
                 style = getattr(region.region, 'TextStyle')
                 for attribute in [
@@ -543,7 +556,7 @@ class ViewPage(View):
                         'smallCaps',
                         'letterSpaced',
                 ]:
-                    if getattr(style, attribute):
+                    if hasattr(style, attribute):
                         content += '\n<tt>@{}=</tt>{}'.format(attribute, getattr(style, attribute))
             if region.warnings:
                 content += '\n\nWarnings:' + ('\n '.join(region.warnings))
