@@ -12,6 +12,7 @@ from socketserver import ForkingTCPServer
 import urllib
 import click
 
+
 class RequestHandler(SimpleHTTPRequestHandler):
     bwhost = "localhost"
     bwport = 8085
@@ -33,7 +34,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             self._workspaces.cache_clear()
             self.send_response(HTTPStatus.OK)
         else:
-            #SimpleHTTPRequestHandler.do_GET(self)
+            # SimpleHTTPRequestHandler.do_GET(self)
             self.send_response(HTTPStatus.FORBIDDEN)
 
     def do_POST(self):
@@ -91,21 +92,21 @@ class RequestHandler(SimpleHTTPRequestHandler):
         else:
             if not path.endswith('mets.xml'):
                 path = os.path.join(path, 'mets.xml')
-            ## run app
+            # run app
             Popen([which('browse-ocrd'),
                    '--maximize',
                    '--fullscreen',
                    '--display', ':' + str(self.bwport - 8080),
                    path])
-            ## proxy does not work, because the follow-up requests would need to be forwarded, too:
+            # # proxy does not work, because the follow-up requests would need to be forwarded, too:
             # response = urllib.request.urlopen('http://' + self.bwhost + ':' + str(self.bwport))
             # self.send_response(response.status)
             # for name, value in response.getheaders():
             #     self.send_header(name.rstrip(':'), value)
             # self.end_headers()
             # self.copyfile(response, self.wfile)
-            ## so let's use temporary redirect instead
-            self.send_response(HTTPStatus.SEE_OTHER) # or TEMPORARY_REDIRECT?
+            # # so let's use temporary redirect instead
+            self.send_response(HTTPStatus.SEE_OTHER)  # or TEMPORARY_REDIRECT?
             self.send_header('Location', 'http://' + self.bwhost + ':' + str(self.bwport))
             self.end_headers()
 
@@ -113,11 +114,12 @@ class RequestHandler(SimpleHTTPRequestHandler):
     #     """ Override to prevent stdout on requests """
     #     pass
 
+
 @click.command(context_settings={'help_option_names': ['-h', '--help']})
 @click.option('-P', '--bwport', default=8085, type=int, help="TCP port of Broadwayd to delegate to")
 @click.option('-p', '--port', default=80, type=int, help="TCP port to bind the web server to")
 @click.option('-l', '--listen', default="", type=str, help="network address to bind the web server to")
-@click.option('-d', '--basedir', default=".", type=click.Path(exists=True, file_okay=False))                    
+@click.option('-d', '--basedir', default=".", type=click.Path(exists=True, file_okay=False))
 def cli(bwport, port, listen, basedir):
     Handler = RequestHandler
     Handler.bwport = bwport
@@ -125,6 +127,7 @@ def cli(bwport, port, listen, basedir):
     ForkingTCPServer.allow_reuse_address = True
     with ForkingTCPServer((listen, port), Handler) as httpd:
         httpd.serve_forever()
+
 
 if __name__ == '__main__':
     cli()

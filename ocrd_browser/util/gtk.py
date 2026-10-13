@@ -6,7 +6,7 @@ from typing import Callable, Dict, Optional, Set, Any
 try:
     from importlib.resources import read_text
 except ModuleNotFoundError:
-    from importlib_resources import read_text  # type: ignore
+    from importlib_resources import read_text
 
 
 ActionCallback = Optional[Callable[[Gio.SimpleAction, Any], None]]

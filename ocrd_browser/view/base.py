@@ -110,12 +110,12 @@ class View:
 
 class BooleanSelector(Gtk.Box, Configurator):
 
-    def __init__(self, label : str = "feature", tooltip : str = "enable feature?") -> None:
+    def __init__(self, label: str = "feature", tooltip: str = "enable feature?") -> None:
         super().__init__(visible=True, spacing=3)
         self.value = False
 
         # default label
-        self.button = Gtk.CheckButton(visible=True, label=label) # default label
+        self.button = Gtk.CheckButton(visible=True, label=label)  # default label
         self.button.set_tooltip_text(tooltip)
         self.pack_start(self.button, False, True, 0)
 
@@ -131,6 +131,7 @@ class BooleanSelector(Gtk.Box, Configurator):
     @GObject.Signal(arg_types=[bool])
     def changed(self, enabled: bool) -> None:
         self.value = enabled
+
 
 class PageQtySelector(Gtk.Box, Configurator):
 

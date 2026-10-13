@@ -9,7 +9,7 @@ import PIL.ImageFont
 import numpy as np
 from math import sin, cos, radians, inf
 from enum import IntFlag
-from collections import defaultdict, OrderedDict as odict
+from collections import defaultdict
 from logging import Logger
 
 from functools import lru_cache as memoized
@@ -580,11 +580,10 @@ class PageXmlRenderer:
             id2region[region_ds.id] = region_ds
 
         if self.features & Feature.ORDER and (
-                group := (page.ReadingOrder and
-                         (page.ReadingOrder.OrderedGroup or
-                          page.ReadingOrder.UnorderedGroup))):
-            def add_refs(group, level: int = 0):
-                color: str = {0: '#DC143CFF', # '#FF0000CF'
+                order := page.ReadingOrder) and (
+                group := order.OrderedGroup or order.UnorderedGroup):
+            def add_refs(group, level: int = 0):  # type: ignore
+                color: str = {0: '#DC143CFF',  # '#FF0000CF'
                               1: '#9400D3FF',
                               2: '#8B0000FF',
                 }.get(level, '#8B0000FF')
@@ -592,14 +591,14 @@ class PageXmlRenderer:
                     iterator = group.get_AllIndexed
                 else:
                     iterator = group.get_UnorderedGroupChildren
-                points = []
+                points: List[Tuple[float, float]] = []
                 for ref in iterator():
                     # ordered recursive case: arrow into first, arrow from last
                     if isinstance(ref, (OrderedGroupType, OrderedGroupIndexedType)):
-                        first, last = add_refs(ref, level+1)
+                        first, last = add_refs(ref, level + 1)
                     # unordered recursive case: arrow into center, arrow from center
                     elif isinstance(ref, (UnorderedGroupType, UnorderedGroupIndexedType)):
-                        first = last = add_refs(ref, level+1)
+                        first = last = add_refs(ref, level + 1)
                     elif ref.regionRef:
                         if region_ds := id2region.get(ref.regionRef, None):
                             region = self.region_factory.create(region_ds)

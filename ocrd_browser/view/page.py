@@ -587,7 +587,7 @@ class ViewPage(View):
         if w > 0 and h > 0:
             self.highlight.queue_draw_area(x, y, w, h)
 
-    def draw_highlight(self, _area: Gtk.DrawingArea, context: Context) -> None:  # type: ignore[type-arg]
+    def draw_highlight(self, _area: Gtk.DrawingArea, context: Context) -> None:
         if self.current_region and self.t:
             poly: Polygon = self.current_region.poly
             poly = poly.buffer(1, single_sided=True)
