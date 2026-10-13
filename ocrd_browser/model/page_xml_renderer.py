@@ -603,7 +603,11 @@ class PageXmlRenderer:
                     elif ref.regionRef:
                         if region_ds := id2region.get(ref.regionRef, None):
                             region = self.region_factory.create(region_ds)
-                            first = last = region.poly.representative_point()
+                            if region is None or region.poly is None:
+                                first = last = Point(*coordinates_of_segment(
+                                    region_ds, None, self.region_factory.coords)[0])
+                            else:
+                                first = last = region.poly.representative_point()
                         else:
                             self.region_factory.logger.warning(
                                 'Page "%s" @ %s has unknown regionRef="%s"', self.region_factory.page_id,
