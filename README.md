@@ -1,5 +1,5 @@
-[![Unit tests](https://github.com/hnesk/browse-ocrd/workflows/Unit%20tests/badge.svg?branch=master)](https://github.com/hnesk/browse-ocrd/actions/workflows/unittest.yml)
-[![Docker build](https://github.com/hnesk/browse-ocrd/actions/workflows/dockerhub.yml/badge.svg)](https://github.com/hnesk/browse-ocrd/actions/workflows/dockerhub.yml)
+[![Unit tests](https://github.com/OCR-D/browse-ocrd/workflows/Unit%20tests/badge.svg?branch=master)](https://github.com/OCR-D/browse-ocrd/actions/workflows/unittest.yml)
+[![Docker build](https://github.com/OCR-D/browse-ocrd/actions/workflows/dockerhub.yml/badge.svg)](https://github.com/OCR-D/browse-ocrd/actions/workflows/dockerhub.yml)
 [![PyPI version](https://badge.fury.io/py/browse-ocrd.svg)](https://badge.fury.io/py/browse-ocrd)
 # OCR-D Browser
 
@@ -59,7 +59,7 @@ pip install --upgrade pip setuptools wheel
 
 #### From source
 ```bash
-git clone https://github.com/hnesk/browse-ocrd.git 
+git clone https://github.com/OCR-D/browse-ocrd.git 
 cd browse-ocrd
 sudo make deps-ubuntu
 make install
@@ -80,7 +80,7 @@ If you have installed [Docker](https://docs.docker.com/get-docker/), you can bui
 
 Or use a prebuilt image from Dockerhub:
 
-    docker pull hnesk/ocrd_browser
+    docker pull ocrd/browser
 
 
 ## Usage
