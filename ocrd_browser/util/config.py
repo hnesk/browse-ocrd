@@ -27,7 +27,7 @@ class _DummyObject:
 class BaseModel(PydanticBaseModel):
     class Config:
         env_nested_delimiter = '__'
-        extra = Extra.forbid
+        extra = 'forbid'
 
 
 def snake_case(optionstr: str) -> str:
@@ -109,7 +109,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_nested_delimiter='__',
-        extra=Extra.forbid,
+        extra='forbid',
         env_prefix='BROCRD__',
     )
 
