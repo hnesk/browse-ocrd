@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, ubuntu-22.04]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
 
     steps:
     - uses: actions/checkout@v3
@@ -42,7 +42,7 @@ jobs:
       run: xvfb-run make test
     - name: Upload Unit Test Results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Unit Test Results (python-${{ matrix.python-version }} on ${{ matrix.os }})
         path: unittest.xml
