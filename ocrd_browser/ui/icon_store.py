@@ -50,6 +50,7 @@ class LazyLoadingListStore(Gtk.ListStore):
 
     def _do_insert(self, position: int, row: Sequence[Any]) -> None:
         if row is not None:
+            # add column (reserved for row hash)
             row = tuple(row) + (None,)
         super()._do_insert(position, row)
 
