@@ -8,10 +8,19 @@ from collections import defaultdict
 from configparser import ConfigParser
 from gi.repository import GLib
 from ocrd_utils import getLogger
-from pydantic import BaseModel as PydanticBaseModel, Field, field_validator as validator, Extra
-from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
+from pydantic import BaseModel as PydanticBaseModel, Field, field_validator as validator
+from pydantic_settings import (
+    BaseSettings,
+    NoDecode,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 from shutil import which
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Optional, Dict, Any, Tuple, Type
+try:
+    from typing import Annotated  # type: ignore
+except ImportError:
+    from typing_extensions import Annotated
 
 
 class _DummyObject:
@@ -79,9 +88,8 @@ DUMMY_WORKSPACE = _DummyObject(directory='/tmp/test/', baseurl='/tmp/test/mets.x
 
 
 class FileGroups(BaseModel):
-    preferred_images: List[re.Pattern]  # type: ignore[type-arg]
+    preferred_images: Annotated[List[re.Pattern], NoDecode]
 
-    # FIXME: does not always work in pydantic v2 because of #7749
     @validator('preferred_images', mode="before")
     @classmethod
     def split_regexes(cls, v: str) -> List[re.Pattern[str]]:
