@@ -15,7 +15,10 @@ try:
 except ValueError:
     gi.require_version('GtkSource', '3.0')
 
-gi.require_version('WebKit2', '4.1')
+try:
+    gi.require_version('WebKit2', '4.1')
+except ValueError:
+    gi.require_version('WebKit2', '4.0')
 
 from gi.repository import Gtk, Gio, GLib  # noqa: E402
 from pathlib import Path  # noqa: E402
