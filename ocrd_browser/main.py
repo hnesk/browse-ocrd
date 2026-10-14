@@ -15,7 +15,10 @@ try:
 except ValueError:
     gi.require_version('GtkSource', '3.0')
 
-gi.require_version('WebKit2', '4.0')
+try:
+    gi.require_version('WebKit2', '4.1')
+except ValueError:
+    gi.require_version('WebKit2', '4.0')
 
 from gi.repository import Gtk, Gio, GLib  # noqa: E402
 from pathlib import Path  # noqa: E402
@@ -57,7 +60,9 @@ def main() -> None:
     if PROFILER:
         GLib.idle_add(startup_time)
     from ocrd_utils import initLogging
+    import logging
     initLogging()
+    logging.getLogger('ocrd').setLevel(logging.DEBUG)
     from ocrd_browser.application import OcrdBrowserApplication
     install_excepthook()
     app = OcrdBrowserApplication()

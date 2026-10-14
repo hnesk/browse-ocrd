@@ -23,10 +23,13 @@ try:
 except ValueError:
     gi.require_version('GtkSource', '3.0')
 
-gi.require_version('WebKit2', '4.0')
+try:
+    gi.require_version('WebKit2', '4.1')
+except ValueError:
+    gi.require_version('WebKit2', '4.0')
 
 initLogging()
-setOverrideLogLevel('OFF', True)
+setOverrideLogLevel('CRITICAL', True)
 
 TEST_BASE_PATH = (Path(__file__).parent).absolute()
 ASSETS_PATH = (TEST_BASE_PATH / 'assets').absolute()

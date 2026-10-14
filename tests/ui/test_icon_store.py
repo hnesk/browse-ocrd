@@ -12,21 +12,19 @@ class LazyLoadingListStoreTestCase(TestCase):
 
         self.types = (str, int, GdkPixbuf.Pixbuf)
         self.list_store = Gtk.ListStore(*self.types)
-        self.lazy_list_store = LazyLoadingListStore(*self.types, init_row=self.logging_init, load_row=self.logging_load,
+        self.lazy_list_store = LazyLoadingListStore(*self.types,
+                                                    load_row=self.logging_load,
                                                     hash_row=self.hash_row)
         self.init_log = []
         self.backup_idle_add = GLib.idle_add
         GLib.idle_add = call_instantly
+        self.lazy_list_store.start_loading()
 
     def tearDown(self) -> None:
         GLib.idle_add = self.backup_idle_add
 
-    def logging_init(self, row: Gtk.TreeModelRow):
-        self.init_log.append(row[:])
-
     def logging_load(self, row: Gtk.TreeModelRow):
-        pass
-        # self.init_log.append(row[:])
+        self.init_log.append(row[:])
 
     def hash_row(self, row: Gtk.TreeModelRow):
         return row[0]
@@ -49,17 +47,22 @@ class LazyLoadingListStoreTestCase(TestCase):
         actual = self.lazy_list_store[-1][:]
         self.assertSequenceEqual(row_data + (None,), actual)
 
-    def test_append_calls_init_row(self):
+    def test_append_calls_load_row(self):
         row_data = ('a', 5, None)
         self.lazy_list_store.append(row_data)
         self.assertEqual(1, len(self.init_log))
         self.assertSequenceEqual(row_data, self.init_log[0][:len(row_data)])
 
-    def test_init_row_can_modify_model(self):
+    @unittest.skip
+    # used to test whether init_row() can modify, which it obviously can
+    # but that's gone, and load_row() is only run on a background thread
+    # via pool executor...
+    def test_load_row_can_modify_model(self):
         def change_row(row: Gtk.TreeModelRow):
             row[1] = 15
+            return row
 
-        self.lazy_list_store.init_row = change_row
+        self.lazy_list_store.load_row = change_row
         self.lazy_list_store.append(('a', 5, None))
         self.assertEqual(self.lazy_list_store[-1][1], 15)
 

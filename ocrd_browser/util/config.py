@@ -8,10 +8,19 @@ from collections import defaultdict
 from configparser import ConfigParser
 from gi.repository import GLib
 from ocrd_utils import getLogger
-from pydantic import BaseSettings, BaseModel as PydanticBaseModel, Field, validator, Extra
-from pydantic.env_settings import SettingsSourceCallable
+from pydantic import BaseModel as PydanticBaseModel, Field, field_validator as validator
+from pydantic_settings import (
+    BaseSettings,
+    NoDecode,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 from shutil import which
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Optional, Dict, Any, Tuple, Type
+try:
+    from typing import Annotated  # type: ignore
+except ImportError:
+    from typing_extensions import Annotated
 
 
 class _DummyObject:
@@ -27,7 +36,7 @@ class _DummyObject:
 class BaseModel(PydanticBaseModel):
     class Config:
         env_nested_delimiter = '__'
-        extra = Extra.forbid
+        extra = 'forbid'
 
 
 def snake_case(optionstr: str) -> str:
@@ -79,21 +88,25 @@ DUMMY_WORKSPACE = _DummyObject(directory='/tmp/test/', baseurl='/tmp/test/mets.x
 
 
 class FileGroups(BaseModel):
-    preferred_images: List[re.Pattern]  # type: ignore[type-arg]
+    preferred_images: Annotated[List[re.Pattern], NoDecode]
 
-    split_preferred_images = validator('preferred_images', pre=True, allow_reuse=True)(_split_regexes)
+    @validator('preferred_images', mode="before")
+    @classmethod
+    def split_regexes(cls, v: str) -> List[re.Pattern[str]]:
+        return _split_regexes(cls, v)
 
 
 class Tool(BaseModel):
     commandline: str
-    shortcut: Optional[str]
-    name: Optional[str]
+    shortcut: Optional[str] = None
+    name: Optional[str] = None
 
     def named(self, name: str) -> Tool:
         self.name = name
         return self
 
     @validator('commandline')
+    @classmethod
     def check_commandline(cls, v: str) -> str:
         return _check_commandline(cls, v, file=DUMMY_FILE, workspace=DUMMY_WORKSPACE)
 
@@ -102,24 +115,28 @@ class Settings(BaseSettings):
     file_groups: FileGroups = FileGroups(preferred_images='OCR-D-IMG,OCR-D-IMG.*')
     tool: Dict[str, Tool] = Field({})
 
+    model_config = SettingsConfigDict(
+        env_nested_delimiter='__',
+        extra='forbid',
+        env_prefix='BROCRD__',
+    )
+
     @validator('tool')
+    @classmethod
     def check_tool(cls, tools: Dict[str, Tool]) -> Dict[str, Tool]:
         return {k.lower(): v.named(k) for k, v in tools.items()}
 
-    class Config:
-        env_nested_delimiter = '__'
-        extra = Extra.forbid
-        env_prefix = 'BROCRD__'
-
-        @classmethod
-        def customise_sources(
+    @classmethod
+    def settings_customise_sources(
             cls,
-            init_settings: SettingsSourceCallable,
-            env_settings: SettingsSourceCallable,
-            file_secret_settings: SettingsSourceCallable,
-        ) -> Tuple[SettingsSourceCallable, ...]:
-            """Prioritize ENV over .conf files"""
-            return env_settings, init_settings, file_secret_settings
+            settings_cls: Type[BaseSettings],
+            init_settings: PydanticBaseSettingsSource,
+            env_settings: PydanticBaseSettingsSource,
+            dotenv_settings: PydanticBaseSettingsSource,
+            file_secret_settings: PydanticBaseSettingsSource,
+    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        """Prioritize ENV over .conf files"""
+        return env_settings, init_settings, dotenv_settings, file_secret_settings
 
 
 class SettingsFactory:
@@ -151,7 +168,6 @@ class SettingsFactory:
         log.info('Read %d config file(s): %s, tried %s', len(read_files), ', '.join(read_files),
                  ', '.join(str(file) for file in files))
         settings = Settings(**cls.config_to_dict(config))
-        print(settings)
         return settings
 
     @staticmethod

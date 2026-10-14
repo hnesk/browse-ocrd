@@ -1,3 +1,6 @@
+import shutil
+from ocrd_models import OcrdFile
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -5,7 +8,7 @@ from ocrd_browser.util.file_groups import FileGroupHandle
 from tests import TestCase, ASSETS_PATH, TEST_BASE_PATH
 from ocrd_browser.model import Document, Page
 from datetime import datetime
-from ocrd_models.ocrd_page import PcGtsType
+from ocrd_models.ocrd_page import OcrdPage, PcGtsType
 
 
 # TODO: Later: from tests.assets import Assets, copy_of_directory
@@ -28,30 +31,44 @@ class DocumentTestCase(TestCase):
         ]
         self.assertEqual(expected, doc.file_groups)
 
-    def test_get_page_index(self):
-        doc = Document.load(self.path)
-        file_index = doc.get_file_index()
-        page17 = [file for file in file_index.values() if file.static_page_id == 'PHYS_0017']
-        alto = [file for file in file_index.values() if file.mimetype == 'application/alto+xml']
-        self.assertEqual(3, len(page17))
-        self.assertEqual(2, len(alto))
-
     def test_get_image_paths(self):
         doc = Document.load(self.path)
-        image_paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG', 'image/tiff'))
-        self.assertEqual(2, len(image_paths))
-        self.assertEqual('INPUT_0017.tif', image_paths['PHYS_0017'].name)
-        self.assertEqual('INPUT_0020.tif', image_paths['PHYS_0020'].name)
+        image_files = doc.get_image_files(FileGroupHandle('OCR-D-IMG', 'image/tiff'))
+        self.assertEqual(2, len(image_files))
+        self.assertEqual('INPUT_0017.tif', image_files['PHYS_0017'].basename)
+        self.assertEqual('INPUT_0020.tif', image_files['PHYS_0020'].basename)
 
     def test_get_image_paths_only_returns_matching_groups(self):
         """
         Testcase for https://github.com/hnesk/browse-ocrd/issues/51
         """
         doc = Document.load(ASSETS_PATH / '../example/workspaces/kant_aufklaerung_1784_bin/mets.xml')
-        image_paths = doc.get_image_paths(FileGroupHandle('OCR-D-IMG-BIN', 'image/png'))
-        self.assertEqual(2, len(image_paths))
-        self.assertEqual('OCR-D-IMG-BIN_0001.IMG-BIN.png', image_paths['PHYS_0017'].name)
-        self.assertEqual('OCR-D-IMG-BIN_0002.IMG-BIN.png', image_paths['PHYS_0020'].name)
+        image_files = doc.get_image_files(FileGroupHandle('OCR-D-IMG-BIN', 'image/png'))
+        self.assertEqual(2, len(image_files))
+        self.assertEqual('OCR-D-IMG-BIN_0001.IMG-BIN.png', image_files['PHYS_0017'].basename)
+        self.assertEqual('OCR-D-IMG-BIN_0002.IMG-BIN.png', image_files['PHYS_0020'].basename)
+
+    def test_get_image_files_with_remote_image(self):
+        path = TEST_BASE_PATH / 'example/workspaces/remote-single/mets.xml'
+        for file_group_dir in path.parent.glob('OCR-D-*'):
+            shutil.rmtree(file_group_dir)
+        doc = Document.load(path.as_uri())
+        image_files = doc.get_image_files(FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'), allow_download=True)
+        self.assertGreater(len(image_files), 0)
+        file = image_files['PHYS_0002']
+        self.assertIsInstance(file, OcrdFile)
+        self.assertIsNotNone(file.local_filename)
+
+    def test_get_image_files_with_remote_image_and_disallowed_download(self):
+        path = TEST_BASE_PATH / 'example/workspaces/remote-single/mets.xml'
+        for file_group_dir in path.parent.glob('OCR-D-*'):
+            shutil.rmtree(file_group_dir)
+        doc = Document.load(path.as_uri())
+        image_files = doc.get_image_files(FileGroupHandle('OCR-D-IMG-BIN', 'image/tiff'), allow_download=False)
+        self.assertGreater(len(image_files), 0)
+        file = image_files['PHYS_0002']
+        self.assertIsInstance(file, OcrdFile)
+        self.assertIsNone(file.local_filename)
 
     def test_get_default_image_group(self):
         doc = Document.load(ASSETS_PATH / 'kant_aufklaerung_1784-complex/data/mets.xml')
@@ -122,6 +139,12 @@ class DocumentTestCase(TestCase):
             for page_id in doc.page_ids:
                 for fg in doc.file_groups:
                     original_file = doc.files_for_page_id(page_id, fg.group, fg.mime)[0]
+                    # workaround for core#1149: remove .url absolute path from cloning
+                    original_file.url = None
+                    # workaround for core#1226: remove URL FLocat directly
+                    flocat = original_file._el.find('{http://www.loc.gov/METS/}FLocat[@LOCTYPE="URL"]')
+                    if flocat is not None:
+                        original_file._el.remove(flocat)
                     saved_file = saved.files_for_page_id(page_id, fg.group, fg.mime)[0]
                     self.assertEqual(original_file, saved_file)
 
@@ -159,7 +182,7 @@ class DocumentTestCase(TestCase):
         # with self.assertLogs('ocrd_browser.model.document', level='WARNING') as log_watch:
         page = doc.page_for_id('PHYS_0017', 'OCR-D-IMG-CLIP')
         self.assertIsInstance(page, Page)
-        self.assertIsInstance(page.pc_gts, PcGtsType)
+        self.assertIsInstance(page.pc_gts, (PcGtsType, OcrdPage))
         # self.assertEqual(1, len(log_watch.records))
         # self.assertEqual("No PAGE-XML but 2 images for page 'PHYS_0017' in fileGrp 'OCR-D-IMG-CLIP'", log_watch.records[0].msg)
 

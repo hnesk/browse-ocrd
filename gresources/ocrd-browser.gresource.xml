@@ -3,8 +3,9 @@
   <gresource prefix="/org/readmachine/ocrd-browser">
     <file compressed="true" preprocess="to-pixdata">icons/logo.png</file>
     <file compressed="true" preprocess="to-pixdata">icons/icon.png</file>
-    <file compressed="true" preprocess="to-pixdata">icons/page-loading.png</file>
     <file compressed="true" preprocess="to-pixdata">icons/page-missing.png</file>
+    <file compressed="true" preprocess="to-pixdata">icons/page-downloading.png</file>
+    <file compressed="true" preprocess="to-pixdata">icons/page-generating-thumb.png</file>
     <file compressed="true" preprocess="xml-stripblanks">icons/split-horizontal.svg</file>
     <file compressed="true" preprocess="xml-stripblanks">icons/split-vertical.svg</file>
     <file compressed="true" preprocess="xml-stripblanks">icons/icon-feature-border.svg</file>

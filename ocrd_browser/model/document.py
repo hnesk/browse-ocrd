@@ -1,5 +1,8 @@
 from __future__ import annotations
-from typing import Optional, Tuple, List, Union, cast, Callable, Any, Dict, Sequence, TYPE_CHECKING
+
+from contextlib import contextmanager
+
+from typing import Optional, Tuple, List, Union, cast, Callable, Any, Dict, Sequence, Generator, TYPE_CHECKING
 
 import atexit
 import errno
@@ -39,6 +42,17 @@ if TYPE_CHECKING:
 
 
 EventCallBack = Optional[Callable[[str, Any], None]]
+
+
+@contextmanager
+def caching_environment(value: str = '1') -> Generator[None, None, None]:
+    backup_caching = os.environ.get('OCRD_METS_CACHING', None)
+    os.environ['OCRD_METS_CACHING'] = value
+    try:
+        yield
+    finally:
+        if backup_caching is not None:
+            os.environ['OCRD_METS_CACHING'] = backup_caching
 
 
 def check_editable(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -81,7 +95,9 @@ class Document:
             return cls.create(emitter=emitter)
         mets_path = cls._to_path(mets_url)
 
-        workspace = Resolver().workspace_from_url(str(mets_path), download=False)
+        with caching_environment('1'):
+            workspace = Resolver().workspace_from_url(str(mets_path), download=False)
+
         doc = cls(workspace, emitter=emitter, original_url=str(mets_url))
         doc._empty = False
         return doc
@@ -106,7 +122,10 @@ class Document:
         cls.temporary_workspaces.append(temporary_workspace)
         # TODO download = False and lazy loading would be nice for responsiveness
         log.info("Cloning '%s' to '%s'", mets_url, temporary_workspace)
-        workspace = Resolver().workspace_from_url(mets_url=mets_url, dst_dir=temporary_workspace, download=True)
+
+        with caching_environment('1'):
+            workspace = Resolver().workspace_from_url(mets_url=mets_url, dst_dir=temporary_workspace, download=True)
+
         return workspace
 
     @check_editable
@@ -166,13 +185,18 @@ class Document:
         """
         return str(self.workspace.baseurl) + '/' + self.mets_filename if self.workspace else None
 
-    def path(self, other: Union[OcrdFile, Path, str]) -> Optional[Path]:
+    def path(self, other: Union[OcrdFile, Path, str], allow_download: bool = False) -> Optional[Path]:
         """
         Resolves other relative to current workspace
         """
         if not self.directory:
             return None
         if isinstance(other, OcrdFile):
+            if not other.local_filename:
+                if allow_download:
+                    other = self.workspace.download_file(other)
+                else:
+                    raise ValueError('path with allow_download=False for non local file called: #{}: {}'.format(other.ID, other.url))
             return self.directory.joinpath(other.local_filename)
         elif isinstance(other, Path):
             return self.directory.joinpath(other)
@@ -219,49 +243,26 @@ class Document:
     def title(self) -> str:
         return str(self.workspace.mets.unique_identifier) if self.workspace and self.workspace.mets.unique_identifier else '<unnamed>'
 
-    def get_file_index(self) -> Dict[str, OcrdFile]:
+    def get_image_files(self, file_group: FileGroupHandle, allow_download: bool = False) -> Dict[str, Optional[OcrdFile]]:
         """
-        Return all OcrdFiles by file id and additionally augments the OcrdFile with static_page_id for fast(er) lookup
-
-        Example:
-        page17 = [file for file in file_index.values() if file.static_page_id == 'PHYS_0017']
-
+        Builds a Dict PageID->OcrdFile|None for all page_ids
         """
-        log = getLogger('ocrd_browser.model.document.Document.get_file_index')
-        file_index = {}
+        log = getLogger('ocrd_browser.model.document.Document.get_image_files')
+        image_paths: Dict[str, Optional[OcrdFile]] = {}
         if self.workspace:
-            for file in self.workspace.mets.find_files():
-                file.static_page_id = None
-                file_index[file.ID] = file
+            for page_id in self.page_ids:
+                for file in self.workspace.mets.find_files(pageId=page_id, fileGrp=file_group.group, mimetype=file_group.mime):
+                    if page_id in image_paths:
+                        log.warning('Multiple files for PAGE %s and fileGrp %s, using first %s', page_id, file_group, image_paths[page_id])
+                    else:
+                        if not file.local_filename:
+                            if allow_download:
+                                file = self.workspace.download_file(file)
+                        image_paths[page_id] = file
+                if page_id not in image_paths:
+                    log.warning('Found no files for PAGE %s and fileGrp %s', page_id, file_group)
+                    image_paths[page_id] = None
 
-        file_pointers: List[Element] = self.xpath(
-            'mets:structMap[@TYPE="PHYSICAL"]/mets:div[@TYPE="physSequence"]/mets:div[@TYPE="page"]/mets:fptr')
-        for file_pointer in file_pointers:
-            file_id = file_pointer.get('FILEID')
-            page_id = file_pointer.getparent().get('ID')
-            if file_id in file_index:
-                file_index[file_id].static_page_id = page_id
-            else:
-                log.warning("FILEID '%s' for PAGE '%s' not in mets:fileSec", file_id, page_id)
-
-        return file_index
-
-    def get_image_paths(self, file_group: FileGroupHandle) -> Dict[str, Path]:
-        """
-        Builds a Dict ID->Path for all page_ids fast
-
-        More precisely:  fast = Faster than iterating over page_ids and using mets.get_physical_page_for_file for each entry
-        """
-        log = getLogger('ocrd_browser.model.document.Document.get_image_paths')
-        image_paths = {}
-        file_index = self.get_file_index()
-        for page_id in self.page_ids:
-            images = [image for image in file_index.values() if image.static_page_id == page_id and file_group.match(image)]
-            if len(images) > 0:
-                image_paths[page_id] = self.directory.joinpath(images[0].local_filename)
-            else:
-                log.warning('Found no images for PAGE %s and fileGrp %s', page_id, file_group)
-                image_paths[page_id] = None
         return image_paths
 
     def get_default_image_group(self, preferred_image_file_groups: PatternList = None) -> Optional[FileGroupHandle]:
@@ -306,11 +307,19 @@ class Document:
         return Page(self, page_id, file_group)
 
     def files_for_page_id(self, page_id: str, file_group: str = None, mimetype: str = None) -> List[OcrdFile]:
+        log = getLogger('ocrd_browser.model.document.Document.files_for_page_id')
         with pushd_popd(self.workspace.directory):
-            files: List[OcrdFile] = self.workspace.mets.find_files(fileGrp=file_group, pageId=page_id,
-                                                                   mimetype=mimetype)
-            files = [self.workspace.download_file(file) for file in files]
-            return files
+            files: List[OcrdFile] = self.workspace.mets.find_files(
+                fileGrp=file_group, pageId=page_id, mimetype=mimetype)
+
+            def try_download(file_: OcrdFile) -> OcrdFile:
+                try:
+                    return self.workspace.download_file(file_)
+                except FileNotFoundError as e:
+                    log.warning(e)
+                    return None
+            return [local_file for maybe_remote_file in files
+                    if (local_file := try_download(maybe_remote_file)) is not None]
 
     def page_for_file(self, page_file: OcrdFile) -> PcGtsType:
         # cd and silence Warning: Value "ocrd-cis-word-alignment" ... does not match xsd enumeration restriction on TextDataTypeSimpleType
@@ -319,7 +328,7 @@ class Document:
 
     def resolve_image(self, image_file: OcrdFile) -> Image:
         with pushd_popd(self.workspace.directory):
-            pil_image = Image.open(self.workspace.download_file(image_file).local_filename)
+            pil_image = Image.open(self.path(image_file, allow_download=True))
             # pil_image.load()
             return pil_image
 
@@ -354,7 +363,7 @@ class Document:
             page_sequence.append(div)
 
         old_to_new = dict(zip(old_page_ids, self.page_ids))
-        self.workspace.mets.refresh_caches()
+        self.workspace.mets._refresh_caches()
         self.save_mets()
         self._emit('document_changed', 'reordered', old_to_new)
 
@@ -390,7 +399,7 @@ class Document:
                   mimetype: str = 'image/png') -> OcrdFile:
         extension = MIME_TO_EXT[mimetype]
         retval, image_array = cv2.imencode(extension, image)
-        image_bytes = add_dpi_to_png_buffer(image_array.tostring(), dpi)
+        image_bytes = add_dpi_to_png_buffer(image_array.tobytes(), dpi)
         local_filename = Path(file_group, '%s%s' % (file_id, extension))
         current_file = self.workspace.add_file(file_group, ID=file_id, mimetype=mimetype, force=True,
                                                content=image_bytes,
@@ -418,14 +427,15 @@ class Document:
 
     @editable.setter
     def editable(self, editable: bool) -> None:
-        if editable:
-            if self._original_url:
-                self.workspace = self._clone_workspace(self._original_url)
+        with caching_environment('1'):
+            if editable:
+                if self._original_url:
+                    self.workspace = self._clone_workspace(self._original_url)
+                else:
+                    # noinspection PyTypeChecker
+                    self.workspace = Resolver().workspace_from_nothing(directory=None, mets_basename='mets.xml')
             else:
-                # noinspection PyTypeChecker
-                self.workspace = Resolver().workspace_from_nothing(directory=None, mets_basename='mets.xml')
-        else:
-            self.workspace = Resolver().workspace_from_url(self.baseurl_mets)
+                self.workspace = Resolver().workspace_from_url(self.baseurl_mets)
         self._editable = editable
         # self._empty = False
         # self._modified = False

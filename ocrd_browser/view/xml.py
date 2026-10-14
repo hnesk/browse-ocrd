@@ -4,11 +4,12 @@ from typing import Optional, Any
 
 from ocrd_utils.constants import MIMETYPE_PAGE
 from ocrd_models.ocrd_page import to_xml
+from ocrd_models.utils import xmllint_format
 
 from ocrd_browser.util.file_groups import FileGroupHandle
 from ocrd_browser.util.launcher import Launcher
 from ocrd_browser.view import View
-from ocrd_browser.view.base import FileGroupSelector, FileGroupFilter
+from ocrd_browser.view.base import FileGroupSelector, FileGroupFilter, BooleanSelector
 
 GObject.type_register(GtkSource.View)
 
@@ -23,6 +24,7 @@ class ViewXml(View):
     def __init__(self, name: str, window: Gtk.Window):
         super().__init__(name, window)
         self.file_group = FileGroupHandle(None, MIMETYPE_PAGE)
+        self.indent = False
         self.font_size: Optional[int] = None
         # noinspection PyTypeChecker
         self.text_view: GtkSource.View = None
@@ -32,6 +34,7 @@ class ViewXml(View):
     def build(self) -> None:
         super().build()
         self.add_configurator('file_group', FileGroupSelector(FileGroupFilter.XML))
+        self.add_configurator('indent', BooleanSelector(label="indent", tooltip="pretty-print XML?"))
         button = Gtk.Button.new_with_label('PageViewer')
         button.connect('clicked', self.open_jpageviewer)
         button.set_visible(True)
@@ -97,6 +100,8 @@ class ViewXml(View):
                     text = f.read()
             else:
                 text = to_xml(self.current.pc_gts)
+            if self.indent:
+                text = xmllint_format(text.encode('utf-8')).decode('utf-8')
             self.buffer.set_text(text)
         else:
             self.buffer.set_text('')

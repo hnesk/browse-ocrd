@@ -4,7 +4,7 @@ from typing import List, Callable, Optional, Any, cast
 
 from ocrd_browser.util.gtk import resource_string
 from ocrd_browser.model import Document
-from .page_store import PageListStore, ChangeList
+from .page_store import PageListStore, ChangeList, Column
 
 
 @Gtk.Template(string=resource_string('page-list.ui'))
@@ -45,9 +45,9 @@ class PagePreviewList(Gtk.IconView):
             self.scroll_to_id(cast(List[str], page_ids)[-1])
 
     def setup_ui(self) -> None:
-        self.set_text_column(PageListStore.COLUMN_PAGE_ID)
-        self.set_tooltip_column(PageListStore.COLUMN_TOOLTIP)
-        self.set_pixbuf_column(PageListStore.COLUMN_THUMB)
+        self.set_text_column(Column.PAGE_ID)
+        self.set_tooltip_column(Column.TOOLTIP)
+        self.set_pixbuf_column(Column.THUMB)
         text_renderers = [cell for cell in self.get_cells() if isinstance(cell, Gtk.CellRendererText)]
         text_renderer: Gtk.CellRendererText = text_renderers[0]
         text_renderer.props.ellipsize = Pango.EllipsizeMode.MIDDLE
@@ -67,7 +67,7 @@ class PagePreviewList(Gtk.IconView):
         self.context_menu.popup_at_pointer(event)
 
     def get_selected_ids(self) -> List[str]:
-        return [self.model[path][PageListStore.COLUMN_PAGE_ID] for path in self.get_selected_items()]
+        return [self.model[path][Column.PAGE_ID] for path in self.get_selected_items()]
 
     def goto_index(self, index: int) -> None:
         index = index if index >= 0 else len(self.model) + index
@@ -99,7 +99,7 @@ class PagePreviewList(Gtk.IconView):
 
     def do_item_activated(self, path: Gtk.TreePath) -> None:
         self.current = self.model.get_iter(path)
-        self.emit('page_activated', self.model[path][PageListStore.COLUMN_PAGE_ID])
+        self.emit('page_activated', self.model[path][Column.PAGE_ID])
 
     @GObject.Signal()
     def page_activated(self, page_id: str) -> None:

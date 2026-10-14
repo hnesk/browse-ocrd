@@ -9,7 +9,7 @@ SHARE_DIR=~/.local/share
 DOCKER_TAG = ocrd_browser
 
 deps-ubuntu:
-	apt-get install -o Acquire::Retries=3 --no-install-recommends -y libcairo2-dev libgtk-3-bin libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev gir1.2-webkit2-4.0 python3-dev pkg-config cmake
+	apt-get install -o Acquire::Retries=3 --no-install-recommends -y libcairo2-dev libgtk-3-bin libgtk-3-dev libglib2.0-dev libgtksourceview-3.0-dev libgirepository1.0-dev $(shell apt-cache pkgnames libgirepository-2.0-dev) $(shell apt-cache pkgnames gir1.2-webkit2-4.) python3-dev pkg-config cmake
 
 deps-dev:
 	$(PIP) install -r requirements-dev.txt
@@ -83,7 +83,7 @@ tests/assets: repo/assets
 	mkdir -p $@
 	cp -r -t $@ repo/assets/data/*
 
-docker-build:
+docker-build: ocrd_browser/ui.gresource
 	docker build --tag $(DOCKER_TAG) .
 
 docker-run: DATADIR ?= $(CURDIR)

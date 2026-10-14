@@ -1,8 +1,30 @@
 # Change Log
 
-<!-- 
 ## [Unreleased](../../compare/v0.5.5...master)
--->
+
+Features:
+ * :fire: support remote images in METS #52:
+   - download URLs lazily (on demand)
+   - ignore failing `file:/` URLs
+ * in XML view, add switch to enable pretty-printing
+ * in PAGE view, support "star view" unordered groups as in PRImA:
+   - for `UnorderedGroup(Indexed)`, draw lines from regions to 
+     group center instead of arrow sequence 
+   - for recursive groups, switch color from red to purple
+ * in PAGE view, use page id as default screenshot filename 
+   (instead of `untitled`)
+
+Changed:
+ * drop Python 3.7
+
+Fixed:
+ * in PAGE view, avoid crashes for reading order view when
+   - arrow start is near end
+   - regionRef cannot be found
+   - regionRef polygon is invalid
+ * Docker: start maximised and without window decorations
+ * adapt to ocrd v3
+ * adapt to pydantic v2
 
 ## [0.5.5](../../compare/v0.5.4...0.5.5)
 

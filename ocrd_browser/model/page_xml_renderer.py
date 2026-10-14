@@ -16,12 +16,30 @@ from functools import lru_cache as memoized
 
 from PIL import ImageDraw, Image, ImageFont
 
-from ocrd_models.ocrd_page import PcGtsType, PageType, BorderType, PrintSpaceType, RegionType, TextRegionType, TextLineType, WordType, GlyphType, GraphemeType, ChartRegionType, GraphicRegionType, SeparatorRegionType
+from ocrd_models.ocrd_page import (
+    PcGtsType,
+    PageType,
+    BorderType,
+    PrintSpaceType,
+    RegionType,
+    TextRegionType,
+    TextLineType,
+    WordType,
+    GlyphType,
+    GraphemeType,
+    ChartRegionType,
+    GraphicRegionType,
+    SeparatorRegionType,
+    OrderedGroupType,
+    OrderedGroupIndexedType,
+    UnorderedGroupType,
+    UnorderedGroupIndexedType,
+)
 from ocrd_utils import coordinates_of_segment, getLogger, polygon_from_points, transform_coordinates
 
-from shapely.geometry import Polygon, Point, LineString
+from shapely.geometry import Polygon, Point, LineString, MultiPoint
 from shapely.validation import explain_validity
-from shapely import prepared
+from shapely import prepared, centroid
 
 RegionWithCoords = Union[RegionType, TextLineType, WordType, GlyphType, GraphemeType, PrintSpaceType, BorderType]
 __all__ = ['PageXmlRenderer', 'RegionMap', 'Feature', 'Region']
@@ -320,7 +338,7 @@ class LineStringOperation(Operation):
 
 
 class ArrowOperation(Operation):
-    def __init__(self, p0: Point, p1: Point, size: float = 30.0, width: int = 3, color: str = '#FF0000FF'):
+    def __init__(self, p0: Point, p1: Point, size: float = 20.0, width: int = 3, color: str = '#FF0000FF'):
         super().__init__(color, 200)  # Depth 200 is on top of everything
         self.p0 = p0.coords[0]
         self.p1 = p1.coords[0]
@@ -333,16 +351,40 @@ class ArrowOperation(Operation):
         d = self.p1[0] - self.p0[0], self.p1[1] - self.p0[1]
         left = d[0] * c - d[1] * s, d[0] * s + d[1] * c
         right = d[0] * c + d[1] * s, -d[0] * s + d[1] * c
+        if d[0] == 0 and d[1] == 0:
+            return
         lf = self.size / (d[0] ** 2 + d[1] ** 2) ** 0.5
 
-        # Draw arrow shaft
+        # Draw straight line
         draw.line([self.p0, self.p1], fill=self.color, width=self.width)
-        # Draw dot
+        # Draw destination dot
         draw.ellipse((self.p1[0] - 5, self.p1[1] - 5, self.p1[0] + 5, self.p1[1] + 5), fill=self.color)
-        # Draw left arrow wing
-        draw.line([(self.p1[0] + lf * left[0], self.p1[1] + lf * left[1]), self.p1], fill=self.color, width=self.width)
-        # Draw right arrow wing
-        draw.line([(self.p1[0] + lf * right[0], self.p1[1] + lf * right[1]), self.p1], fill=self.color, width=self.width)
+        # Draw destination arrow
+        draw.polygon([self.p1[0] + lf * left[0], self.p1[1] + lf * left[1],
+                      self.p1[0] + lf * right[0], self.p1[1] + lf * right[1],
+                      self.p1], fill=self.color, width=self.width)
+
+
+class StarOperation(Operation):
+    def __init__(self, center: Point, points: List[Point], size: float = 30.0, width: int = 3, color: str = '#FF0000FF'):
+        super().__init__(color, 200)  # Depth 200 is on top of everything
+        self.lines = [list(LineString((center, point)).coords) for point in points]
+        self.center = center.coords[0]
+        self.size = size
+        self.width = width
+
+    def paint(self, draw: ImageDraw.Draw, regions: RegionMap) -> None:
+        # Draw lines
+        for line in self.lines:
+            draw.line(line, fill=self.color, width=self.width)
+        # Draw tangent dots
+        for line in self.lines:
+            point = line[-1]
+            draw.ellipse((point[0] - 5, point[1] - 5, point[0] + 5, point[1] + 5), fill=self.color)
+        # Draw central dot
+        draw.ellipse((self.center[0] - 7, self.center[1] - 7,
+                      self.center[0] + 7, self.center[1] + 7),
+                     outline=self.color, fill='#FFFFFFFF')
 
 
 class TextOperation(Operation):
@@ -532,17 +574,64 @@ class PageXmlRenderer:
             if isinstance(region, TextRegionType):
                 return -1
             return -2
+        id2region = dict()
         for region_ds in sorted(page.get_AllRegions(), key=region_priority):
             self.render_type(region_ds)
+            id2region[region_ds.id] = region_ds
 
-        if self.features & Feature.ORDER:
-            last_point: Optional[Point] = None
-            for region_ds in page.get_AllRegions(order='reading-order-only'):
-                region = self.region_factory.create(region_ds)
-                new_point = region.poly.representative_point()
-                if last_point:
-                    self.operations.append(ArrowOperation(last_point, new_point, color='#FF0000CF'))
-                last_point = new_point
+        if self.features & Feature.ORDER and (
+                order := page.ReadingOrder) and (
+                group := order.OrderedGroup or order.UnorderedGroup):
+            def add_refs(group, level: int = 0):  # type: ignore
+                color: str = {0: '#DC143CFF',  # '#FF0000CF'
+                              1: '#9400D3FF',
+                              2: '#8B0000FF',
+                }.get(level, '#8B0000FF')
+                if isinstance(group, (OrderedGroupType, OrderedGroupIndexedType)):
+                    iterator = group.get_AllIndexed
+                else:
+                    iterator = group.get_UnorderedGroupChildren
+                points: List[Tuple[float, float]] = []
+                for ref in iterator():
+                    # ordered recursive case: arrow into first, arrow from last
+                    if isinstance(ref, (OrderedGroupType, OrderedGroupIndexedType)):
+                        first, last = add_refs(ref, level + 1)
+                    # unordered recursive case: arrow into center, arrow from center
+                    elif isinstance(ref, (UnorderedGroupType, UnorderedGroupIndexedType)):
+                        first = last = add_refs(ref, level + 1)
+                    elif ref.regionRef:
+                        if region_ds := id2region.get(ref.regionRef, None):
+                            region = self.region_factory.create(region_ds)
+                            if region is None or region.poly is None:
+                                first = last = Point(*coordinates_of_segment(
+                                    region_ds, None, self.region_factory.coords)[0])
+                            else:
+                                first = last = region.poly.representative_point()
+                        else:
+                            self.region_factory.logger.warning(
+                                'Page "%s" @ %s has unknown regionRef="%s"', self.region_factory.page_id,
+                                group.id or 'ReadingOrder', ref.regionRef)
+                            continue
+                    else:
+                        continue
+                    # ordered iterative case: arrow from last
+                    if isinstance(group, (OrderedGroupType, OrderedGroupIndexedType)):
+                        if len(points):
+                            self.operations.append(ArrowOperation(points[-1], first, color=color))
+                        points.append(last)
+                    else:
+                        points.append(first)
+                if not len(points):
+                    points = [Point(0, 0)]
+                # ordered iterative case: arrow from last
+                if isinstance(group, (OrderedGroupType, OrderedGroupIndexedType)):
+                    return points[0], points[-1]
+                # unordered iterative case: line to center
+                if isinstance(group, (UnorderedGroupType, UnorderedGroupIndexedType)):
+                    center = centroid(MultiPoint(points))
+                    self.operations.append(StarOperation(center, points, color=color))
+                    return center
+            add_refs(group)
 
     def get_result(self) -> Tuple[Image.Image, RegionMap]:
         canvas, regions = self.operations.paint(self.canvas.copy())
